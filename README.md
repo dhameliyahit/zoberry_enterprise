@@ -1,36 +1,30 @@
-This is a [Next.js](https://nextjs.org) project bootstrapped with [`create-next-app`](https://nextjs.org/docs/app/api-reference/cli/create-next-app).
+# Free eCommerce Template for Next.js - NextMerce
 
-## Getting Started
+The free Next.js eCommerce template is a lite version of the NextMerce Next.js eCommerce boilerplate, designed to streamline the launch and management of your online store.
 
-First, run the development server:
+![NextMerce](https://github.com/user-attachments/assets/57155689-a756-4222-8af7-134e556acae2)
 
-```bash
-npm run dev
-# or
-yarn dev
-# or
-pnpm dev
-# or
-bun dev
-```
 
-Open [http://localhost:3000](http://localhost:3000) with your browser to see the result.
+While NextMerce Pro features advanced functionalities, seamless integration, and customizable options, providing all the essential tools needed to build and expand your business, the lite version offers a basic Next.js template specifically crafted for eCommerce websites. Both versions ensure superior performance and flexibility, all powered by Next.js.
 
-You can start editing the page by modifying `app/page.js`. The page auto-updates as you edit the file.
+### NextMerce Free VS NextMerce Pro
 
-This project uses [`next/font`](https://nextjs.org/docs/app/building-your-application/optimizing/fonts) to automatically optimize and load [Geist](https://vercel.com/font), a new font family for Vercel.
+| ✨ Features                         | 🎁 NextMerce Free                 | 🔥 NextMerce Pro                        |
+|----------------------------------|--------------------------------|--------------------------------------|
+| Next.js Pages                    | Static                         | Dynamic Boilerplate Template         |
+| Components                       | Limited                        | All According to Demo                |
+| eCommerce Functionality          | Included                       | Included                             |
+| Integrations (DB, Auth, etc.)    | Not Included                   | Included                             |
+| Community Support                | Included                       | Included                             |
+| Premium Email Support            | Not Included                   | Included                             |
+| Lifetime Free Updates            | Included                       | Included                             |
 
-## Learn More
 
-To learn more about Next.js, take a look at the following resources:
+#### [🚀 Live Demo](https://demo.nextmerce.com/)
 
-- [Next.js Documentation](https://nextjs.org/docs) - learn about Next.js features and API.
-- [Learn Next.js](https://nextjs.org/learn) - an interactive Next.js tutorial.
+#### [🌐 Visit Website](https://nextmerce.com/)
 
-You can check out [the Next.js GitHub repository](https://github.com/vercel/next.js) - your feedback and contributions are welcome!
+## Update Logs
 
-## Deploy on Vercel
-
-The easiest way to deploy your Next.js app is to use the [Vercel Platform](https://vercel.com/new?utm_medium=default-template&filter=next.js&utm_source=create-next-app&utm_campaign=create-next-app-readme) from the creators of Next.js.
-
-Check out our [Next.js deployment documentation](https://nextjs.org/docs/app/building-your-application/deploying) for more details.
+Version 0.1.2 - [Mar 16, 2026]
+- Update Next.js, React, and React DOM dependencies, add baseline-browser-mapping
