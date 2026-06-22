@@ -1,28 +1,37 @@
-import { createSlice } from "@reduxjs/toolkit";
+import { createSlice, PayloadAction } from "@reduxjs/toolkit";
 import { Product } from "@/types/product";
 
 type InitialState = {
   value: Product;
 };
 
-const initialState = {
+const initialState: InitialState = {
   value: {
+    _id: "",
     title: "",
-    reviews: 0,
+    slug: "",
+    description: "",
     price: 0,
     discountedPrice: 0,
-    img: "",
     images: [],
-    id: 0,
-    imgs: { thumbnails: [], previews: [] },
+    category: null,
+    tags: [],
+    sku: "",
+    stock: 0,
+    ratings: { average: 0, count: 0 },
+    isActive: true,
+    isFeatured: false,
+    hasVariants: false,
+    createdAt: "",
+    updatedAt: "",
   },
-} as InitialState;
+};
 
 export const productDetails = createSlice({
   name: "productDetails",
   initialState,
   reducers: {
-    updateproductDetails: (_, action) => {
+    updateproductDetails: (_, action: PayloadAction<Product>) => {
       return {
         value: {
           ...action.payload,

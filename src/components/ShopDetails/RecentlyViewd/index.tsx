@@ -1,6 +1,7 @@
 "use client";
-import React from "react";
-import shopData from "@/components/Shop/shopData";
+import React, { useState, useEffect } from "react";
+import { productService } from "@/services/product.service";
+import type { Product } from "@/types";
 import ProductItem from "@/components/Common/ProductItem";
 import Image from "next/image";
 import Link from "next/link";
@@ -21,6 +22,14 @@ const RecentlyViewdItems = () => {
   const handleNext = useCallback(() => {
     if (!sliderRef.current) return;
     sliderRef.current.swiper.slideNext();
+  }, []);
+
+  const [products, setProducts] = useState<Product[]>([]);
+
+  useEffect(() => {
+    productService.getAll({ limit: 8 }).then((res) => {
+      setProducts(res.data || []);
+    }).catch(() => {});
   }, []);
 
   return (
@@ -89,11 +98,11 @@ const RecentlyViewdItems = () => {
             spaceBetween={20}
             className="justify-between"
           >
-            {shopData.map((item, key) => (
+            {products.length > 0 ? products.map((item, key) => (
               <SwiperSlide key={key}>
                 <ProductItem item={item} />
               </SwiperSlide>
-            ))}
+            )) : <SwiperSlide><p className="text-gray-500 text-center py-8">No products</p></SwiperSlide>}
           </Swiper>
         </div>
       </div>

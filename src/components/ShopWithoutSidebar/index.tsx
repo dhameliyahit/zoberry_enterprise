@@ -1,15 +1,21 @@
 "use client";
-import React, { useState } from "react";
+import React, { useState, useEffect } from "react";
 import Breadcrumb from "../Common/Breadcrumb";
-
+import { productService } from "@/services/product.service";
+import type { Product } from "@/types";
 import SingleGridItem from "../Shop/SingleGridItem";
 import SingleListItem from "../Shop/SingleListItem";
 import CustomSelect from "../ShopWithSidebar/CustomSelect";
 
-import shopData from "../Shop/shopData";
-
 const ShopWithoutSidebar = () => {
+  const [products, setProducts] = useState<Product[]>([]);
   const [productStyle, setProductStyle] = useState("grid");
+
+  useEffect(() => {
+    productService.getAll({ limit: 50 }).then((res) => {
+      setProducts(res.data || []);
+    }).catch(() => {});
+  }, []);
 
   const options = [
     { label: "Latest Products", value: "0" },
@@ -129,13 +135,13 @@ const ShopWithoutSidebar = () => {
                     : "flex flex-col gap-7.5"
                 }`}
               >
-                {shopData.map((item, key) =>
+                {products.length > 0 ? products.map((item, key) =>
                   productStyle === "grid" ? (
                     <SingleGridItem item={item} key={key} />
                   ) : (
                     <SingleListItem item={item} key={key} />
                   )
-                )}
+                ) : <p className="text-gray-500 col-span-full text-center py-8">No products found</p>}
               </div>
               {/* <!-- Products Grid Tab Content End --> */}
 

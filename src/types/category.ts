@@ -1,5 +1,9 @@
 export type Category = {
-  title: string;
-  id: number;
-  img: string;
+  _id: string;
+  name: string;
+  slug: string;
+  description: string;
+  image: string;
+  parentCategory: Category | string | null;
+  isActive: boolean;
 };

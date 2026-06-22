@@ -1,14 +1,28 @@
-import React from "react";
+"use client";
+import React, { useEffect, useState } from "react";
 import Breadcrumb from "../Common/Breadcrumb";
-import BlogItem from "../Blog/BlogItem";
-import blogData from "../BlogGrid/blogData"; 
+import { blogService } from "@/services/blog.service";
+import { productService } from "@/services/product.service";
+import type { BlogItem, Product } from "@/types";
+import BlogItemComponent from "../Blog/BlogItem";
 import SearchForm from "../Blog/SearchForm"; 
 import LatestPosts from "../Blog/LatestPosts";
 import LatestProducts from "../Blog/LatestProducts";
 import Categories from "../Blog/Categories";
-import shopData from "../Shop/shopData"; 
  
 const BlogGridWithSidebar = () => {
+  const [blogs, setBlogs] = useState<BlogItem[]>([]);
+  const [products, setProducts] = useState<Product[]>([]);
+
+  useEffect(() => {
+    blogService.getAll({ limit: 50 }).then((res) => {
+      setBlogs(res.data || []);
+    }).catch(() => {});
+    productService.getAll({ limit: 5 }).then((res) => {
+      setProducts(res.data || []);
+    }).catch(() => {});
+  }, []);
+
   const categories = [
     {
       name: "Desktop",
@@ -46,9 +60,9 @@ const BlogGridWithSidebar = () => {
             {/* <!-- blog grid --> */}
             <div className="lg:max-w-[770px] w-full">
               <div className="grid grid-cols-1 sm:grid-cols-2 gap-y-10 gap-x-7.5">
-                {blogData.map((blog, key) => (
-                  <BlogItem blog={blog} key={key} />
-                ))}
+                {blogs.length > 0 ? blogs.map((blog, key) => (
+                  <BlogItemComponent blog={blog} key={key} />
+                )) : <p className="text-gray-500 col-span-full text-center py-8">No posts yet</p>}
               </div>
 
               {/* <!-- Blog Pagination Start --> */}
@@ -176,10 +190,10 @@ const BlogGridWithSidebar = () => {
               <SearchForm />
 
               {/* <!-- Recent Posts box --> */}
-              <LatestPosts blogs={blogData} />
+              <LatestPosts blogs={blogs} />
 
               {/* <!-- Latest Products box --> */}
-              <LatestProducts products={shopData} />
+              <LatestProducts products={products} />
 
               {/* <!-- Popular Category box --> */}
               <Categories categories={categories} />

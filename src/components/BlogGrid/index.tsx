@@ -1,22 +1,32 @@
-import React from "react";
+"use client";
+import React, { useEffect, useState } from "react";
 import Breadcrumb from "../Common/Breadcrumb";
-import blogData from "./blogData";
-import BlogItem from "../Blog/BlogItem";
+import { blogService } from "@/services/blog.service";
+import type { BlogItem } from "@/types";
+import BlogItemComponent from "../Blog/BlogItem";
 
 const BlogGrid = () => {
+  const [blogs, setBlogs] = useState<BlogItem[]>([]);
+
+  useEffect(() => {
+    blogService.getAll({ limit: 50 }).then((res) => {
+      setBlogs(res.data || []);
+    }).catch(() => {});
+  }, []);
+
   return (
     <>
       <Breadcrumb title={"Blog Grid"} pages={["blog grid"]} />{" "}
       <section className="overflow-hidden py-20 bg-gray-2">
         <div className="max-w-[1170px] w-full mx-auto px-4 sm:px-8 xl:px-0">
           <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-y-10 gap-x-7.5">
-            {/* <!-- blog item --> */}
-            {blogData.map((blog, key) => (
-              <BlogItem blog={blog} key={key} />
-            ))}
+            {blogs.length > 0 ? blogs.map((blog, key) => (
+              <BlogItemComponent blog={blog} key={key} />
+            )) : (
+              <p className="text-gray-500 col-span-full text-center py-8">No blog posts yet</p>
+            )}
           </div>
 
-          {/* <!-- Blog Pagination Start --> */}
           <div className="flex justify-center mt-15">
             <div className="bg-white shadow-1 rounded-md p-2">
               <ul className="flex items-center">
@@ -132,7 +142,6 @@ const BlogGrid = () => {
               </ul>
             </div>
           </div>
-          {/* <!-- Blog Pagination End --> */}
         </div>
       </section> 
     </>

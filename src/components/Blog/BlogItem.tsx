@@ -8,7 +8,7 @@ const BlogItem = ({ blog }: { blog: BlogItem }) => {
     <div className="shadow-1 bg-white rounded-xl px-4 sm:px-5 pt-5 pb-4">
       <Link href="/blogs/blog-details" className="rounded-md overflow-hidden">
         <Image
-          src={blog.img}
+          src={blog.image}
           alt="blog"
           className="rounded-md w-full"
           width={330}
@@ -22,7 +22,7 @@ const BlogItem = ({ blog }: { blog: BlogItem }) => {
             href="#"
             className="text-custom-sm ease-out duration-200 hover:text-blue"
           >
-            {blog.date}
+            {blog.publishedAt ? new Date(blog.publishedAt).toLocaleDateString("en-US", { month: "short", day: "numeric", year: "numeric" }) : ""}
           </a>
 
           {/* <!-- divider --> */}

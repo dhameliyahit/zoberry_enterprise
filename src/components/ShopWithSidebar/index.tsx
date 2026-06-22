@@ -7,14 +7,22 @@ import GenderDropdown from "./GenderDropdown";
 import SizeDropdown from "./SizeDropdown";
 import ColorsDropdwon from "./ColorsDropdwon";
 import PriceDropdown from "./PriceDropdown";
-import shopData from "../Shop/shopData";
+import { productService } from "@/services/product.service";
+import type { Product } from "@/types";
 import SingleGridItem from "../Shop/SingleGridItem";
 import SingleListItem from "../Shop/SingleListItem";
 
 const ShopWithSidebar = () => {
+  const [products, setProducts] = useState<Product[]>([]);
   const [productStyle, setProductStyle] = useState("grid");
   const [productSidebar, setProductSidebar] = useState(false);
   const [stickyMenu, setStickyMenu] = useState(false);
+
+  useEffect(() => {
+    productService.getAll({ limit: 50 }).then((res) => {
+      setProducts(res.data || []);
+    }).catch(() => {});
+  }, []);
 
   const handleStickyMenu = () => {
     if (window.scrollY >= 80) {
@@ -278,13 +286,13 @@ const ShopWithSidebar = () => {
                     : "flex flex-col gap-7.5"
                 }`}
               >
-                {shopData.map((item, key) =>
+                {products.length > 0 ? products.map((item, key) =>
                   productStyle === "grid" ? (
                     <SingleGridItem item={item} key={key} />
                   ) : (
                     <SingleListItem item={item} key={key} />
                   )
-                )}
+                ) : <p className="text-gray-500 col-span-full text-center py-8">No products found</p>}
               </div>
               {/* <!-- Products Grid Tab Content End --> */}
 

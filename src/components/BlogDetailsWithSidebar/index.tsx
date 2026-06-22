@@ -1,13 +1,26 @@
-import React from "react";
+"use client";
+import React, { useEffect, useState } from "react";
 import Breadcrumb from "../Common/Breadcrumb";
+import { blogService } from "@/services/blog.service";
+import { productService } from "@/services/product.service";
+import type { BlogItem, Product } from "@/types";
 import SearchForm from "../Blog/SearchForm";
 import LatestPosts from "../Blog/LatestPosts";
 import LatestProducts from "../Blog/LatestProducts";
-import blogData from "../BlogGrid/blogData";
 import Image from "next/image";
-import shopData from "../Shop/shopData"; 
 
 const BlogDetailsWithSidebar = () => {
+  const [blogs, setBlogs] = useState<BlogItem[]>([]);
+  const [products, setProducts] = useState<Product[]>([]);
+
+  useEffect(() => {
+    blogService.getAll({ limit: 5 }).then((res) => {
+      setBlogs(res.data || []);
+    }).catch(() => {});
+    productService.getAll({ limit: 5 }).then((res) => {
+      setProducts(res.data || []);
+    }).catch(() => {});
+  }, []);
   return (
     <>
       <Breadcrumb
@@ -269,10 +282,10 @@ const BlogDetailsWithSidebar = () => {
               <SearchForm />
 
               {/* <!-- Recent Posts box --> */}
-              <LatestPosts blogs={blogData} />
+              <LatestPosts blogs={blogs} />
 
               {/* <!-- Latest Products box --> */}
-              <LatestProducts products={shopData} />
+              <LatestProducts products={products} />
 
               {/* <!-- Popular Category box --> */}
               <div className="shadow-1 bg-white rounded-xl mt-7.5">

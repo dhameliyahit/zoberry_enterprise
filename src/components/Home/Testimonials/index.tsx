@@ -1,16 +1,22 @@
 "use client";
 import { Swiper, SwiperSlide } from "swiper/react";
-import { useCallback, useRef } from "react";
-import testimonialsData from "./testimonialsData";
+import { useCallback, useRef, useEffect, useState } from "react";
 import Image from "next/image";
-
-// Import Swiper styles
 import "swiper/css/navigation";
 import "swiper/css";
 import SingleItem from "./SingleItem";
+import { testimonialService } from "@/services/testimonial.service";
+import type { Testimonial } from "@/types";
 
 const Testimonials = () => {
   const sliderRef = useRef(null);
+  const [testimonials, setTestimonials] = useState<Testimonial[]>([]);
+
+  useEffect(() => {
+    testimonialService.getAll(true).then((res) => {
+      setTestimonials(res.data || []);
+    }).catch(() => {});
+  }, []);
 
   const handlePrev = useCallback(() => {
     if (!sliderRef.current) return;
@@ -27,7 +33,6 @@ const Testimonials = () => {
       <div className="max-w-[1170px] w-full mx-auto px-4 sm:px-8 xl:px-0">
         <div className="">
           <div className="swiper testimonial-carousel common-carousel p-5">
-            {/* <!-- section title --> */}
             <div className="mb-10 flex items-center justify-between">
               <div>
                 <span className="flex items-center gap-2.5 font-medium text-dark mb-1.5">
@@ -88,25 +93,18 @@ const Testimonials = () => {
               slidesPerView={3}
               spaceBetween={20}
               breakpoints={{
-                // when window width is >= 640px
-                0: {
-                  slidesPerView: 1,
-                },
-                1000: {
-                  slidesPerView: 2,
-                  // spaceBetween: 4,
-                },
-                // when window width is >= 768px
-                1200: {
-                  slidesPerView: 3,
-                },
+                0: { slidesPerView: 1 },
+                1000: { slidesPerView: 2 },
+                1200: { slidesPerView: 3 },
               }}
             >
-              {testimonialsData.map((item, key) => (
+              {testimonials.length > 0 ? testimonials.map((item, key) => (
                 <SwiperSlide key={key}>
                   <SingleItem testimonial={item} />
                 </SwiperSlide>
-              ))}
+              )) : (
+                <SwiperSlide><p className="text-gray-500 text-center py-8">No testimonials yet</p></SwiperSlide>
+              )}
             </Swiper>
           </div>
         </div>
