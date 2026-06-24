@@ -7,3 +7,4 @@ export type { User, Address } from "./user";
 export type { Contact } from "./contact";
 export type { ApiResponse, PaginatedResponse, LoginResponse } from "./api";
 export type { Menu } from "./Menu";
+export type { HeroSlide } from "./heroSlide";

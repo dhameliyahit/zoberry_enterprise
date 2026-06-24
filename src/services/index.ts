@@ -7,3 +7,5 @@ export { testimonialService } from "./testimonial.service";
 export { blogService } from "./blog.service";
 export type { BlogFilters } from "./blog.service";
 export { contactService } from "./contact.service";
+export { heroService } from "./hero.service";
+export { recentlyViewedService } from "./recently-viewed.service";

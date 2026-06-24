@@ -30,4 +30,7 @@ export const productService = {
 
   delete: (id: string) =>
     del<ApiResponse<null>>(`/products/${id}`),
+
+  addReview: (id: string, data: { name?: string; email?: string; rating: number; comment: string }) =>
+    post<ApiResponse<Product>>(`/products/${id}/reviews`, data),
 };

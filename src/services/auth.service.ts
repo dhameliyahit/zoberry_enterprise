@@ -11,6 +11,9 @@ export const authService = {
   adminLogin: (data: { email: string; password: string }) =>
     post<LoginResponse>("/auth/admin-login", data),
 
+  googleLogin: (token: string) =>
+    post<LoginResponse>("/auth/google-login", { token }),
+
   getMe: () => get<ApiResponse<User>>("/auth/me"),
 
   setToken: (token: string) => {
@@ -23,6 +26,7 @@ export const authService = {
 
   logout: () => {
     localStorage.removeItem("zoberry_token");
+    localStorage.removeItem("zoberry_user");
   },
 
   isAuthenticated: (): boolean => {

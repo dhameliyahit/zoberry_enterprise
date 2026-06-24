@@ -1,5 +1,5 @@
 "use client";
-import React, { useState, useEffect } from "react";
+import React, { useState, useEffect, useRef } from "react";
 import Link from "next/link";
 import CustomSelect from "./CustomSelect";
 import { menuData } from "./menuData";
@@ -8,13 +8,22 @@ import { useAppSelector } from "@/redux/store";
 import { useSelector } from "react-redux";
 import { selectTotalPrice } from "@/redux/features/cart-slice";
 import { useCartModalContext } from "@/app/context/CartSidebarModalContext";
+import { useAuthModalContext } from "@/app/context/AuthModalContext";
+import { authService } from "@/services";
+import toast from "react-hot-toast";
 import Image from "next/image";
 
 const Header = () => {
   const [searchQuery, setSearchQuery] = useState("");
   const [navigationOpen, setNavigationOpen] = useState(false);
   const [stickyMenu, setStickyMenu] = useState(false);
+  const [isLoggedIn, setIsLoggedIn] = useState(false);
+  const [userName, setUserName] = useState("");
+  const [profileDropdownOpen, setProfileDropdownOpen] = useState(false);
+
   const { openCartModal } = useCartModalContext();
+  const { openAuthModal } = useAuthModalContext();
+  const profileRef = useRef<HTMLDivElement>(null);
 
   const product = useAppSelector((state) => state.cartReducer.items);
   const totalPrice = useSelector(selectTotalPrice);
@@ -34,7 +43,44 @@ const Header = () => {
 
   useEffect(() => {
     window.addEventListener("scroll", handleStickyMenu);
-  });
+    return () => window.removeEventListener("scroll", handleStickyMenu);
+  }, []);
+
+  useEffect(() => {
+    const token = localStorage.getItem("zoberry_token");
+    const userStr = localStorage.getItem("zoberry_user");
+    if (token) {
+      setIsLoggedIn(true);
+      if (userStr) {
+        try {
+          const userData = JSON.parse(userStr);
+          const name = userData.data?.name || userData.name || "My Account";
+          setUserName(name);
+        } catch (e) {
+          setUserName("My Account");
+        }
+      } else {
+        setUserName("My Account");
+      }
+    } else {
+      setIsLoggedIn(false);
+      setUserName("");
+    }
+  }, []);
+
+  useEffect(() => {
+    function handleClickOutside(event: MouseEvent) {
+      if (profileRef.current && !profileRef.current.contains(event.target as Node)) {
+        setProfileDropdownOpen(false);
+      }
+    }
+    if (profileDropdownOpen) {
+      document.addEventListener("mousedown", handleClickOutside);
+    }
+    return () => {
+      document.removeEventListener("mousedown", handleClickOutside);
+    };
+  }, [profileDropdownOpen]);
 
   const options = [
     { label: "All Categories", value: "0" },
@@ -62,12 +108,14 @@ const Header = () => {
         >
           {/* <!-- header top left --> */}
           <div className="xl:w-auto flex-col sm:flex-row w-full flex sm:justify-between sm:items-center gap-5 sm:gap-10">
-            <Link className="flex-shrink-0" href="/">
+            <Link className="flex-shrink-0 flex items-center" href="/">
               <Image
-                src="/images/logo/logo.svg"
-                alt="Logo"
-                width={219}
-                height={36}
+                src="/images/zb_header.png"
+                alt="Zoberry Logo"
+                width={160}
+                height={40}
+                className="object-contain max-h-[45px] w-auto"
+                priority
               />
             </Link>
 
@@ -147,9 +195,12 @@ const Header = () => {
                 <span className="block text-2xs text-dark-4 uppercase">
                   24/7 SUPPORT
                 </span>
-                <p className="font-medium text-custom-sm text-dark">
-                  (+965) 7492-3477
-                </p>
+                <a href="tel:9638601192" className="block font-medium text-custom-sm text-dark hover:text-blue">
+                  9638601192
+                </a>
+                <a href="mailto:work.heetdhameliya59@gmail.com" className="block text-2xs text-dark-4 hover:text-blue lowercase">
+                  work.heetdhameliya59@gmail.com
+                </a>
               </div>
             </div>
 
@@ -158,37 +209,83 @@ const Header = () => {
 
             <div className="flex w-full lg:w-auto justify-between items-center gap-5">
               <div className="flex items-center gap-5">
-                <Link href="/signin" className="flex items-center gap-2.5">
-                  <svg
-                    width="24"
-                    height="24"
-                    viewBox="0 0 24 24"
-                    fill="none"
-                    xmlns="http://www.w3.org/2000/svg"
-                  >
-                    <path
-                      fillRule="evenodd"
-                      clipRule="evenodd"
-                      d="M12 1.25C9.37666 1.25 7.25001 3.37665 7.25001 6C7.25001 8.62335 9.37666 10.75 12 10.75C14.6234 10.75 16.75 8.62335 16.75 6C16.75 3.37665 14.6234 1.25 12 1.25ZM8.75001 6C8.75001 4.20507 10.2051 2.75 12 2.75C13.7949 2.75 15.25 4.20507 15.25 6C15.25 7.79493 13.7949 9.25 12 9.25C10.2051 9.25 8.75001 7.79493 8.75001 6Z"
-                      fill="#3C50E0"
-                    />
-                    <path
-                      fillRule="evenodd"
-                      clipRule="evenodd"
-                      d="M12 12.25C9.68646 12.25 7.55494 12.7759 5.97546 13.6643C4.4195 14.5396 3.25001 15.8661 3.25001 17.5L3.24995 17.602C3.24882 18.7638 3.2474 20.222 4.52642 21.2635C5.15589 21.7761 6.03649 22.1406 7.22622 22.3815C8.41927 22.6229 9.97424 22.75 12 22.75C14.0258 22.75 15.5808 22.6229 16.7738 22.3815C17.9635 22.1406 18.8441 21.7761 19.4736 21.2635C20.7526 20.222 20.7512 18.7638 20.7501 17.602L20.75 17.5C20.75 15.8661 19.5805 14.5396 18.0246 13.6643C16.4451 12.7759 14.3136 12.25 12 12.25ZM4.75001 17.5C4.75001 16.6487 5.37139 15.7251 6.71085 14.9717C8.02681 14.2315 9.89529 13.75 12 13.75C14.1047 13.75 15.9732 14.2315 17.2892 14.9717C18.6286 15.7251 19.25 16.6487 19.25 17.5C19.25 18.8078 19.2097 19.544 18.5264 20.1004C18.1559 20.4022 17.5365 20.6967 16.4762 20.9113C15.4193 21.1252 13.9742 21.25 12 21.25C10.0258 21.25 8.58075 21.1252 7.5238 20.9113C6.46354 20.6967 5.84413 20.4022 5.4736 20.1004C4.79033 19.544 4.75001 18.8078 4.75001 17.5Z"
-                      fill="#3C50E0"
-                    />
-                  </svg>
+                {isLoggedIn ? (
+                  <div className="relative" ref={profileRef}>
+                    <button
+                      onClick={() => setProfileDropdownOpen(!profileDropdownOpen)}
+                      className="flex items-center gap-2.5 focus:outline-none"
+                    >
+                      <div className="flex items-center justify-center w-10 h-10 rounded-full bg-blue text-white font-semibold text-lg border border-gray-3 shadow-sm hover:bg-blue-dark duration-150">
+                        {userName.charAt(0).toUpperCase()}
+                      </div>
+                      <div className="hidden sm:block text-left">
+                        <span className="block text-2xs text-dark-4 uppercase">
+                          Welcome
+                        </span>
+                        <p className="font-medium text-custom-sm text-dark truncate max-w-[80px]">
+                          {userName.split(" ")[0]}
+                        </p>
+                      </div>
+                    </button>
 
-                  <div>
-                    <span className="block text-2xs text-dark-4 uppercase">
-                      account
-                    </span>
-                    <p className="font-medium text-custom-sm text-dark">
-                      Sign In
-                    </p>
+                    {profileDropdownOpen && (
+                      <div className="absolute right-0 mt-3 w-48 bg-white border border-gray-3 rounded-lg shadow-lg py-2 z-999">
+                        <Link
+                          href="/my-account"
+                          onClick={() => setProfileDropdownOpen(false)}
+                          className="block px-4 py-2 text-custom-sm text-dark hover:bg-gray-1 hover:text-blue transition-all"
+                        >
+                          My Account
+                        </Link>
+                        <button
+                          onClick={() => {
+                            setProfileDropdownOpen(false);
+                            authService.logout();
+                            toast.success("Logged out successfully!");
+                            window.location.reload();
+                          }}
+                          className="block w-full text-left px-4 py-2 text-custom-sm text-red hover:bg-gray-1 transition-all"
+                        >
+                          Logout
+                        </button>
+                      </div>
+                    )}
                   </div>
-                </Link>
+                ) : (
+                  <button
+                    onClick={() => openAuthModal("signin")}
+                    className="flex items-center gap-2.5 text-left focus:outline-none"
+                  >
+                    <svg
+                      width="24"
+                      height="24"
+                      viewBox="0 0 24 24"
+                      fill="none"
+                      xmlns="http://www.w3.org/2000/svg"
+                    >
+                      <path
+                        fillRule="evenodd"
+                        clipRule="evenodd"
+                        d="M12 1.25C9.37666 1.25 7.25001 3.37665 7.25001 6C7.25001 8.62335 9.37666 10.75 12 10.75C14.6234 10.75 16.75 8.62335 16.75 6C16.75 3.37665 14.6234 1.25 12 1.25ZM8.75001 6C8.75001 4.20507 10.2051 2.75 12 2.75C13.7949 2.75 15.25 4.20507 15.25 6C15.25 7.79493 13.7949 9.25 12 9.25C10.2051 9.25 8.75001 7.79493 8.75001 6Z"
+                        fill="#3C50E0"
+                      />
+                      <path
+                        fillRule="evenodd"
+                        clipRule="evenodd"
+                        d="M12 12.25C9.68646 12.25 7.55494 12.7759 5.97546 13.6643C4.4195 14.5396 3.25001 15.8661 3.25001 17.5L3.24995 17.602C3.24882 18.7638 3.2474 20.222 4.52642 21.2635C5.15589 21.7761 6.03649 22.1406 7.22622 22.3815C8.41927 22.6229 9.97424 22.75 12 22.75C14.0258 22.75 15.5808 22.6229 16.7738 22.3815C17.9635 22.1406 18.8441 21.7761 19.4736 21.2635C20.7526 20.222 20.7512 18.7638 20.7501 17.602L20.75 17.5C20.75 15.8661 19.5805 14.5396 18.0246 13.6643C16.4451 12.7759 14.3136 12.25 12 12.25ZM4.75001 17.5C4.75001 16.6487 5.37139 15.7251 6.71085 14.9717C8.02681 14.2315 9.89529 13.75 12 13.75C14.1047 13.75 15.9732 14.2315 17.2892 14.9717C18.6286 15.7251 19.25 16.6487 19.25 17.5C19.25 18.8078 19.2097 19.544 18.5264 20.1004C18.1559 20.4022 17.5365 20.6967 16.4762 20.9113C15.4193 21.1252 13.9742 21.25 12 21.25C10.0258 21.25 8.58075 21.1252 7.5238 20.9113C6.46354 20.6967 5.84413 20.4022 5.4736 20.1004C4.79033 19.544 4.75001 18.8078 4.75001 17.5Z"
+                        fill="#3C50E0"
+                      />
+                    </svg>
+                    <div>
+                      <span className="block text-2xs text-dark-4 uppercase">
+                        account
+                      </span>
+                      <p className="font-medium text-custom-sm text-dark hover:text-blue transition-colors">
+                        Sign In
+                      </p>
+                    </div>
+                  </button>
+                )}
 
                 <button
                   onClick={handleOpenCartModal}

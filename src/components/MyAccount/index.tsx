@@ -1,13 +1,42 @@
 "use client";
-import React, { useState } from "react";
+import React, { useState, useEffect } from "react";
 import Breadcrumb from "../Common/Breadcrumb";
 import Image from "next/image";
 import AddressModal from "./AddressModal";
 import Orders from "../Orders";
+import { authService } from "@/services";
+import toast from "react-hot-toast";
 
 const MyAccount = () => {
   const [activeTab, setActiveTab] = useState("dashboard");
   const [addressModal, setAddressModal] = useState(false);
+  const [userName, setUserName] = useState("User");
+  const [userEmail, setUserEmail] = useState("");
+
+  useEffect(() => {
+    if (!authService.isAuthenticated()) {
+      window.location.href = "/signin";
+      return;
+    }
+    const userStr = localStorage.getItem("zoberry_user");
+    if (userStr) {
+      try {
+        const userData = JSON.parse(userStr);
+        const name = userData.data?.name || userData.name || "User";
+        const email = userData.data?.email || userData.email || "";
+        setUserName(name);
+        setUserEmail(email);
+      } catch (e) {
+        console.error(e);
+      }
+    }
+  }, []);
+
+  const handleLogout = () => {
+    authService.logout();
+    toast.success("Logged out successfully!");
+    window.location.href = "/signin";
+  };
 
   const openAddressModal = () => {
     setAddressModal(true);
@@ -39,7 +68,7 @@ const MyAccount = () => {
 
                   <div>
                     <p className="font-medium text-dark mb-0.5">
-                      James Septimus
+                      {userName}
                     </p>
                     <p className="text-custom-xs">Member Since Sep 2020</p>
                   </div>
@@ -219,12 +248,8 @@ const MyAccount = () => {
                     </button>
 
                     <button
-                      onClick={() => setActiveTab("logout")}
-                      className={`flex items-center rounded-md gap-2.5 py-3 px-4.5 ease-out duration-200 hover:bg-blue hover:text-white ${
-                        activeTab === "logout"
-                          ? "text-white bg-blue"
-                          : "text-dark-2 bg-gray-1"
-                      }`}
+                      onClick={handleLogout}
+                      className="flex items-center rounded-md gap-2.5 py-3 px-4.5 ease-out duration-200 hover:bg-blue hover:text-white text-dark-2 bg-gray-1"
                     >
                       <svg
                         className="fill-current"
@@ -261,13 +286,13 @@ const MyAccount = () => {
               }`}
             >
               <p className="text-dark">
-                Hello Annie (not Annie?
-                <a
-                  href="#"
-                  className="text-red ease-out duration-200 hover:underline"
+                Hello {userName} (not {userName}?
+                <button
+                  onClick={handleLogout}
+                  className="text-red ease-out duration-200 hover:underline pl-1"
                 >
                   Log Out
-                </a>
+                </button>
                 )
               </p>
 
@@ -357,7 +382,7 @@ const MyAccount = () => {
                           fill=""
                         />
                       </svg>
-                      Name: James Septimus
+                      Name: {userName}
                     </p>
 
                     <p className="flex items-center gap-2.5 text-custom-sm">
@@ -376,7 +401,7 @@ const MyAccount = () => {
                           fill=""
                         />
                       </svg>
-                      Email: jamse@example.com
+                      Email: {userEmail}
                     </p>
 
                     <p className="flex items-center gap-2.5 text-custom-sm">
@@ -489,7 +514,7 @@ const MyAccount = () => {
                           fill=""
                         />
                       </svg>
-                      Name: James Septimus
+                      Name: {userName}
                     </p>
 
                     <p className="flex items-center gap-2.5 text-custom-sm">
@@ -508,7 +533,7 @@ const MyAccount = () => {
                           fill=""
                         />
                       </svg>
-                      Email: jamse@example.com
+                      Email: {userEmail}
                     </p>
 
                     <p className="flex items-center gap-2.5 text-custom-sm">

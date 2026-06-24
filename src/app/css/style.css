@@ -145,12 +145,16 @@ input[type='search']::-webkit-search-results-decoration {
   @apply w-auto h-auto;
 }
 
+.img-zoom-container {
+  overflow: hidden;
+}
+
 .img-zoom-container img {
-  transition: 0.8s;
+  transition: transform 0.8s ease;
 }
 .img-zoom-container img:hover {
-  transform: scale(2) rotate(0deg);
-  transition: 0.8s;
+  transform: scale(1.4) rotate(0deg);
+  transition: transform 0.8s ease;
 }
 
 .priceSlide .noUi-target {

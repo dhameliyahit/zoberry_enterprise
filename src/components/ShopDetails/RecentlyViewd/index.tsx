@@ -1,18 +1,21 @@
 "use client";
 import React, { useState, useEffect } from "react";
-import { productService } from "@/services/product.service";
+import { recentlyViewedService } from "@/services";
 import type { Product } from "@/types";
 import ProductItem from "@/components/Common/ProductItem";
 import Image from "next/image";
-import Link from "next/link";
 
 import { Swiper, SwiperSlide } from "swiper/react";
 import { useCallback, useRef } from "react";
 import "swiper/css/navigation";
 import "swiper/css";
 
-const RecentlyViewdItems = () => {
-  const sliderRef = useRef(null);
+interface RecentlyViewdItemsProps {
+  currentProductId?: string;
+}
+
+const RecentlyViewdItems = ({ currentProductId }: RecentlyViewdItemsProps) => {
+  const sliderRef = useRef<any>(null);
 
   const handlePrev = useCallback(() => {
     if (!sliderRef.current) return;
@@ -27,10 +30,30 @@ const RecentlyViewdItems = () => {
   const [products, setProducts] = useState<Product[]>([]);
 
   useEffect(() => {
-    productService.getAll({ limit: 8 }).then((res) => {
-      setProducts(res.data || []);
-    }).catch(() => {});
-  }, []);
+    const fetchRecentlyViewed = async () => {
+      try {
+        if (typeof window !== "undefined") {
+          const macAddress = localStorage.getItem("zoberry_mac_address");
+          if (!macAddress) return;
+
+          const res = await recentlyViewedService.getRecentlyViewed(macAddress);
+          if (res && res.success && res.data) {
+            // Filter out the currently viewed product from the list
+            const filteredProducts = res.data.filter(
+              (p: Product) => p._id !== currentProductId
+            );
+            setProducts(filteredProducts);
+          }
+        }
+      } catch (error) {
+        console.error("Failed to fetch recently viewed products:", error);
+      }
+    };
+
+    fetchRecentlyViewed();
+  }, [currentProductId]);
+
+  if (products.length === 0) return null;
 
   return (
     <section className="overflow-hidden pt-17.5">
@@ -46,10 +69,10 @@ const RecentlyViewdItems = () => {
                   height={17}
                   alt="icon"
                 />
-                Categories
+                Recent
               </span>
               <h2 className="font-semibold text-xl xl:text-heading-5 text-dark">
-                Browse by Category
+                Recently Viewed Products
               </h2>
             </div>
 
@@ -98,11 +121,11 @@ const RecentlyViewdItems = () => {
             spaceBetween={20}
             className="justify-between"
           >
-            {products.length > 0 ? products.map((item, key) => (
+            {products.map((item, key) => (
               <SwiperSlide key={key}>
                 <ProductItem item={item} />
               </SwiperSlide>
-            )) : <SwiperSlide><p className="text-gray-500 text-center py-8">No products</p></SwiperSlide>}
+            ))}
           </Swiper>
         </div>
       </div>
@@ -111,3 +134,4 @@ const RecentlyViewdItems = () => {
 };
 
 export default RecentlyViewdItems;
+

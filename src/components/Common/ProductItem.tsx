@@ -10,11 +10,12 @@ import { updateproductDetails } from "@/redux/features/product-details";
 import { useDispatch } from "react-redux";
 import { AppDispatch } from "@/redux/store";
 import Link from "next/link";
+import { useRouter } from "next/navigation";
 
 const ProductItem = ({ item }: { item: Product }) => {
   const { openModal } = useModalContext();
-
   const dispatch = useDispatch<AppDispatch>();
+  const router = useRouter();
 
   // update the QuickView state
   const handleQuickViewUpdate = () => {
@@ -52,14 +53,20 @@ const ProductItem = ({ item }: { item: Product }) => {
     dispatch(updateproductDetails({ ...item }));
   };
 
+  const handleCardClick = () => {
+    handleProductDetails();
+    router.push("/shop-details");
+  };
+
   return (
-    <div className="group">
+    <div className="group cursor-pointer" onClick={handleCardClick}>
       <div className="relative overflow-hidden flex items-center justify-center rounded-lg bg-[#F6F7FB] min-h-[270px] mb-4">
         <Image src={item.images?.[0] || ""} alt="" width={250} height={250} />
 
         <div className="absolute left-0 bottom-0 translate-y-full w-full flex items-center justify-center gap-2.5 pb-5 ease-linear duration-200 group-hover:translate-y-0">
           <button
-            onClick={() => {
+            onClick={(e) => {
+              e.stopPropagation();
               openModal();
               handleQuickViewUpdate();
             }}
@@ -91,14 +98,20 @@ const ProductItem = ({ item }: { item: Product }) => {
           </button>
 
           <button
-            onClick={() => handleAddToCart()}
+            onClick={(e) => {
+              e.stopPropagation();
+              handleAddToCart();
+            }}
             className="inline-flex font-medium text-custom-sm py-[7px] px-5 rounded-[5px] bg-blue text-white ease-out duration-200 hover:bg-blue-dark"
           >
             Add to cart
           </button>
 
           <button
-            onClick={() => handleItemToWishList()}
+            onClick={(e) => {
+              e.stopPropagation();
+              handleItemToWishList();
+            }}
             aria-label="button for favorite select"
             id="favOne"
             className="flex items-center justify-center w-9 h-9 rounded-[5px] shadow-1 ease-out duration-200 text-dark bg-white hover:text-blue"

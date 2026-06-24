@@ -34,7 +34,7 @@ const config: Config = {
         5: "#BBBEC9",
       },
       dark: {
-        DEFAULT: "#1C274C",
+        DEFAULT: "#293681",
         2: "#495270",
         3: "#606882",
         4: "#8D93A5",
@@ -51,13 +51,13 @@ const config: Config = {
         7: "#374151",
       },
       blue: {
-        DEFAULT: "#3C50E0",
-        dark: "#1C3FB7",
-        light: "#5475E5",
+        DEFAULT: "#4274D9",
+        dark: "#293681",
+        light: "#95CCDD",
         "light-2": "#8099EC",
         "light-3": "#ADBCF2",
         "light-4": "#C3CEF6",
-        "light-5": "#E1E8FF",
+        "light-5": "#D0E7E6",
       },
       red: {
         DEFAULT: "#F23030",

@@ -17,6 +17,15 @@ export type Specification = {
   value: string;
 };
 
+export type Review = {
+  _id?: string;
+  name: string;
+  email: string;
+  rating: number;
+  comment: string;
+  createdAt?: string;
+};
+
 export type Product = {
   _id: string;
   title: string;
@@ -35,6 +44,7 @@ export type Product = {
   hasVariants: boolean;
   variants?: Variant[];
   specifications?: Specification[];
+  reviews?: Review[];
   createdAt: string;
   updatedAt: string;
 };
