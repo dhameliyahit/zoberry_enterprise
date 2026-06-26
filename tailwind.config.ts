@@ -25,6 +25,7 @@ const config: Config = {
       current: "currentColor",
       transparent: "transparent",
       white: "#FFFFFF",
+      "brand-navy": "#1D2E7D",
       body: "#6C6F93",
       meta: {
         DEFAULT: "#F7F9FC",

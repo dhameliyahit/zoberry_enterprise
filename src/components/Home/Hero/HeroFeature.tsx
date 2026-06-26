@@ -5,7 +5,7 @@ const featureData = [
   {
     img: "/images/icons/icon-01.svg",
     title: "Free Shipping",
-    description: "For all orders $200",
+    description: "For all orders ₹2000",
   },
   {
     img: "/images/icons/icon-02.svg",

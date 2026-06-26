@@ -114,9 +114,12 @@ const ShopDetails = () => {
     (state) => state.productDetailsReducer.value
   );
 
-  const productImages = product.images && product.images.length > 0
+  const rawImages = product.images && product.images.length > 0
     ? product.images
     : (product.imgs?.previews || []);
+  const productImages = rawImages.map((img: any) =>
+    typeof img === "string" ? img : img.url
+  );
 
   // Hydrate Redux store from localStorage on mount/refresh if empty
   useEffect(() => {
@@ -157,18 +160,36 @@ const ShopDetails = () => {
   }, [product?._id, dispatch]);
 
   useEffect(() => {
-    if (product && product.hasVariants && product.variants) {
+    if (product && product.hasVariants && product.variantOptions) {
       const initial: Record<string, string> = {};
-      product.variants.forEach((v: any) => {
-        if (v.options && v.options.length > 0) {
-          initial[v.name] = v.options[0].label;
+      product.variantOptions.forEach((opt: any) => {
+        if (opt.values && opt.values.length > 0) {
+          initial[opt.name] = opt.values[0];
         }
       });
       setSelectedVariants(initial);
     } else {
       setSelectedVariants({});
     }
-  }, [product?._id, product?.hasVariants, product?.variants]);
+  }, [product?._id, product?.hasVariants, product?.variantOptions]);
+
+  const getSelectedVariant = () => {
+    if (!product.hasVariants || !product.variants || product.variants.length === 0) return null;
+    return product.variants.find((v: any) => {
+      const selectedKeys = Object.entries(selectedVariants);
+      if (selectedKeys.length === 0) return false;
+      return selectedKeys.every(([key, val], idx) => {
+        const optionField = `option${idx + 1}`;
+        return v[optionField] === val;
+      });
+    }) || null;
+  };
+
+  const selectedVariant = getSelectedVariant();
+  const displayPrice = selectedVariant?.price ?? product.discountedPrice ?? product.price;
+  const displayCompareAt = selectedVariant?.price ? (product.compareAtPrice || product.price) : (product.compareAtPrice || null);
+  const displayStock = selectedVariant?.stock ?? product.stock;
+  const displayImage = selectedVariant?.image || productImages[previewImg];
 
   useEffect(() => {
     if (product && product._id) {
@@ -359,7 +380,7 @@ const ShopDetails = () => {
                           />
                           <path
                             d="M12.6875 7.09374L8.9688 10.7187L7.2813 9.06249C7.00005 8.78124 6.56255 8.81249 6.2813 9.06249C6.00005 9.34374 6.0313 9.78124 6.2813 10.0625L8.2813 12C8.4688 12.1875 8.7188 12.2812 8.9688 12.2812C9.2188 12.2812 9.4688 12.1875 9.6563 12L13.6875 8.12499C13.9688 7.84374 13.9688 7.40624 13.6875 7.12499C13.4063 6.84374 12.9688 6.84374 12.6875 7.09374Z"
-                            fill={product.stock > 0 ? "#22AD5C" : "#E11D48"}
+                            fill={displayStock > 0 ? "#22AD5C" : "#E11D48"}
                           />
                         </g>
                         <defs>
@@ -369,19 +390,19 @@ const ShopDetails = () => {
                         </defs>
                       </svg>
 
-                      <span className={product.stock > 0 ? "text-green" : "text-[#E11D48]"}>
-                        {product.stock > 0 ? "In Stock" : "Out of Stock"}
+                      <span className={displayStock > 0 ? "text-green" : "text-[#E11D48]"}>
+                        {displayStock > 0 ? "In Stock" : "Out of Stock"}
                       </span>
                     </div>
                   </div>
 
                   <h3 className="font-medium text-custom-1 mb-4.5 flex items-center gap-2">
                     <span className="text-sm sm:text-base text-dark">
-                      Price: ₹{product.discountedPrice}
+                      Price: ₹{displayPrice}
                     </span>
-                    {product.price > product.discountedPrice && (
+                    {displayCompareAt && displayCompareAt > displayPrice && (
                       <span className="line-through text-dark-4">
-                        ₹{product.price}
+                        ₹{displayCompareAt}
                       </span>
                     )}
                   </h3>
@@ -431,26 +452,35 @@ const ShopDetails = () => {
                       Sales {product.price > product.discountedPrice ? Math.round(((product.price - product.discountedPrice) / product.price) * 100) : 30}% Off Use Code: PROMO{product.price > product.discountedPrice ? Math.round(((product.price - product.discountedPrice) / product.price) * 100) : 30}
                     </li>
                   </ul>
-                  {product.hasVariants && product.variants && product.variants.length > 0 ? (
+                  {product.hasVariants && product.variantOptions && product.variantOptions.length > 0 ? (
                     <form onSubmit={(e) => e.preventDefault()}>
                       <div className="flex flex-col gap-4.5 border-y border-gray-3 mt-7.5 mb-9 py-9">
-                        {product.variants.map((variant: any, vKey: number) => (
-                          <div key={vKey} className="flex flex-col sm:flex-row sm:items-center gap-4">
+                        {product.variantOptions.map((opt: any, optKey: number) => (
+                          <div key={optKey} className="flex flex-col sm:flex-row sm:items-center gap-4">
                             <div className="min-w-[100px]">
-                              <h4 className="font-medium text-dark capitalize">{variant.name}:</h4>
+                              <h4 className="font-medium text-dark capitalize">{opt.name}:</h4>
                             </div>
-
                             <div className="flex flex-wrap items-center gap-2.5">
-                              {variant.options?.map((option: any, oKey: number) => {
-                                const isSelected = selectedVariants[variant.name] === option.label;
+                              {opt.values?.map((val: string, valKey: number) => {
+                                const isSelected = selectedVariants[opt.name] === val;
+                                const matchingVariant = product.variants?.find((v: any) => {
+                                  const idx = product.variantOptions.findIndex((o: any) => o.name === opt.name);
+                                  const field = `option${idx + 1}`;
+                                  return v[field] === val && Object.entries(selectedVariants).every(([k, v2]) => {
+                                    if (k === opt.name) return true;
+                                    const idx2 = product.variantOptions.findIndex((o: any) => o.name === k);
+                                    return v[`option${idx2 + 1}`] === v2;
+                                  });
+                                });
+                                const extraPrice = matchingVariant?.price ? ` (+₹${matchingVariant.price})` : "";
                                 return (
                                   <button
                                     type="button"
-                                    key={oKey}
+                                    key={valKey}
                                     onClick={() =>
                                       setSelectedVariants((prev) => ({
                                         ...prev,
-                                        [variant.name]: option.label,
+                                        [opt.name]: val,
                                       }))
                                     }
                                     className={`px-4 py-2 border rounded-md text-sm font-medium transition-all ${
@@ -459,8 +489,8 @@ const ShopDetails = () => {
                                         : "border-gray-3 bg-white text-dark hover:border-blue hover:text-blue"
                                     }`}
                                   >
-                                    {option.label}
-                                    {option.price ? ` (+₹${option.price})` : ""}
+                                    {val}
+                                    {extraPrice}
                                   </button>
                                 );
                               })}

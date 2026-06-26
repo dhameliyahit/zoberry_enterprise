@@ -12,15 +12,45 @@ export interface ProductFilters {
   limit?: number;
 }
 
+const normalizeImages = (product: any): any => {
+  if (!product) return product;
+  if (product.images && Array.isArray(product.images)) {
+    product.images = product.images.map((img: any) =>
+      typeof img === "string" ? img : img.url || img
+    );
+  }
+  if (product.variants) {
+    product.variants = product.variants.map((v: any) => ({
+      ...v,
+      option1: v.option1 || null,
+      option2: v.option2 || null,
+      option3: v.option3 || null,
+    }));
+  }
+  return product;
+};
+
+const normalizeList = (data: any[]): any[] =>
+  (data || []).map(normalizeImages);
+
 export const productService = {
-  getAll: (filters?: ProductFilters) =>
-    get<PaginatedResponse<Product>>("/products", filters as Record<string, any>),
+  getAll: async (filters?: ProductFilters) => {
+    const res = await get<PaginatedResponse<Product>>("/products", filters as Record<string, any>);
+    if (res.data) res.data = normalizeList(res.data);
+    return res;
+  },
 
-  getBySlug: (slug: string) =>
-    get<ApiResponse<Product>>(`/products/slug/${slug}`),
+  getBySlug: async (slug: string) => {
+    const res = await get<ApiResponse<Product>>(`/products/slug/${slug}`);
+    if (res.data) res.data = normalizeImages(res.data);
+    return res;
+  },
 
-  getById: (id: string) =>
-    get<ApiResponse<Product>>(`/products/${id}`),
+  getById: async (id: string) => {
+    const res = await get<ApiResponse<Product>>(`/products/${id}`);
+    if (res.data) res.data = normalizeImages(res.data);
+    return res;
+  },
 
   create: (data: FormData) =>
     post<ApiResponse<Product>>("/products", data),
