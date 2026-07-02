@@ -1,4 +1,4 @@
-export type { Product, Variant, VariantOption, Specification } from "./product";
+export type { Product, ProductVariant, VariantOption, Specification } from "./product";
 export type { Category } from "./category";
 export type { BlogItem } from "./blogItem";
 export type { Testimonial } from "./testimonial";

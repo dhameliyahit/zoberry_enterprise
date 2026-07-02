@@ -5,11 +5,11 @@ import "swiper/css/navigation";
 import "swiper/css";
 import Image from "next/image";
 
-import { usePreviewSlider } from "@/app/context/PreviewSliderContext";
+import { useUI } from "@/app/context/UIContext";
 import { useAppSelector } from "@/redux/store";
 
 const PreviewSliderModal = () => {
-  const { closePreviewModal, isModalPreviewOpen } = usePreviewSlider();
+  const { previewSliderOpen, closePreviewSlider } = useUI();
   const [show, setShow] = useState(false);
   const [animate, setAnimate] = useState(false);
 
@@ -18,7 +18,7 @@ const PreviewSliderModal = () => {
   const [swiperInstance, setSwiperInstance] = useState<any>(null);
 
   useEffect(() => {
-    if (isModalPreviewOpen) {
+    if (previewSliderOpen) {
       setShow(true);
       requestAnimationFrame(() => {
         requestAnimationFrame(() => setAnimate(true));
@@ -28,7 +28,7 @@ const PreviewSliderModal = () => {
       const timer = setTimeout(() => setShow(false), 300);
       return () => clearTimeout(timer);
     }
-  }, [isModalPreviewOpen]);
+  }, [previewSliderOpen]);
 
   const handlePrev = useCallback(() => {
     swiperInstance?.slidePrev();
@@ -47,7 +47,7 @@ const PreviewSliderModal = () => {
       }`}
     >
       <button
-        onClick={() => closePreviewModal()}
+        onClick={() => closePreviewSlider()}
         aria-label="button for close modal"
         className="absolute top-0 right-0 sm:top-6 sm:right-6 flex items-center justify-center w-10 h-10 rounded-full ease-in duration-150 text-white hover:text-meta-5 z-10"
       >

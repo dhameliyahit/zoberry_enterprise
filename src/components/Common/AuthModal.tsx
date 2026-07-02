@@ -1,11 +1,11 @@
 "use client";
 import React, { useEffect, useState } from "react";
-import { useAuthModalContext } from "@/app/context/AuthModalContext";
+import { useUI } from "@/app/context/UIContext";
 import { authService } from "@/services";
 import toast from "react-hot-toast";
 
 const AuthModal = () => {
-  const { isAuthModalOpen, closeAuthModal, activeTab, setActiveTab } = useAuthModalContext();
+  const { authModalOpen, closeAuthModal, authModalTab, setAuthModalTab } = useUI();
   
   // Sign In State
   const [email, setEmail] = useState("");
@@ -25,7 +25,7 @@ const AuthModal = () => {
       }
     }
 
-    if (isAuthModalOpen) {
+    if (authModalOpen) {
       document.addEventListener("mousedown", handleClickOutside);
     }
 
@@ -39,10 +39,10 @@ const AuthModal = () => {
       setSignUpPassword("");
       setRePassword("");
     };
-  }, [isAuthModalOpen, closeAuthModal]);
+  }, [authModalOpen, closeAuthModal]);
 
   useEffect(() => {
-    if (!isAuthModalOpen) return;
+    if (!authModalOpen) return;
 
     const googleClientId = process.env.NEXT_PUBLIC_GOOGLE_CLIENT_ID || "369746489415-p3hp6lirrkpcdi8peb2d41psiurdcgch.apps.googleusercontent.com";
 
@@ -53,7 +53,7 @@ const AuthModal = () => {
         if (res.success && res.data?.token) {
           authService.setToken(res.data.token);
           localStorage.setItem("zoberry_user", JSON.stringify(res.data));
-          toast.success(activeTab === "signin" ? "Logged in successfully!" : "Signed up and logged in successfully!");
+          toast.success(authModalTab === "signin" ? "Logged in successfully!" : "Signed up and logged in successfully!");
           closeAuthModal();
           window.location.reload();
         } else {
@@ -72,7 +72,7 @@ const AuthModal = () => {
           callback: handleCredentialResponse,
         });
 
-        const btnId = activeTab === "signin" ? "google-modal-signin-btn" : "google-modal-signup-btn";
+        const btnId = authModalTab === "signin" ? "google-modal-signin-btn" : "google-modal-signup-btn";
         const btnContainer = document.getElementById(btnId);
         if (btnContainer) {
           (window as any).google.accounts.id.renderButton(btnContainer, {
@@ -101,7 +101,7 @@ const AuthModal = () => {
     return () => {
       if (interval) clearInterval(interval);
     };
-  }, [isAuthModalOpen, activeTab, closeAuthModal]);
+  }, [authModalOpen, authModalTab, closeAuthModal]);
 
   const handleSignInSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -153,7 +153,7 @@ const AuthModal = () => {
     }
   };
 
-  if (!isAuthModalOpen) return null;
+  if (!authModalOpen) return null;
 
   return (
     <div className="fixed top-0 left-0 overflow-y-auto no-scrollbar w-full h-screen bg-dark/70 flex items-center justify-center z-99999 px-4 sm:px-8 py-5">
@@ -183,9 +183,9 @@ const AuthModal = () => {
         {/* Modal Tabs */}
         <div className="flex border-b border-gray-3 mt-4">
           <button
-            onClick={() => setActiveTab("signin")}
+            onClick={() => setAuthModalTab("signin")}
             className={`w-1/2 pb-3 font-semibold text-center border-b-2 transition-all ${
-              activeTab === "signin"
+              authModalTab === "signin"
                 ? "border-blue text-blue"
                 : "border-transparent text-dark-5 hover:text-dark"
             }`}
@@ -193,9 +193,9 @@ const AuthModal = () => {
             Sign In
           </button>
           <button
-            onClick={() => setActiveTab("signup")}
+            onClick={() => setAuthModalTab("signup")}
             className={`w-1/2 pb-3 font-semibold text-center border-b-2 transition-all ${
-              activeTab === "signup"
+              authModalTab === "signup"
                 ? "border-blue text-blue"
                 : "border-transparent text-dark-5 hover:text-dark"
             }`}
@@ -205,7 +205,7 @@ const AuthModal = () => {
         </div>
 
         {/* Tab Contents */}
-        {activeTab === "signin" ? (
+        {authModalTab === "signin" ? (
           <div>
             <form onSubmit={handleSignInSubmit} className="flex flex-col gap-4">
               <div>
@@ -252,7 +252,7 @@ const AuthModal = () => {
                 Don&apos;t have an account?{" "}
                 <button
                   type="button"
-                  onClick={() => setActiveTab("signup")}
+                  onClick={() => setAuthModalTab("signup")}
                   className="text-blue hover:underline font-medium"
                 >
                   Sign Up Now
@@ -332,7 +332,7 @@ const AuthModal = () => {
                 Already have an account?{" "}
                 <button
                   type="button"
-                  onClick={() => setActiveTab("signin")}
+                  onClick={() => setAuthModalTab("signin")}
                   className="text-blue hover:underline font-medium"
                 >
                   Sign In Now

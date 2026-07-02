@@ -22,6 +22,7 @@ const initialState: InitialState = {
     isActive: true,
     isFeatured: false,
     hasVariants: false,
+    status: "active",
     createdAt: "",
     updatedAt: "",
   },

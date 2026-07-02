@@ -246,6 +246,12 @@ const config: Config = {
       },
     },
   },
-  plugins: [],
+  plugins: [require("daisyui")],
+  daisyui: {
+    themes: ["corporate"],
+    base: true,
+    styled: true,
+    utils: true,
+  },
 };
 export default config;

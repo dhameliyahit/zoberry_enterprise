@@ -6,4 +6,5 @@ export type Category = {
   image: string;
   parentCategory: Category | string | null;
   isActive: boolean;
+  count?: number;
 };

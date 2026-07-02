@@ -203,3 +203,24 @@ input[type='search']::-webkit-search-results-decoration {
 .range-slider__range {
   @apply !bg-blue;
 }
+
+/* DaisyUI Zoberry Brand Theme */
+:root {
+  --p: 213 76% 54%;
+  --pf: 213 76% 44%;
+  --pc: 0 0% 100%;
+  --s: 160 64% 42%;
+  --sf: 160 64% 32%;
+  --sc: 0 0% 100%;
+  --a: 24 90% 57%;
+  --af: 24 90% 47%;
+  --ac: 0 0% 100%;
+  --n: 230 25% 50%;
+  --nf: 230 25% 40%;
+  --nc: 0 0% 100%;
+  --b1: 0 0% 100%;
+  --b2: 220 14% 96%;
+  --b3: 220 14% 92%;
+  --bc: 230 25% 25%;
+  --br: 0.5rem;
+}

@@ -17,6 +17,7 @@ export type PaginatedResponse<T> = {
 
 export type LoginResponse = {
   success: boolean;
+  error?: string;
   data: {
     _id: string;
     name: string;
