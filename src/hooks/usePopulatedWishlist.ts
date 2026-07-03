@@ -25,27 +25,23 @@ export function usePopulatedWishlist() {
 
     const fetchWishlistProducts = async () => {
       try {
-        const promises = wishlistItems.map(async (id) => {
-          const existing = populatedItems.find((pop) => pop._id === id);
-          if (existing) {
-            return existing;
+        const existingPopulated = populatedItems.filter((item) => wishlistItems.includes(item._id));
+        const idsToFetch = wishlistItems.filter((id) => !existingPopulated.some((item) => item._id === id));
+        
+        let fetched: Product[] = [];
+        if (idsToFetch.length > 0) {
+          const res = await productService.getBulk(idsToFetch);
+          if (res.success && res.data) {
+            fetched = res.data;
           }
-          try {
-            const res = await productService.getById(id);
-            if (res.data) {
-              return res.data;
-            }
-          } catch (err) {
-            console.error(`Failed to fetch wishlist product details for ID: ${id}`, err);
-          }
-          return null;
-        });
-
-        const results = await Promise.all(promises);
+        }
+        
         if (isMounted) {
-          // Filter out null/undefined results
-          const validItems = results.filter((item): item is Product => item !== null && item._id !== undefined);
-          setPopulatedItems(validItems);
+          const finalItems = wishlistItems.map((id) => {
+            return existingPopulated.find((item) => item._id === id) || fetched.find((item) => item._id === id);
+          }).filter((item): item is Product => !!item);
+          
+          setPopulatedItems(finalItems);
         }
       } catch (error) {
         console.error("Error populating wishlist items:", error);

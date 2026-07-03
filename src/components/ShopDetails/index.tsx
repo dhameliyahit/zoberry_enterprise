@@ -5,17 +5,19 @@ import Image from "next/image";
 import Newsletter from "../Common/Newsletter";
 import RecentlyViewdItems from "./RecentlyViewd";
 import { useUI } from "@/app/context/UIContext";
-import { useAppSelector } from "@/redux/store";
+import { useAppSelector, AppDispatch } from "@/redux/store";
 import { recentlyViewedService, productService, authService } from "@/services";
 import { useDispatch } from "react-redux";
 import { updateproductDetails } from "@/redux/features/product-details";
+import { addItemToWishlist, removeItemFromWishlist } from "@/redux/features/wishlist-slice";
 import toast from "react-hot-toast";
-import { useSearchParams } from "next/navigation";
+import { useSearchParams, useRouter } from "next/navigation";
 import { MagnifyingGlassPlus, Minus, Plus, Heart, CheckCircle, Star } from "@phosphor-icons/react";
 
 const ShopDetails = () => {
-  const dispatch = useDispatch();
+  const dispatch = useDispatch<AppDispatch>();
   const searchParams = useSearchParams();
+  const router = useRouter();
   const productId = searchParams.get("id");
   const [activeColor, setActiveColor] = useState("blue");
   const { openPreviewSlider, openAuthModal } = useUI();
@@ -84,6 +86,26 @@ const ShopDetails = () => {
     (state) => state.productDetailsReducer.value
   );
 
+  const wishlistItems = useAppSelector((state) => state.wishlistReducer.items);
+  const isInWishlist = product && product._id ? wishlistItems.includes(product._id) : false;
+
+  const handleItemToWishList = (e: React.MouseEvent) => {
+    e.preventDefault();
+    if (!product || !product._id) return;
+    const token = typeof window !== "undefined" ? localStorage.getItem("zoberry_token") : null;
+    if (!token) {
+      router.push("/signin");
+      return;
+    }
+    if (isInWishlist) {
+      dispatch(removeItemFromWishlist(product._id));
+      toast.success("Removed from wishlist");
+    } else {
+      dispatch(addItemToWishlist(product._id));
+      toast.success("Added to wishlist");
+    }
+  };
+
   const rawImages = product.images && product.images.length > 0
     ? product.images
     : [];
@@ -142,7 +164,9 @@ const ShopDetails = () => {
 
   const selectedVariant = getSelectedVariant();
   const displayPrice = selectedVariant?.price ?? product.discountedPrice ?? product.price;
-  const displayCompareAt = selectedVariant?.price ? (product.compareAtPrice || product.price) : (product.compareAtPrice || null);
+  const displayCompareAt = selectedVariant?.price
+    ? (product.compareAtPrice || product.price)
+    : (product.compareAtPrice || (product.discountedPrice ? product.price : null));
   const displayStock = selectedVariant?.stock ?? product.stock;
   const displayImage = selectedVariant?.image || productImages[previewImg];
 
@@ -264,9 +288,9 @@ const ShopDetails = () => {
                       {product.title}
                     </h2>
 
-                    {product.price > product.discountedPrice && (
+                    {displayCompareAt && displayCompareAt > displayPrice && (
                       <div className="inline-flex font-medium text-custom-sm text-white bg-blue rounded py-0.5 px-2.5">
-                        {Math.round(((product.price - product.discountedPrice) / product.price) * 100)}% OFF
+                        {Math.round(((displayCompareAt - displayPrice) / displayCompareAt) * 100)}% OFF
                       </div>
                     )}
                   </div>
@@ -323,7 +347,7 @@ const ShopDetails = () => {
 
                     <li className="flex items-center gap-2.5">
                       <CheckCircle size={20} weight="fill" className="text-blue" />
-                      Sales {product.price > product.discountedPrice ? Math.round(((product.price - product.discountedPrice) / product.price) * 100) : 30}% Off Use Code: PROMO{product.price > product.discountedPrice ? Math.round(((product.price - product.discountedPrice) / product.price) * 100) : 30}
+                      Sales {displayCompareAt && displayCompareAt > displayPrice ? Math.round(((displayCompareAt - displayPrice) / displayCompareAt) * 100) : 30}% Off Use Code: PROMO{displayCompareAt && displayCompareAt > displayPrice ? Math.round(((displayCompareAt - displayPrice) / displayCompareAt) * 100) : 30}
                     </li>
                   </ul>
 
@@ -408,12 +432,16 @@ const ShopDetails = () => {
                       Purchase Now
                     </a>
 
-                    <a
-                      href="#"
-                      className="flex items-center justify-center w-12 h-12 rounded-md border border-gray-3 ease-out duration-200 hover:text-white hover:bg-dark hover:border-transparent"
+                    <button
+                      type="button"
+                      onClick={handleItemToWishList}
+                      className={`flex items-center justify-center w-12 h-12 rounded-md border ease-out duration-200 hover:text-white hover:bg-dark hover:border-transparent ${
+                        isInWishlist ? "border-red-light-4 bg-red-light-6 text-red" : "border-gray-3"
+                      }`}
+                      aria-label={isInWishlist ? "Remove from wishlist" : "Add to wishlist"}
                     >
-                      <Heart size={24} weight="bold" />
-                    </a>
+                      <Heart size={24} weight={isInWishlist ? "fill" : "bold"} className={isInWishlist ? "text-red" : ""} />
+                    </button>
                   </div>
                 </div>
               </div>

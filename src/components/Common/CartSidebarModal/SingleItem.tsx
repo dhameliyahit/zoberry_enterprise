@@ -38,7 +38,7 @@ const SingleItem = ({ item, removeItemFromCart }) => {
           <h3 className="font-medium text-dark mb-1 ease-out duration-200 hover:text-blue">
             <a href="#"> {item.title} </a>
           </h3>
-          <p className="text-custom-sm mb-2">Price: ₹{item.discountedPrice}</p>
+          <p className="text-custom-sm mb-2">Price: ₹{item.discountedPrice || item.price}</p>
           
           <div className="w-max flex items-center rounded-md border border-gray-3 scale-90 origin-left">
             <button

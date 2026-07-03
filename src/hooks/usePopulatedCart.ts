@@ -42,37 +42,30 @@ export function usePopulatedCart() {
 
     const fetchCartProducts = async () => {
       try {
-        const promises = cartItems.map(async (item) => {
-          // If we already have the details, use them
-          const existing = populatedItems.find((pop) => pop._id === item._id);
-          if (existing) {
-            return {
-              ...existing,
-              quantity: item.quantity,
-            };
+        const existingPopulated = populatedItems.filter((pop) => cartItems.some((item) => item._id === pop._id));
+        const idsToFetch = cartItems.filter((item) => !existingPopulated.some((pop) => pop._id === item._id)).map((item) => item._id);
+        
+        let fetched: Product[] = [];
+        if (idsToFetch.length > 0) {
+          const res = await productService.getBulk(idsToFetch);
+          if (res.success && res.data) {
+            fetched = res.data;
           }
-          // Otherwise, fetch from API
-          try {
-            const res = await productService.getById(item._id);
-            if (res.data) {
+        }
+        
+        if (isMounted) {
+          const finalItems = cartItems.map((cartItem) => {
+            const prod = existingPopulated.find((pop) => pop._id === cartItem._id) || fetched.find((f) => f._id === cartItem._id);
+            if (prod) {
               return {
-                ...res.data,
-                quantity: item.quantity,
+                ...prod,
+                quantity: cartItem.quantity,
               };
             }
-          } catch (err) {
-            console.error(`Failed to fetch product details for ID: ${item._id}`, err);
-          }
-          return null;
-        });
-
-        const results = await Promise.all(promises);
-        if (isMounted) {
-          // Filter out null values
-          const validItems = results.filter(
-            (item): item is PopulatedCartItem => item !== null && item._id !== undefined
-          );
-          setPopulatedItems(validItems);
+            return null;
+          }).filter((item): item is PopulatedCartItem => !!item);
+          
+          setPopulatedItems(finalItems);
         }
       } catch (error) {
         console.error("Error populating cart items:", error);

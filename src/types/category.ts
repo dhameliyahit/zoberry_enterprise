@@ -7,4 +7,5 @@ export type Category = {
   parentCategory: Category | string | null;
   isActive: boolean;
   count?: number;
+  products?: number;
 };

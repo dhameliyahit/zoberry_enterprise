@@ -51,6 +51,12 @@ export const productService = {
     if (res.data) res.data = normalizeImages(res.data);
     return res;
   },
+  
+  getBulk: async (ids: string[]) => {
+    const res = await post<ApiResponse<Product[]>>("/products/bulk-get", { ids });
+    if (res.data) res.data = normalizeList(res.data);
+    return res;
+  },
 
   create: (data: FormData) =>
     post<ApiResponse<Product>>("/products", data),

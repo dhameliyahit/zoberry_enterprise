@@ -9,7 +9,7 @@ import ColorsDropdwon from "./ColorsDropdwon";
 import PriceDropdown from "./PriceDropdown";
 import { productService } from "@/services/product.service";
 import { categoryService } from "@/services/category.service";
-import type { Product } from "@/types";
+import type { Product, Category } from "@/types";
 import SingleGridItem from "../Shop/SingleGridItem";
 import SingleListItem from "../Shop/SingleListItem";
 
@@ -18,7 +18,26 @@ const ShopWithSidebar = () => {
   const [productStyle, setProductStyle] = useState("grid");
   const [productSidebar, setProductSidebar] = useState(false);
   const [stickyMenu, setStickyMenu] = useState(false);
-  const [categories, setCategories] = useState<{ name: string; products: number; isRefined: boolean }[]>([]);
+  const [categories, setCategories] = useState<Category[]>([]);
+  const [selectedCategories, setSelectedCategories] = useState<string[]>([]);
+
+  const handleCategoryToggle = (categoryName: string) => {
+    setSelectedCategories((prev) =>
+      prev.includes(categoryName)
+        ? prev.filter((c) => c !== categoryName)
+        : [...prev, categoryName]
+    );
+  };
+
+  const handleCleanAll = () => {
+    setSelectedCategories([]);
+  };
+
+  const filteredProducts = products.filter((p) => {
+    if (selectedCategories.length === 0) return true;
+    const catName = typeof p.category === "object" ? p.category?.name : "";
+    return selectedCategories.includes(catName);
+  });
 
   useEffect(() => {
     categoryService.getAll(true).then((catRes) => {
@@ -28,14 +47,9 @@ const ShopWithSidebar = () => {
         setProducts(prods);
 
         const mapped = cats.map((cat: any) => {
-          const count = prods.filter((p: any) => {
-            const catId = typeof p.category === "object" ? p.category?._id : p.category;
-            return catId === cat._id;
-          }).length;
           return {
-            name: cat.name,
-            products: count,
-            isRefined: false,
+            ...cat,
+            products: cat.products || cat.count || 0,
           };
         });
         setCategories(mapped);
@@ -146,12 +160,16 @@ const ShopWithSidebar = () => {
                   <div className="bg-white shadow-1 rounded-lg py-4 px-5">
                     <div className="flex items-center justify-between">
                       <p>Filters:</p>
-                      <button className="text-blue">Clean All</button>
+                      <button onClick={handleCleanAll} className="text-blue" type="button">Clean All</button>
                     </div>
                   </div>
 
                   {/* <!-- category box --> */}
-                  <CategoryDropdown categories={categories} />
+                  <CategoryDropdown
+                    categories={categories}
+                    selectedCategories={selectedCategories}
+                    onCategoryToggle={handleCategoryToggle}
+                  />
 
                   {/* <!-- gender box --> */}
                   <GenderDropdown genders={genders} />
@@ -178,7 +196,7 @@ const ShopWithSidebar = () => {
                     <CustomSelect options={options} />
 
                     <p>
-                      Showing <span className="text-dark">9 of 50</span>{" "}
+                      Showing <span className="text-dark">{filteredProducts.length} of {products.length}</span>{" "}
                       Products
                     </p>
                   </div>
@@ -272,13 +290,13 @@ const ShopWithSidebar = () => {
                     : "flex flex-col gap-7.5"
                 }`}
               >
-                {products.length > 0 ? products.map((item, key) =>
+                {filteredProducts.length > 0 ? filteredProducts.map((item, key) =>
                   productStyle === "grid" ? (
                     <SingleGridItem item={item} key={key} />
                   ) : (
                     <SingleListItem item={item} key={key} />
                   )
-                ) : <p className="text-gray-500 col-span-full text-center py-8">No products found</p>}
+                ) : <p className="text-gray-500 col-span-full text-center py-8">No products found matching filters</p>}
               </div>
               {/* <!-- Products Grid Tab Content End --> */}
 

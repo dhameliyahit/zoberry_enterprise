@@ -1,15 +1,22 @@
 "use client";
 
 import { useState } from "react";
+import type { Category } from "@/types";
 
-const CategoryItem = ({ category }) => {
-  const [selected, setSelected] = useState(false);
+interface CategoryItemProps {
+  category: Category;
+  selected: boolean;
+  onToggle: () => void;
+}
+
+const CategoryItem = ({ category, selected, onToggle }: CategoryItemProps) => {
   return (
     <button
       className={`${
         selected && "text-blue"
       } group flex items-center justify-between ease-out duration-200 hover:text-blue `}
-      onClick={() => setSelected(!selected)}
+      onClick={onToggle}
+      type="button"
     >
       <div className="flex items-center gap-2">
         <div
@@ -43,13 +50,19 @@ const CategoryItem = ({ category }) => {
           selected ? "text-white bg-blue" : "bg-gray-2"
         } inline-flex rounded-[30px] text-custom-xs px-2 ease-out duration-200 group-hover:text-white group-hover:bg-blue`}
       >
-        {category.products}
+        {category.products || category.count || 0}
       </span>
     </button>
   );
 };
 
-const CategoryDropdown = ({ categories }) => {
+interface CategoryDropdownProps {
+  categories: Category[];
+  selectedCategories: string[];
+  onCategoryToggle: (name: string) => void;
+}
+
+const CategoryDropdown = ({ categories, selectedCategories, onCategoryToggle }: CategoryDropdownProps) => {
   const [toggleDropdown, setToggleDropdown] = useState(true);
 
   return (
@@ -69,6 +82,7 @@ const CategoryDropdown = ({ categories }) => {
           className={`text-dark ease-out duration-200 ${
             toggleDropdown && "rotate-180"
           }`}
+          type="button"
         >
           <svg
             className="fill-current"
@@ -88,15 +102,18 @@ const CategoryDropdown = ({ categories }) => {
         </button>
       </div>
 
-      {/* dropdown && 'shadow-filter */}
-      {/* <!-- dropdown menu --> */}
       <div
         className={`flex-col gap-3 py-6 pl-6 pr-5.5 ${
           toggleDropdown ? "flex" : "hidden"
         }`}
       >
-        {categories.map((category, key) => (
-          <CategoryItem key={key} category={category} />
+        {categories.map((category) => (
+          <CategoryItem
+            key={category._id || category.name}
+            category={category}
+            selected={selectedCategories.includes(category.name)}
+            onToggle={() => onCategoryToggle(category.name)}
+          />
         ))}
       </div>
     </div>

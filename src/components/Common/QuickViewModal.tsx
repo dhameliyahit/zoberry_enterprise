@@ -24,6 +24,11 @@ const QuickViewModal = () => {
 
   const product = quickViewProduct;
 
+  const displayPrice = product ? (product.discountedPrice || product.price) : 0;
+  const comparePrice = product ? (product.compareAtPrice || (product.discountedPrice ? product.price : null)) : null;
+  const hasDiscount = !!(comparePrice && comparePrice > displayPrice);
+  const discountPercent = hasDiscount ? Math.round(((comparePrice - displayPrice) / comparePrice) * 100) : 0;
+
   const wishlistItems = useAppSelector((state) => state.wishlistReducer.items);
   const isInWishlist = product ? wishlistItems.includes(product._id) : false;
 
@@ -196,9 +201,9 @@ const QuickViewModal = () => {
 
             {/* Right Column: Product Info */}
             <div className="w-full flex flex-col justify-center">
-              {product?.price > product?.discountedPrice && (
+              {hasDiscount && (
                 <span className="inline-block self-start text-xs font-semibold text-white py-1 px-3 bg-green mb-4 rounded">
-                  {Math.round(((product.price - product.discountedPrice) / product.price) * 100)}% OFF
+                  {discountPercent}% OFF
                 </span>
               )}
 
@@ -243,11 +248,13 @@ const QuickViewModal = () => {
                   <h4 className="font-semibold text-sm text-dark-3 mb-1.5">Price</h4>
                   <div className="flex items-baseline gap-2">
                     <span className="font-bold text-dark text-xl sm:text-2xl">
-                      ₹{product?.discountedPrice}
+                      ₹{displayPrice}
                     </span>
-                    <span className="text-sm font-medium text-gray-4 line-through">
-                      ₹{product?.price}
-                    </span>
+                    {hasDiscount && (
+                      <span className="text-sm font-medium text-gray-4 line-through">
+                        ₹{comparePrice}
+                      </span>
+                    )}
                   </div>
                 </div>
 
