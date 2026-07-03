@@ -1,8 +1,12 @@
 import React from "react";
 import Image from "next/image";
 import Link from "next/link";
+import { useDispatch } from "react-redux";
+import { updateproductDetails } from "@/redux/features/product-details";
 
 const LatestProducts = ({ products }) => {
+  const dispatch = useDispatch();
+
   return (
     <div className="shadow-1 bg-white rounded-xl mt-7.5">
       <div className="px-4 sm:px-6 py-4.5 border-b border-gray-3">
@@ -20,7 +24,12 @@ const LatestProducts = ({ products }) => {
 
               <div>
                 <h3 className="font-medium text-dark mb-1 ease-out duration-200 hover:text-blue">
-                  <Link href="/shop-details"> {product.title} </Link>
+                  <Link
+                    href={`/shop-details?id=${product._id}`}
+                    onClick={() => dispatch(updateproductDetails(product))}
+                  >
+                    {product.title}
+                  </Link>
                 </h3>
                 <p className="text-custom-sm">Price: ₹{product.price}</p>
               </div>

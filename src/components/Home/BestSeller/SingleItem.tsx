@@ -3,6 +3,7 @@ import React from "react";
 import { Product } from "@/types/product";
 import { useUI } from "@/app/context/UIContext";
 import { useDispatch } from "react-redux";
+import { updateproductDetails } from "@/redux/features/product-details";
 import { AppDispatch, useAppSelector } from "@/redux/store";
 import Image from "next/image";
 import Link from "next/link";
@@ -66,7 +67,12 @@ const SingleItem = ({ item }: { item: Product }) => {
           </div>
 
           <h3 className="font-medium text-dark ease-out duration-200 hover:text-blue mb-1.5">
-            <Link href="/shop-details"> {item.title} </Link>
+            <Link
+              href={`/shop-details?id=${item._id}`}
+              onClick={() => dispatch(updateproductDetails({ ...item }))}
+            >
+              {item.title}
+            </Link>
           </h3>
 
           <span className="flex items-center justify-center gap-2 font-medium text-lg">

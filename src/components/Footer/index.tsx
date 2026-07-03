@@ -351,6 +351,7 @@ const Footer = () => {
                     alt="visa card"
                     width={66}
                     height={22}
+                    style={{ height: "auto" }}
                   />
                 </a>
                 <a href="#" aria-label="payment system with paypal">
@@ -359,6 +360,7 @@ const Footer = () => {
                     alt="paypal"
                     width={18}
                     height={21}
+                    style={{ height: "auto" }}
                   />
                 </a>
                 <a href="#" aria-label="payment system with master card">
@@ -367,14 +369,16 @@ const Footer = () => {
                     alt="master card"
                     width={33}
                     height={24}
+                    style={{ height: "auto" }}
                   />
                 </a>
                 <a href="#" aria-label="payment system with apple pay">
                   <Image
                     src="/images/payment/payment-04.svg"
                     alt="apple pay"
-                    width={52.94}
+                    width={53}
                     height={22}
+                    style={{ height: "auto" }}
                   />
                 </a>
                 <a href="#" aria-label="payment system with google pay">
@@ -383,6 +387,7 @@ const Footer = () => {
                     alt="google pay"
                     width={56}
                     height={22}
+                    style={{ height: "auto" }}
                   />
                 </a>
               </div>

@@ -35,6 +35,7 @@ const PromoBanner = () => {
             className="absolute bottom-0 right-4 lg:right-26 -z-1"
             width={274}
             height={350}
+            style={{ height: "auto" }}
           />
         </div>
 

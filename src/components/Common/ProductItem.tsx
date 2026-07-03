@@ -58,7 +58,7 @@ const ProductItem = ({ item }: { item: Product }) => {
 
   const handleCardClick = () => {
     handleProductDetails();
-    router.push("/shop-details");
+    router.push(`/shop-details?id=${item._id}`);
   };
 
   return (
@@ -118,7 +118,7 @@ const ProductItem = ({ item }: { item: Product }) => {
         className="font-medium text-dark ease-out duration-200 hover:text-blue mb-1.5"
         onClick={() => handleProductDetails()}
       >
-        <Link href="/shop-details"> {item.title} </Link>
+        <Link href={`/shop-details?id=${item._id}`}> {item.title} </Link>
       </h3>
 
       <span className="flex items-center gap-2 font-medium text-lg">

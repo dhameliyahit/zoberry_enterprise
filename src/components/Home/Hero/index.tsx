@@ -17,6 +17,7 @@ const Hero = () => {
                 className="absolute right-0 bottom-0 -z-1"
                 width={534}
                 height={520}
+                priority
               />
 
               <HeroCarousel />
@@ -53,6 +54,7 @@ const Hero = () => {
                       alt="mobile image"
                       width={123}
                       height={161}
+                      style={{ height: "auto" }}
                     />
                   </div>
                 </div>
@@ -85,6 +87,7 @@ const Hero = () => {
                       alt="mobile image"
                       width={123}
                       height={161}
+                      style={{ height: "auto" }}
                     />
                   </div>
                 </div>

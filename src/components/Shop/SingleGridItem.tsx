@@ -6,6 +6,7 @@ import { updateQuickView } from "@/redux/features/quickView-slice";
 import { addItemToCart } from "@/redux/features/cart-slice";
 import { addItemToWishlist, removeItemFromWishlist } from "@/redux/features/wishlist-slice";
 import { useDispatch } from "react-redux";
+import { updateproductDetails } from "@/redux/features/product-details";
 import { AppDispatch, useAppSelector } from "@/redux/store";
 import Link from "next/link";
 import Image from "next/image";
@@ -98,7 +99,12 @@ const SingleGridItem = ({ item }: { item: Product }) => {
       </div>
 
       <h3 className="font-medium text-dark ease-out duration-200 hover:text-blue mb-1.5">
-        <Link href="/shop-details"> {item.title} </Link>
+        <Link
+          href={`/shop-details?id=${item._id}`}
+          onClick={() => dispatch(updateproductDetails({ ...item }))}
+        >
+          {item.title}
+        </Link>
       </h3>
 
       <span className="flex items-center gap-2 font-medium text-lg">

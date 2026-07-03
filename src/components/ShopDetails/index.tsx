@@ -1,5 +1,5 @@
 "use client";
-import React, { useEffect, useState } from "react";
+import React, { useEffect, useState, useRef } from "react";
 import Breadcrumb from "../Common/Breadcrumb";
 import Image from "next/image";
 import Newsletter from "../Common/Newsletter";
@@ -10,10 +10,13 @@ import { recentlyViewedService, productService, authService } from "@/services";
 import { useDispatch } from "react-redux";
 import { updateproductDetails } from "@/redux/features/product-details";
 import toast from "react-hot-toast";
+import { useSearchParams } from "next/navigation";
 import { MagnifyingGlassPlus, Minus, Plus, Heart, CheckCircle, Star } from "@phosphor-icons/react";
 
 const ShopDetails = () => {
   const dispatch = useDispatch();
+  const searchParams = useSearchParams();
+  const productId = searchParams.get("id");
   const [activeColor, setActiveColor] = useState("blue");
   const { openPreviewSlider, openAuthModal } = useUI();
   const [previewImg, setPreviewImg] = useState(0);
@@ -88,41 +91,28 @@ const ShopDetails = () => {
     typeof img === "string" ? img : img.url
   );
 
-  useEffect(() => {
-    if (!product?._id && typeof window !== "undefined") {
-      const saved = localStorage.getItem("productDetails");
-      if (saved) {
-        try {
-          const parsed = JSON.parse(saved);
-          dispatch(updateproductDetails(parsed));
-        } catch (e) {
-          console.error("Failed to parse product details from storage", e);
-        }
-      }
-    }
-  }, [dispatch, product?._id]);
+  const fetchedIdRef = useRef<string | null>(null);
 
   useEffect(() => {
-    if (product?._id) {
-      localStorage.setItem("productDetails", JSON.stringify(product));
+    const targetId = productId || product?._id;
+    if (targetId && fetchedIdRef.current !== targetId) {
+      fetchedIdRef.current = targetId;
+      productService
+        .getById(targetId)
+        .then((res) => {
+          if (res.success && res.data) {
+            dispatch(updateproductDetails(res.data));
+          }
+        })
+        .catch((err) => {
+          console.error("Error fetching product details:", err);
+        });
     }
-  }, [product]);
+  }, [productId, product?._id, dispatch]);
 
   useEffect(() => {
     setPreviewImg(0);
   }, [product?._id]);
-
-  useEffect(() => {
-    if (product && product._id) {
-      productService.getById(product._id).then((res) => {
-        if (res.success && res.data) {
-          dispatch(updateproductDetails(res.data));
-        }
-      }).catch((err) => {
-        console.error("Error fetching latest product details:", err);
-      });
-    }
-  }, [product?._id, dispatch]);
 
   useEffect(() => {
     if (product && product.hasVariants && product.variantOptions) {
@@ -162,6 +152,9 @@ const ShopDetails = () => {
         const macAddress = localStorage.getItem("zoberry_mac_address");
         if (macAddress) {
           recentlyViewedService.addRecentlyViewed(macAddress, product._id).catch((err) => {
+            if (err?.message && (err.message.includes("already exists") || err.message.includes("macAddress"))) {
+              return;
+            }
             console.error("Error adding to recently viewed:", err);
           });
         }
@@ -192,7 +185,6 @@ const ShopDetails = () => {
 
       if (res.success && res.data) {
         dispatch(updateproductDetails(res.data));
-        localStorage.setItem("productDetails", JSON.stringify(res.data));
         toast.success("Review submitted successfully!");
         setReviewComment("");
         setReviewRating(5);

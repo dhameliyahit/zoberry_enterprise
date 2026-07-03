@@ -59,6 +59,7 @@ const HeroCarousal = () => {
               alt="headphone"
               width={351}
               height={358}
+              style={{ height: "auto" }}
             />
           </div>
         </div>
@@ -101,6 +102,7 @@ const HeroCarousal = () => {
               alt="headphone"
               width={351}
               height={358}
+              style={{ height: "auto" }}
             />
           </div>
         </div>

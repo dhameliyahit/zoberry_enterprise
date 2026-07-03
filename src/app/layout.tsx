@@ -14,8 +14,8 @@ export default function RootLayout({
   children: React.ReactNode;
 }) {
   return (
-    <html lang="en" suppressHydrationWarning={true}>
-      <body>
+    <html lang="en" suppressHydrationWarning={true} data-scroll-behavior="smooth">
+      <body suppressHydrationWarning={true}>
         {children}
         <Script src="https://accounts.google.com/gsi/client" strategy="afterInteractive" />
       </body>
