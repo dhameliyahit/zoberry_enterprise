@@ -2,13 +2,13 @@
 import React from "react";
 import Discount from "./Discount";
 import OrderSummary from "./OrderSummary";
-import { useAppSelector } from "@/redux/store";
+import { usePopulatedCart } from "@/hooks/usePopulatedCart";
 import SingleItem from "./SingleItem";
 import Breadcrumb from "../Common/Breadcrumb";
 import Link from "next/link";
 
 const Cart = () => {
-  const cartItems = useAppSelector((state) => state.cartReducer.items);
+  const { items: cartItems, loading } = usePopulatedCart();
 
   return (
     <>
@@ -17,7 +17,9 @@ const Cart = () => {
         <Breadcrumb title={"Cart"} pages={["Cart"]} />
       </section>
       {/* <!-- ===== Breadcrumb Section End ===== --> */}
-      {cartItems.length > 0 ? (
+      {loading ? (
+        <div className="py-20 text-center text-dark font-medium">Loading cart items...</div>
+      ) : cartItems.length > 0 ? (
         <section className="overflow-hidden py-20 bg-gray-2">
           <div className="max-w-[1170px] w-full mx-auto px-4 sm:px-8 xl:px-0">
             <div className="flex flex-wrap items-center justify-between gap-5 mb-7.5">

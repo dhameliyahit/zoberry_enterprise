@@ -2,12 +2,8 @@
 import React, { useEffect } from "react";
 
 import { useUI } from "@/app/context/UIContext";
-import {
-  removeItemFromCart,
-  selectTotalPrice,
-} from "@/redux/features/cart-slice";
-import { useAppSelector } from "@/redux/store";
-import { useSelector } from "react-redux";
+import { removeItemFromCart } from "@/redux/features/cart-slice";
+import { usePopulatedCart } from "@/hooks/usePopulatedCart";
 import SingleItem from "./SingleItem";
 import Link from "next/link";
 import EmptyCart from "./EmptyCart";
@@ -15,9 +11,7 @@ import { X } from "@phosphor-icons/react";
 
 const CartSidebarModal = () => {
   const { cartSidebarOpen, closeCartSidebar } = useUI();
-  const cartItems = useAppSelector((state) => state.cartReducer.items);
-
-  const totalPrice = useSelector(selectTotalPrice);
+  const { items: cartItems, loading, totalPrice } = usePopulatedCart();
 
   useEffect(() => {
     function handleClickOutside(event) {
@@ -58,7 +52,9 @@ const CartSidebarModal = () => {
 
           <div className="h-[66vh] overflow-y-auto no-scrollbar">
             <div className="flex flex-col gap-6">
-              {cartItems.length > 0 ? (
+              {loading ? (
+                <div className="text-center py-10 text-dark">Loading...</div>
+              ) : cartItems.length > 0 ? (
                 cartItems.map((item, key) => (
                   <SingleItem
                     key={key}

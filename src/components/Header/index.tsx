@@ -4,11 +4,9 @@ import Link from "next/link";
 import CustomSelect from "./CustomSelect";
 import { menuData } from "./menuData";
 import Dropdown from "./Dropdown";
-import { useAppSelector } from "@/redux/store";
-import { useSelector } from "react-redux";
-import { selectTotalPrice } from "@/redux/features/cart-slice";
+import { usePopulatedCart } from "@/hooks/usePopulatedCart";
 import { useUI } from "@/app/context/UIContext";
-import { authService } from "@/services";
+import { authService, categoryService } from "@/services";
 import toast from "react-hot-toast";
 import Image from "next/image";
 import { Phone, User, ShoppingCart, Clock, Heart, List } from "@phosphor-icons/react";
@@ -25,8 +23,7 @@ const Header = () => {
   const { openCartSidebar, openAuthModal } = useUI();
   const profileRef = useRef<HTMLDivElement>(null);
 
-  const product = useAppSelector((state) => state.cartReducer.items);
-  const totalPrice = useSelector(selectTotalPrice);
+  const { items: cartItems, totalPrice } = usePopulatedCart();
 
   const handleOpenCartModal = () => {
     openCartSidebar();
@@ -84,16 +81,23 @@ const Header = () => {
     };
   }, [profileDropdownOpen]);
 
-  const options = [
-    { label: "All Categories", value: "0" },
-    { label: "Desktop", value: "1" },
-    { label: "Laptop", value: "2" },
-    { label: "Monitor", value: "3" },
-    { label: "Phone", value: "4" },
-    { label: "Watch", value: "5" },
-    { label: "Mouse", value: "6" },
-    { label: "Tablet", value: "7" },
-  ];
+  const [options, setOptions] = useState<{ label: string; value: string }[]>([
+    { label: "All Categories", value: "0" }
+  ]);
+
+  useEffect(() => {
+    categoryService.getAll(true).then((res) => {
+      if (res.data) {
+        const catOptions = res.data.map((cat: any) => ({
+          label: cat.name,
+          value: cat._id,
+        }));
+        setOptions([{ label: "All Categories", value: "0" }, ...catOptions]);
+      }
+    }).catch((err) => {
+      console.error("Failed to load header categories:", err);
+    });
+  }, []);
 
   return (
     <header
@@ -250,7 +254,7 @@ const Header = () => {
                   <span className="inline-block relative">
                     <ShoppingCart size={24} weight="light" />
                     <span className="flex items-center justify-center font-medium text-2xs absolute -right-2 -top-2.5 bg-blue w-4.5 h-4.5 rounded-full text-white border border-brand-navy">
-                      {isMounted ? product.length : 0}
+                      {isMounted ? cartItems.length : 0}
                     </span>
                   </span>
 

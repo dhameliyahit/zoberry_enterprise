@@ -7,17 +7,22 @@ import { addItemToCart } from "@/redux/features/cart-slice";
 
 import Image from "next/image";
 
+function getImageUrl(img: any): string {
+  if (!img) return "";
+  return typeof img === "string" ? img : img.url || "";
+}
+
 const SingleItem = ({ item }) => {
   const dispatch = useDispatch<AppDispatch>();
 
   const handleRemoveFromWishlist = () => {
-    dispatch(removeItemFromWishlist(item.id));
+    dispatch(removeItemFromWishlist(item._id));
   };
 
   const handleAddToCart = () => {
     dispatch(
       addItemToCart({
-        ...item,
+        _id: item._id,
         quantity: 1,
       })
     );
@@ -57,7 +62,7 @@ const SingleItem = ({ item }) => {
         <div className="flex items-center justify-between gap-5">
           <div className="w-full flex items-center gap-5.5">
             <div className="flex items-center justify-center rounded-[5px] bg-gray-2 max-w-[80px] w-full h-17.5">
-              <Image src={item.imgs?.thumbnails[0]} alt="product" width={200} height={200} />
+              <Image src={getImageUrl(item.images?.[0]) || item.image || ""} alt="product" width={200} height={200} />
             </div>
 
             <div>

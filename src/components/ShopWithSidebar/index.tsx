@@ -8,6 +8,7 @@ import SizeDropdown from "./SizeDropdown";
 import ColorsDropdwon from "./ColorsDropdwon";
 import PriceDropdown from "./PriceDropdown";
 import { productService } from "@/services/product.service";
+import { categoryService } from "@/services/category.service";
 import type { Product } from "@/types";
 import SingleGridItem from "../Shop/SingleGridItem";
 import SingleListItem from "../Shop/SingleListItem";
@@ -17,10 +18,28 @@ const ShopWithSidebar = () => {
   const [productStyle, setProductStyle] = useState("grid");
   const [productSidebar, setProductSidebar] = useState(false);
   const [stickyMenu, setStickyMenu] = useState(false);
+  const [categories, setCategories] = useState<{ name: string; products: number; isRefined: boolean }[]>([]);
 
   useEffect(() => {
-    productService.getAll({ limit: 50 }).then((res) => {
-      setProducts(res.data || []);
+    categoryService.getAll(true).then((catRes) => {
+      const cats = catRes.data || [];
+      productService.getAll({ limit: 50 }).then((prodRes) => {
+        const prods = prodRes.data || [];
+        setProducts(prods);
+
+        const mapped = cats.map((cat: any) => {
+          const count = prods.filter((p: any) => {
+            const catId = typeof p.category === "object" ? p.category?._id : p.category;
+            return catId === cat._id;
+          }).length;
+          return {
+            name: cat.name,
+            products: count,
+            isRefined: false,
+          };
+        });
+        setCategories(mapped);
+      }).catch(() => {});
     }).catch(() => {});
   }, []);
 
@@ -36,39 +55,6 @@ const ShopWithSidebar = () => {
     { label: "Latest Products", value: "0" },
     { label: "Best Selling", value: "1" },
     { label: "Old Products", value: "2" },
-  ];
-
-  const categories = [
-    {
-      name: "Desktop",
-      products: 10,
-      isRefined: true,
-    },
-    {
-      name: "Laptop",
-      products: 12,
-      isRefined: false,
-    },
-    {
-      name: "Monitor",
-      products: 30,
-      isRefined: false,
-    },
-    {
-      name: "UPS",
-      products: 23,
-      isRefined: false,
-    },
-    {
-      name: "Phone",
-      products: 10,
-      isRefined: false,
-    },
-    {
-      name: "Watch",
-      products: 13,
-      isRefined: false,
-    },
   ];
 
   const genders = [

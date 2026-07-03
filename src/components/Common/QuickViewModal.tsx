@@ -1,12 +1,14 @@
 "use client";
 import React, { useEffect, useRef, useState } from "react";
 import { useUI } from "@/app/context/UIContext";
-import { AppDispatch } from "@/redux/store";
+import { AppDispatch, useAppSelector } from "@/redux/store";
 import { addItemToCart } from "@/redux/features/cart-slice";
+import { addItemToWishlist, removeItemFromWishlist } from "@/redux/features/wishlist-slice";
 import { useDispatch } from "react-redux";
 import Image from "next/image";
 import { updateproductDetails } from "@/redux/features/product-details";
 import { X, MagnifyingGlassPlus, Minus, Plus, CheckCircle, Heart, Star } from "@phosphor-icons/react";
+import { useRouter } from "next/navigation";
 
 function getImageUrl(img: string | { url: string; alt?: string; isFeatured?: boolean } | undefined): string {
   if (!img) return "";
@@ -18,8 +20,26 @@ const QuickViewModal = () => {
   const [quantity, setQuantity] = useState(1);
 
   const dispatch = useDispatch<AppDispatch>();
+  const router = useRouter();
 
   const product = quickViewProduct;
+
+  const wishlistItems = useAppSelector((state) => state.wishlistReducer.items);
+  const isInWishlist = product ? wishlistItems.includes(product._id) : false;
+
+  const handleItemToWishList = () => {
+    if (!product) return;
+    const token = typeof window !== "undefined" ? localStorage.getItem("zoberry_token") : null;
+    if (!token) {
+      router.push("/signin");
+      return;
+    }
+    if (isInWishlist) {
+      dispatch(removeItemFromWishlist(product._id));
+    } else {
+      dispatch(addItemToWishlist(product._id));
+    }
+  };
 
   const [activePreview, setActivePreview] = useState(0);
   const [showMagnifier, setShowMagnifier] = useState(false);
@@ -45,10 +65,6 @@ const QuickViewModal = () => {
     dispatch(
       addItemToCart({
         _id: product._id,
-        title: product.title,
-        price: product.price,
-        discountedPrice: product.discountedPrice,
-        image: getImageUrl(product.images?.[0]),
         quantity,
       })
     );
@@ -268,9 +284,12 @@ const QuickViewModal = () => {
                   Add to Cart
                 </button>
 
-                <button className="flex-1 min-w-[160px] inline-flex items-center justify-center gap-2 font-medium text-white bg-dark py-3 px-5 rounded-md transition hover:bg-opacity-90 text-sm">
-                  <Heart size={18} weight="bold" />
-                  Add to Wishlist
+                <button
+                  onClick={handleItemToWishList}
+                  className="flex-1 min-w-[160px] inline-flex items-center justify-center gap-2 font-medium text-white bg-dark py-3 px-5 rounded-md transition hover:bg-opacity-90 text-sm"
+                >
+                  <Heart size={18} weight={isInWishlist ? "fill" : "bold"} className={isInWishlist ? "text-red" : ""} />
+                  {isInWishlist ? "Remove from Wishlist" : "Add to Wishlist"}
                 </button>
               </div>
             </div>

@@ -4,6 +4,7 @@ import Header from "../../components/Header";
 import Footer from "../../components/Footer";
 import { UIProvider } from "../context/UIContext";
 import { ReduxProvider } from "@/redux/provider";
+import ReduxInitializer from "@/components/Common/ReduxInitializer";
 import QuickViewModal from "@/components/Common/QuickViewModal";
 import CartSidebarModal from "@/components/Common/CartSidebarModal";
 import PreviewSliderModal from "@/components/Common/PreviewSlider";
@@ -41,16 +42,18 @@ export default function SiteLayout({
         <PreLoader />
       ) : (
         <ReduxProvider>
-          <UIProvider>
-            <Header />
-            {children}
-            <QuickViewModal />
-            <CartSidebarModal />
-            <PreviewSliderModal />
-            <AuthModal />
-            <ScrollToTop />
-            <Footer />
-          </UIProvider>
+          <ReduxInitializer>
+            <UIProvider>
+              <Header />
+              {children}
+              <QuickViewModal />
+              <CartSidebarModal />
+              <PreviewSliderModal />
+              <AuthModal />
+              <ScrollToTop />
+              <Footer />
+            </UIProvider>
+          </ReduxInitializer>
         </ReduxProvider>
       )}
     </>

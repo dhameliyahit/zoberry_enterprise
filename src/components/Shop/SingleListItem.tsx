@@ -5,11 +5,12 @@ import { Product } from "@/types/product";
 import { useUI } from "@/app/context/UIContext";
 import { updateQuickView } from "@/redux/features/quickView-slice";
 import { addItemToCart } from "@/redux/features/cart-slice";
-import { addItemToWishlist } from "@/redux/features/wishlist-slice";
+import { addItemToWishlist, removeItemFromWishlist } from "@/redux/features/wishlist-slice";
 import { useDispatch } from "react-redux";
-import { AppDispatch } from "@/redux/store";
+import { AppDispatch, useAppSelector } from "@/redux/store";
 import Link from "next/link";
 import Image from "next/image";
+import { useRouter } from "next/navigation";
 import { Eye, ShoppingCart, Heart, Star } from "@phosphor-icons/react";
 
 function getImageUrl(img: string | { url: string; alt?: string; isFeatured?: boolean } | undefined): string {
@@ -20,6 +21,10 @@ function getImageUrl(img: string | { url: string; alt?: string; isFeatured?: boo
 const SingleListItem = ({ item }: { item: Product }) => {
   const { openQuickView } = useUI();
   const dispatch = useDispatch<AppDispatch>();
+  const router = useRouter();
+
+  const wishlistItems = useAppSelector((state) => state.wishlistReducer.items);
+  const isInWishlist = wishlistItems.includes(item._id);
 
   const handleQuickViewUpdate = () => {
     dispatch(updateQuickView({ ...item }));
@@ -29,27 +34,22 @@ const SingleListItem = ({ item }: { item: Product }) => {
     dispatch(
       addItemToCart({
         _id: item._id,
-        title: item.title,
-        price: item.price,
-        discountedPrice: item.discountedPrice,
-        image: getImageUrl(item.images?.[0]),
         quantity: 1,
       })
     );
   };
 
   const handleItemToWishList = () => {
-    dispatch(
-      addItemToWishlist({
-        _id: item._id,
-        title: item.title,
-        price: item.price,
-        discountedPrice: item.discountedPrice,
-        image: getImageUrl(item.images?.[0]),
-        status: "available",
-        quantity: 1,
-      })
-    );
+    const token = typeof window !== "undefined" ? localStorage.getItem("zoberry_token") : null;
+    if (!token) {
+      router.push("/signin");
+      return;
+    }
+    if (isInWishlist) {
+      dispatch(removeItemFromWishlist(item._id));
+    } else {
+      dispatch(addItemToWishlist(item._id));
+    }
   };
 
   return (
@@ -80,9 +80,9 @@ const SingleListItem = ({ item }: { item: Product }) => {
             <button
               onClick={() => handleItemToWishList()}
               aria-label="button for favorite select"
-              className="flex items-center justify-center w-9 h-9 rounded-[5px] shadow-1 ease-out duration-200 text-dark bg-white hover:text-blue"
+              className="flex items-center justify-center w-9 h-9 rounded-[5px] shadow-1 ease-out duration-200 bg-white hover:text-blue"
             >
-              <Heart size={16} weight="bold" />
+              <Heart size={16} weight={isInWishlist ? "fill" : "bold"} className={isInWishlist ? "text-red" : "text-dark"} />
             </button>
           </div>
         </div>
