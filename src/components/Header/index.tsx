@@ -1,354 +1,583 @@
 "use client";
-import React, { useState, useEffect, useRef } from "react";
+import React, { useEffect, useMemo, useRef, useState } from "react";
 import Link from "next/link";
-import CustomSelect from "./CustomSelect";
+import Image from "next/image";
+import { usePathname, useRouter } from "next/navigation";
+import toast from "react-hot-toast";
+import {
+  Heart,
+  List,
+  MagnifyingGlass,
+  Phone,
+  ShoppingCart,
+  SignIn,
+  User,
+  X,
+} from "@phosphor-icons/react";
 import { menuData } from "./menuData";
-import Dropdown from "./Dropdown";
 import { usePopulatedCart } from "@/hooks/usePopulatedCart";
 import { useUI } from "@/app/context/UIContext";
-import { authService, categoryService } from "@/services";
-import toast from "react-hot-toast";
-import Image from "next/image";
-import { Phone, User, ShoppingCart, Clock, Heart, List } from "@phosphor-icons/react";
+import { authService } from "@/services";
 
 const Header = () => {
+  const pathname = usePathname();
+  const router = useRouter();
+  const profileRef = useRef<HTMLDivElement>(null);
   const [searchQuery, setSearchQuery] = useState("");
   const [navigationOpen, setNavigationOpen] = useState(false);
   const [stickyMenu, setStickyMenu] = useState(false);
   const [isLoggedIn, setIsLoggedIn] = useState(false);
   const [userName, setUserName] = useState("");
+  const [userImage, setUserImage] = useState("");
   const [profileDropdownOpen, setProfileDropdownOpen] = useState(false);
   const [isMounted, setIsMounted] = useState(false);
 
-  const { openCartSidebar, openAuthModal } = useUI();
-  const profileRef = useRef<HTMLDivElement>(null);
 
+  const { openCartSidebar, openAuthModal } = useUI();
   const { items: cartItems, totalPrice } = usePopulatedCart();
 
-  const handleOpenCartModal = () => {
-    openCartSidebar();
+  const quickLinks = useMemo(
+    () => [
+      { label: "Wishlist", path: "/wishlist" },
+      { label: "Checkout", path: "/checkout" },
+      { label: "My Account", path: "/my-account" },
+      { label: "Contact", path: "/contact" },
+    ],
+    []
+  );
+
+  const closeNavigation = () => setNavigationOpen(false);
+
+  const syncAuthState = () => {
+    if (typeof window === "undefined") {
+      return;
+    }
+
+    const token = localStorage.getItem("zoberry_token");
+    const userStr = localStorage.getItem("zoberry_user");
+
+    if (!token) {
+      setIsLoggedIn(false);
+      setUserName("");
+      setUserImage("");
+      return;
+    }
+
+    setIsLoggedIn(true);
+
+    if (!userStr) {
+      setUserName("My Account");
+      setUserImage("");
+      return;
+    }
+
+    try {
+      const userData = JSON.parse(userStr);
+      const name = userData.data?.name || userData.name || "My Account";
+      const image = userData.data?.image || userData.image || "";
+      setUserName(name);
+      setUserImage(image);
+    } catch {
+      setUserName("My Account");
+      setUserImage("");
+    }
   };
 
   const handleStickyMenu = () => {
-    if (window.scrollY >= 80) {
-      setStickyMenu(true);
-    } else {
-      setStickyMenu(false);
+    setStickyMenu(window.scrollY >= 80);
+  };
+
+  const handleSearchSubmit = (event: React.FormEvent<HTMLFormElement>) => {
+    event.preventDefault();
+
+    const trimmedQuery = searchQuery.trim();
+    if (!trimmedQuery) {
+      router.push("/shop-with-sidebar");
+      closeNavigation();
+      return;
     }
+
+    router.push(`/shop-with-sidebar?search=${encodeURIComponent(trimmedQuery)}`);
+    closeNavigation();
+  };
+
+  const handleLogout = () => {
+    authService.logout();
+    setProfileDropdownOpen(false);
+    closeNavigation();
+    syncAuthState();
+    toast.success("Logged out successfully!");
+    router.push("/");
+    router.refresh();
+  };
+
+  const isActivePath = (path: string) => {
+    if (path === "/") {
+      return pathname === "/";
+    }
+
+    return pathname === path || pathname.startsWith(`${path}/`);
   };
 
   useEffect(() => {
     setIsMounted(true);
+    syncAuthState();
     window.addEventListener("scroll", handleStickyMenu);
-    return () => window.removeEventListener("scroll", handleStickyMenu);
+    window.addEventListener("focus", syncAuthState);
+    window.addEventListener("storage", syncAuthState);
+
+    return () => {
+      window.removeEventListener("scroll", handleStickyMenu);
+      window.removeEventListener("focus", syncAuthState);
+      window.removeEventListener("storage", syncAuthState);
+    };
   }, []);
 
   useEffect(() => {
-    if (!isMounted) return;
-
-    const token = localStorage.getItem("zoberry_token");
-    const userStr = localStorage.getItem("zoberry_user");
-    if (token) {
-      setIsLoggedIn(true);
-      if (userStr) {
-        try {
-          const userData = JSON.parse(userStr);
-          const name = userData.data?.name || userData.name || "My Account";
-          setUserName(name);
-        } catch (e) {
-          setUserName("My Account");
-        }
-      } else {
-        setUserName("My Account");
-      }
-    } else {
-      setIsLoggedIn(false);
-      setUserName("");
-    }
-  }, [isMounted]);
+    closeNavigation();
+    setProfileDropdownOpen(false);
+    syncAuthState();
+  }, [pathname]);
 
   useEffect(() => {
-    function handleClickOutside(event: MouseEvent) {
+    document.body.style.overflow = navigationOpen ? "hidden" : "";
+
+    return () => {
+      document.body.style.overflow = "";
+    };
+  }, [navigationOpen]);
+
+  useEffect(() => {
+    const handleClickOutside = (event: MouseEvent) => {
       if (profileRef.current && !profileRef.current.contains(event.target as Node)) {
         setProfileDropdownOpen(false);
       }
-    }
+    };
+
     if (profileDropdownOpen) {
       document.addEventListener("mousedown", handleClickOutside);
     }
+
     return () => {
       document.removeEventListener("mousedown", handleClickOutside);
     };
   }, [profileDropdownOpen]);
 
-  const [options, setOptions] = useState<{ label: string; value: string }[]>([
-    { label: "All Categories", value: "0" }
-  ]);
 
-  useEffect(() => {
-    categoryService.getAll(true).then((res) => {
-      if (res.data) {
-        const catOptions = res.data.map((cat: any) => ({
-          label: cat.name,
-          value: cat._id,
-        }));
-        setOptions([{ label: "All Categories", value: "0" }, ...catOptions]);
-      }
-    }).catch((err) => {
-      console.error("Failed to load header categories:", err);
-    });
-  }, []);
 
   return (
-    <header
-      className={`fixed left-0 top-0 w-full z-9999 bg-blue-dark text-white transition-all ease-in-out duration-300 ${
-        stickyMenu ? "shadow-md" : ""
-      }`}
-    >
-      <div className="max-w-[1170px] mx-auto px-4 sm:px-7.5 xl:px-0">
+    <>
+      <header
+        className={`fixed left-0 top-0 z-9999 w-full bg-blue-dark text-white transition-all duration-300 ${
+          stickyMenu ? "shadow-xl shadow-slate-950/10" : ""
+        }`}
+      >
+        {/* Top Utility Row (Desktop Only) */}
         <div
-          className={`flex flex-col lg:flex-row gap-5 items-end lg:items-center xl:justify-between ease-out duration-200 ${
-            stickyMenu ? "py-3" : "py-4.5"
+          className={`hidden lg:block border-b border-white/10 transition-all duration-300 ease-in-out ${
+            stickyMenu ? "h-0 opacity-0 overflow-hidden" : "h-9 opacity-100"
           }`}
         >
-          <div className="xl:w-auto flex-col bg-blue-dark sm:flex-row w-full flex sm:justify-between sm:items-center gap-5 sm:gap-10">
-            <Link className="flex-shrink-0 flex items-center" href="/">
-              <Image
-                src="/images/zb_header.png"
-                alt="Zoberry Logo"
-                width={160}
-                height={40}
-                className="object-contain max-h-[45px] w-auto"
-                priority
-              />
-            </Link>
-
-            <div className="max-w-[475px] w-full">
-              <form onSubmit={(e) => e.preventDefault()}>
-                <div className="flex items-center">
-                  <CustomSelect options={options} />
-
-                  <div className="relative max-w-[333px] sm:min-w-[333px] w-full">
-                    <span className="absolute left-0 top-1/2 -translate-y-1/2 inline-block w-px h-5.5 bg-gray-4"></span>
-                    <input
-                      onChange={(e) => setSearchQuery(e.target.value)}
-                      value={searchQuery}
-                      type="search"
-                      name="search"
-                      id="search"
-                      placeholder="I am shopping for..."
-                      autoComplete="off"
-                      className="custom-search w-full rounded-r-[5px] bg-gray-1 !border-l-0 border border-gray-3 py-2.5 pl-4 pr-10 outline-none ease-in duration-200 text-dark"
-                    />
-
-                    <button
-                      type="submit"
-                      id="search-btn"
-                      aria-label="Search"
-                      className="flex items-center justify-center absolute right-3 top-1/2 -translate-y-1/2 ease-in duration-200 text-dark hover:text-blue"
-                    >
-                      <svg
-                        className="fill-current"
-                        width="18"
-                        height="18"
-                        viewBox="0 0 18 18"
-                        fill="none"
-                        xmlns="http://www.w3.org/2000/svg"
-                      >
-                        <path
-                          d="M17.2687 15.6656L12.6281 11.8969C14.5406 9.28123 14.3437 5.5406 11.9531 3.1781C10.6875 1.91248 8.99995 1.20935 7.19995 1.20935C5.39995 1.20935 3.71245 1.91248 2.44683 3.1781C-0.168799 5.79373 -0.168799 10.0687 2.44683 12.6844C3.71245 13.95 5.39995 14.6531 7.19995 14.6531C8.91558 14.6531 10.5187 14.0062 11.7843 12.8531L16.4812 16.65C16.5937 16.7344 16.7343 16.7906 16.875 16.7906C17.0718 16.7906 17.2406 16.7062 17.3531 16.5656C17.5781 16.2844 17.55 15.8906 17.2687 15.6656ZM7.19995 13.3875C5.73745 13.3875 4.38745 12.825 3.34683 11.7844C1.20933 9.64685 1.20933 6.18748 3.34683 4.0781C4.38745 3.03748 5.73745 2.47498 7.19995 2.47498C8.66245 2.47498 10.0125 3.03748 11.0531 4.0781C13.1906 6.2156 13.1906 9.67498 11.0531 11.7844C10.0406 12.825 8.66245 13.3875 7.19995 13.3875Z"
-                          fill="currentColor"
-                        />
-                      </svg>
-                    </button>
-                  </div>
-                </div>
-              </form>
-            </div>
-          </div>
-
-          <div className="flex w-full lg:w-auto items-center gap-7.5">
-            <div className="hidden xl:flex items-center gap-3.5">
-              <Phone size={24} weight="light" />
-
-              <div>
-                <span className="block text-2xs text-white/70 uppercase">
-                  24/7 SUPPORT
-                </span>
-                <a href="tel:9638601192" className="block font-medium text-custom-sm text-white hover:text-blue-light-3">
-                  9638601192
-                </a>
-                <a href="mailto:work.heetdhameliya59@gmail.com" className="block text-2xs text-white/70 hover:text-blue-light-3 lowercase">
-                  work.heetdhameliya59@gmail.com
-                </a>
-              </div>
-            </div>
-
-            <span className="hidden xl:block w-px h-7.5 bg-white/20"></span>
-
-            <div className="flex w-full lg:w-auto justify-between items-center gap-5">
-              <div className="flex items-center gap-5">
-                {isMounted && isLoggedIn ? (
-                  <div className="relative" ref={profileRef}>
-                    <button
-                      onClick={() => setProfileDropdownOpen(!profileDropdownOpen)}
-                      className="flex items-center gap-2.5 focus:outline-none"
-                    >
-                      <div className="flex items-center justify-center w-10 h-10 rounded-full bg-blue text-white font-semibold text-lg border border-white/20 shadow-sm hover:bg-blue-dark duration-150">
-                        {userName.charAt(0).toUpperCase()}
-                      </div>
-                      <div className="hidden sm:block text-left">
-                        <span className="block text-2xs text-white/70 uppercase">
-                          Welcome
-                        </span>
-                        <p className="font-medium text-custom-sm text-white truncate max-w-[80px]">
-                          {userName.split(" ")[0]}
-                        </p>
-                      </div>
-                    </button>
-                    {profileDropdownOpen && (
-                      <div className="absolute right-0 mt-3 w-48 bg-white border border-gray-3 rounded-lg shadow-lg py-2 z-999">
-                        <Link
-                          href="/my-account"
-                          onClick={() => setProfileDropdownOpen(false)}
-                          className="block px-4 py-2 text-custom-sm text-dark hover:bg-gray-1 hover:text-blue transition-all"
-                        >
-                          My Account
-                        </Link>
-                        <button
-                          onClick={() => {
-                            setProfileDropdownOpen(false);
-                            authService.logout();
-                            toast.success("Logged out successfully!");
-                            window.location.reload();
-                          }}
-                          className="block w-full text-left px-4 py-2 text-custom-sm text-red hover:bg-gray-1 transition-all"
-                        >
-                          Logout
-                        </button>
-                      </div>
-                    )}
-                  </div>
-                ) : (
-                  <button
-                    onClick={() => openAuthModal("signin")}
-                    className="flex items-center gap-2.5 text-left focus:outline-none"
-                  >
-                    <User size={24} weight="light" />
-                    <div>
-                      <span className="block text-2xs text-white/70 uppercase">
-                        account
-                      </span>
-                      <p className="font-medium text-custom-sm text-white hover:text-blue-light-3 transition-colors">
-                        Sign In
-                      </p>
-                    </div>
-                  </button>
-                )}
-
-                <button
-                  type="button"
-                  onClick={handleOpenCartModal}
-                  className="flex items-center gap-2.5"
-                >
-                  <span className="inline-block relative">
-                    <ShoppingCart size={24} weight="light" />
-                    <span className="flex items-center justify-center font-medium text-2xs absolute -right-2 -top-2.5 bg-blue w-4.5 h-4.5 rounded-full text-white border border-brand-navy">
-                      {isMounted ? cartItems.length : 0}
-                    </span>
-                  </span>
-
-                  <div>
-                    <span className="block text-2xs text-white/70 uppercase">
-                      cart
-                    </span>
-                    <p className="font-medium text-custom-sm text-white">
-                      ₹{isMounted ? totalPrice : 0}
-                    </p>
-                  </div>
-                </button>
-              </div>
-
-              {/* Mobile Menu Toggle */}
-              <button
-                type="button"
-                id="Toggle"
-                aria-label="Toggler"
-                className="xl:hidden block"
-                onClick={() => setNavigationOpen(!navigationOpen)}
+          <div className="mx-auto max-w-[1170px] h-full px-4 sm:px-7.5 xl:px-0 flex items-center justify-between">
+            {/* Support Info */}
+            <div className="flex items-center gap-2 text-white/70 hover:text-white transition-colors duration-150">
+              <Phone size={14} weight="regular" className="text-white/50" />
+              <span className="text-[10px] font-medium tracking-wider uppercase text-white/40">Support:</span>
+              <a
+                href="mailto:support.zoberryenterprise@gmail.com"
+                className="text-[11px] font-medium text-white/90 hover:text-white transition-colors"
               >
-                <List size={24} weight="bold" />
-              </button>
+                support.zoberryenterprise@gmail.com
+              </a>
+            </div>
+
+            {/* Quick Links */}
+            <div className="flex items-center gap-6">
+              <Link
+                href="/checkout"
+                className="text-[10px] font-medium tracking-wider uppercase text-white/60 hover:text-white transition-colors duration-150"
+              >
+                Checkout
+              </Link>
+              <Link
+                href="/contact"
+                className="text-[10px] font-medium tracking-wider uppercase text-white/60 hover:text-white transition-colors duration-150"
+              >
+                Contact
+              </Link>
             </div>
           </div>
         </div>
-      </div>
 
-      <div className="border-t border-white/10">
-        <div className="max-w-[1170px] mx-auto px-4 sm:px-7.5 xl:px-0">
-          <div className="flex items-center justify-between">
-            <div
-              className={`w-[288px] absolute right-4 top-full xl:static xl:w-auto h-0 xl:h-auto invisible xl:visible xl:flex items-center justify-between ${
-                navigationOpen &&
-                `!visible bg-white shadow-lg border border-gray-3 !h-auto max-h-[400px] overflow-y-scroll rounded-md p-5`
-              }`}
-            >
-              <nav>
-                <ul className="flex xl:items-center flex-col xl:flex-row gap-5 xl:gap-6">
-                  {menuData.map((menuItem, i) =>
-                    menuItem.submenu ? (
-                      <Dropdown
-                        key={i}
-                        menuItem={menuItem}
-                        stickyMenu={stickyMenu}
+        {/* Main Navigation Row */}
+        <div className="border-b border-white/10">
+          <div className="mx-auto max-w-[1170px] px-4 sm:px-7.5 xl:px-0">
+            <div className={`transition-all duration-300 ${stickyMenu ? "py-2 lg:py-2.5" : "py-3 lg:py-3.5"}`}>
+              <div className="flex items-center justify-between gap-3 lg:gap-5">
+                {/* Logo */}
+                <Link className="flex shrink-0 items-center" href="/" aria-label="Go to homepage">
+                  <Image
+                    src="/images/zb_header.png"
+                    alt="Zoberry Logo"
+                    width={140}
+                    height={35}
+                    className="h-auto w-[118px] object-contain sm:w-[130px] lg:w-[140px]"
+                    priority
+                  />
+                </Link>
+
+                {/* Primary Navigation Links (Desktop: xl and above) */}
+                <nav className="hidden xl:block" aria-label="Primary navigation">
+                  <ul className="flex items-center gap-6 xl:gap-8">
+                    {menuData.map((menuItem) => {
+                      const active = isActivePath(menuItem.path || "/");
+                      return (
+                        <li key={menuItem.id}>
+                          <Link
+                            href={menuItem.path || "/"}
+                            className={`header-nav-link ${
+                              active ? "header-nav-link-active" : ""
+                            }`}
+                          >
+                            {menuItem.title}
+                          </Link>
+                        </li>
+                      );
+                    })}
+                  </ul>
+                </nav>
+
+                {/* Search Bar (Desktop: lg and above) */}
+                <div className="hidden min-w-0 flex-1 lg:block lg:max-w-[320px] xl:max-w-[400px]">
+                  <form onSubmit={handleSearchSubmit}>
+                    <div className="relative w-full">
+                      <input
+                        onChange={(event) => setSearchQuery(event.target.value)}
+                        value={searchQuery}
+                        type="search"
+                        name="search"
+                        id="desktop-search"
+                        placeholder="Search products, brands or categories..."
+                        autoComplete="off"
+                        className="peer w-full rounded-full border border-gray-3 bg-white py-1.5 pl-5 pr-11 text-xs text-dark placeholder-gray-4 outline-none duration-150 focus:border-blue focus:ring-2 focus:ring-blue/15 shadow-sm"
                       />
-                    ) : (
-                      <li
-                        key={i}
-                        className="group relative before:w-0 before:h-[3px] before:bg-blue before:absolute before:left-0 before:top-0 before:rounded-b-[3px] before:ease-out before:duration-200 hover:before:w-full "
+
+                      <button
+                        type="submit"
+                        aria-label="Search products"
+                        className="absolute right-4 top-1/2 flex -translate-y-1/2 items-center justify-center text-gray-4 transition-colors hover:text-blue"
                       >
-                        <Link
-                          href={menuItem.path}
-                          className={`hover:text-blue xl:hover:text-blue-light-3 text-custom-sm font-medium text-dark xl:text-white flex ${
-                            stickyMenu ? "xl:py-2.5" : "xl:py-3.5"
+                        <MagnifyingGlass size={16} weight="bold" />
+                      </button>
+                    </div>
+                  </form>
+                </div>
+
+                {/* Right Action Icons */}
+                <div className="flex items-center gap-3.5 sm:gap-4 lg:gap-5">
+                  {/* Account Section */}
+                  {isMounted && isLoggedIn ? (
+                    <div className="relative hidden sm:block" ref={profileRef}>
+                      <button
+                        onClick={() => setProfileDropdownOpen((current) => !current)}
+                        className="flex items-center gap-2 py-1 text-left transition-colors text-white/80 hover:text-white"
+                        aria-label="Open account menu"
+                      >
+                        {userImage ? (
+                          <img
+                            src={userImage}
+                            alt={userName}
+                            width={24}
+                            height={24}
+                            className="h-6 w-6 rounded-full border border-white/10 object-cover"
+                          />
+                        ) : (
+                          <div className="flex h-6 w-6 items-center justify-center rounded-full bg-white/10 text-[10px] font-semibold text-white">
+                            {(userName || "U").charAt(0).toUpperCase()}
+                          </div>
+                        )}
+                        <span className="truncate text-xs font-medium text-white/95 max-w-[80px]">
+                          Hi, {userName.split(" ")[0]}
+                        </span>
+                        <svg
+                          className={`h-3 w-3 text-white/50 transition-transform duration-200 ${
+                            profileDropdownOpen ? "rotate-180 text-white" : ""
                           }`}
+                          fill="none"
+                          viewBox="0 0 24 24"
+                          stroke="currentColor"
+                          strokeWidth={2.5}
                         >
-                          {menuItem.title}
-                        </Link>
-                      </li>
-                    )
+                          <path strokeLinecap="round" strokeLinejoin="round" d="M19 9l-7 7-7-7" />
+                        </svg>
+                      </button>
+
+                      {profileDropdownOpen && (
+                        <div className="absolute right-0 mt-3 w-48 rounded-xl border border-gray-3 bg-white py-1.5 text-dark shadow-2xl z-999">
+                          <Link
+                            href="/my-account"
+                            onClick={() => setProfileDropdownOpen(false)}
+                            className="block px-4 py-2.5 text-sm transition-colors hover:bg-gray-1 hover:text-blue font-medium"
+                          >
+                            Manage account
+                          </Link>
+                          <Link
+                            href="/wishlist"
+                            onClick={() => setProfileDropdownOpen(false)}
+                            className="block px-4 py-2.5 text-sm transition-colors hover:bg-gray-1 hover:text-blue font-medium"
+                          >
+                            Wishlist
+                          </Link>
+                          <div className="my-1 border-t border-gray-2" />
+                          <button
+                            onClick={handleLogout}
+                            className="block w-full px-4 py-2.5 text-left text-sm text-red transition-colors hover:bg-red/5 font-medium"
+                          >
+                            Logout
+                          </button>
+                        </div>
+                      )}
+                    </div>
+                  ) : (
+                    <button
+                      onClick={() => openAuthModal("signin")}
+                      className="hidden items-center gap-1.5 py-1.5 px-3 rounded-full hover:bg-white/10 transition-colors text-white/80 hover:text-white sm:flex text-xs font-medium"
+                    >
+                      <User size={16} weight="regular" className="text-white/60" />
+                      <span>Sign In</span>
+                    </button>
                   )}
-                </ul>
-              </nav>
-            </div>
 
-            <div className="hidden xl:block">
-              <ul className="flex items-center gap-5.5">
-                <li className={`flex ${stickyMenu ? "py-2.5" : "py-3.5"}`}>
-                  <Link
-                    href="/history"
-                    className="flex items-center gap-1.5 font-medium text-custom-sm text-white hover:text-blue-light-3"
-                  >
-                    <Clock size={16} weight="bold" />
-                    Recently Viewed
-                  </Link>
-                </li>
-
-                <li className={`flex ${stickyMenu ? "py-2.5" : "py-3.5"}`}>
+                  {/* Wishlist Link */}
                   <Link
                     href="/wishlist"
-                    className="flex items-center gap-1.5 font-medium text-custom-sm text-white hover:text-blue-light-3"
+                    className="hidden h-9 w-9 items-center justify-center rounded-full hover:bg-white/10 text-white/80 hover:text-white transition-colors md:flex"
+                    aria-label="Open wishlist"
                   >
-                    <Heart size={16} weight="bold" />
-                    Wishlist
+                    <Heart size={20} weight="regular" />
                   </Link>
-                </li>
-              </ul>
+
+                  {/* Cart Action (Primary Pill) */}
+                  <button
+                    type="button"
+                    onClick={openCartSidebar}
+                    className="flex items-center gap-2 py-1.5 px-3.5 rounded-full bg-white/10 hover:bg-white/20 text-white transition-all duration-150 border border-white/5"
+                    aria-label="Open cart"
+                  >
+                    <span className="relative inline-flex">
+                      <ShoppingCart size={18} weight="bold" />
+                      <span className="absolute -right-1.5 -top-1.5 flex h-4 min-w-[16px] items-center justify-center rounded-full bg-red px-1 text-[8.5px] font-bold text-white shadow-sm">
+                        {isMounted ? cartItems.length : 0}
+                      </span>
+                    </span>
+                    <span className="hidden text-xs font-semibold sm:block">₹{isMounted ? totalPrice : 0}</span>
+                  </button>
+
+                  {/* Mobile Hamburger Menu Toggle */}
+                  <button
+                    type="button"
+                    aria-label="Open navigation menu"
+                    aria-expanded={navigationOpen}
+                    className="flex h-9 w-9 items-center justify-center rounded-full hover:bg-white/10 text-white/80 hover:text-white transition-colors xl:hidden"
+                    onClick={() => setNavigationOpen(true)}
+                  >
+                    <List size={22} weight="bold" />
+                  </button>
+                </div>
+              </div>
+
+              {/* Mobile Search Row */}
+              <div className="mt-2.5 lg:hidden">
+                <form onSubmit={handleSearchSubmit}>
+                  <div className="relative">
+                    <input
+                      onChange={(event) => setSearchQuery(event.target.value)}
+                      value={searchQuery}
+                      type="search"
+                      name="mobile-search"
+                      placeholder="Search products, brands or categories..."
+                      autoComplete="off"
+                      className="w-full rounded-full border border-gray-3 bg-white px-4 py-2 pr-11 text-sm text-dark outline-none duration-150 focus:border-blue focus:ring-2 focus:ring-blue/15 shadow-sm placeholder-gray-4"
+                    />
+                    <button
+                      type="submit"
+                      aria-label="Search products"
+                      className="absolute right-3.5 top-1/2 flex -translate-y-1/2 items-center justify-center text-gray-4 transition-colors hover:text-blue"
+                    >
+                      <MagnifyingGlass size={18} weight="bold" />
+                    </button>
+                  </div>
+                </form>
+              </div>
             </div>
           </div>
         </div>
+      </header>
+
+      {/* Navigation drawer (mobile menu) */}
+      <div
+        className={`fixed inset-0 z-[10000] xl:hidden ${
+          navigationOpen ? "pointer-events-auto" : "pointer-events-none"
+        }`}
+        aria-hidden={!navigationOpen}
+      >
+        <button
+          type="button"
+          aria-label="Close navigation overlay"
+          onClick={closeNavigation}
+          className={`absolute inset-0 bg-slate-950/45 transition-opacity duration-300 ${
+            navigationOpen ? "opacity-100" : "opacity-0"
+          }`}
+        />
+
+        <aside
+          className={`absolute right-0 top-0 flex h-full w-[360px] max-w-[88vw] flex-col bg-white text-dark shadow-2xl transition-transform duration-300 ${
+            navigationOpen ? "translate-x-0" : "translate-x-full"
+          }`}
+        >
+          <div className="flex items-center justify-between border-b border-gray-3 px-5 py-4">
+            <div>
+              <p className="text-sm font-semibold text-dark">Navigation</p>
+              <p className="text-xs text-dark-4">Zoberry Enterprise Menu</p>
+            </div>
+            <button
+              type="button"
+              onClick={closeNavigation}
+              className="flex h-10 w-10 items-center justify-center rounded-full border border-gray-3 text-dark transition-colors hover:border-blue hover:text-blue"
+              aria-label="Close navigation"
+            >
+              <X size={20} weight="bold" />
+            </button>
+          </div>
+
+          <div className="flex-1 overflow-y-auto px-5 py-5">
+            <div className="rounded-xl bg-gray-1 p-4">
+              {isLoggedIn ? (
+                <div className="flex items-center gap-3">
+                  {userImage ? (
+                    <img
+                      src={userImage}
+                      alt={userName}
+                      width={44}
+                      height={44}
+                      className="h-11 w-11 rounded-full object-cover"
+                    />
+                  ) : (
+                    <div className="flex h-11 w-11 items-center justify-center rounded-full bg-blue text-sm font-semibold text-white">
+                      {(userName || "U").charAt(0).toUpperCase()}
+                    </div>
+                  )}
+                  <div className="min-w-0">
+                    <p className="text-xs uppercase tracking-[0.24em] text-dark-4">Signed in</p>
+                    <p className="truncate text-base font-semibold text-dark">{userName}</p>
+                  </div>
+                </div>
+              ) : (
+                <div className="flex items-start justify-between gap-3">
+                  <div>
+                    <p className="text-base font-semibold text-dark">Welcome to Zoberry</p>
+                    <p className="mt-1 text-sm text-dark-4">Sign in to track orders and save your wishlist.</p>
+                  </div>
+                  <button
+                    type="button"
+                    onClick={() => {
+                      closeNavigation();
+                      openAuthModal("signin");
+                    }}
+                    className="inline-flex shrink-0 items-center gap-2 rounded-xl bg-blue px-4 py-2 text-sm font-medium text-white transition-colors hover:bg-blue-dark"
+                  >
+                    <SignIn size={16} weight="bold" />
+                    Sign In
+                  </button>
+                </div>
+              )}
+            </div>
+
+            <nav className="mt-6" aria-label="Mobile primary navigation">
+              <ul className="space-y-2">
+                {menuData.map((menuItem) => (
+                  <li key={menuItem.id}>
+                    <Link
+                      href={menuItem.path || "/"}
+                      onClick={closeNavigation}
+                      className={`flex items-center justify-between rounded-xl border px-4 py-3.5 text-base font-medium transition-colors ${
+                        isActivePath(menuItem.path || "/")
+                          ? "border-blue bg-blue/5 text-blue"
+                          : "border-gray-3 text-dark hover:border-blue/40 hover:bg-gray-1"
+                      }`}
+                    >
+                      <span>{menuItem.title}</span>
+                      <svg
+                        className={`h-4 w-4 transition-colors ${
+                          isActivePath(menuItem.path || "/") ? "text-blue" : "text-gray-4"
+                        }`}
+                        fill="none"
+                        viewBox="0 0 24 24"
+                        stroke="currentColor"
+                      >
+                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 5l7 7-7-7" />
+                      </svg>
+                    </Link>
+                  </li>
+                ))}
+              </ul>
+            </nav>
+
+            <div className="mt-6">
+              <p className="mb-3 text-xs font-semibold uppercase tracking-[0.24em] text-dark-4">
+                Quick Actions
+              </p>
+              <div className="grid grid-cols-2 gap-3">
+                {quickLinks.map((link) => (
+                  <Link
+                    key={link.path}
+                    href={link.path}
+                    onClick={closeNavigation}
+                    className={`rounded-xl border px-4 py-4 text-sm font-medium transition-colors ${
+                      isActivePath(link.path)
+                        ? "border-blue bg-blue/5 text-blue"
+                        : "border-gray-3 text-dark hover:border-blue/40 hover:bg-gray-1"
+                    }`}
+                  >
+                    {link.label}
+                  </Link>
+                ))}
+              </div>
+            </div>
+
+            <div className="mt-6 rounded-xl border border-gray-3 p-4">
+              <p className="text-xs font-semibold uppercase tracking-[0.24em] text-dark-4">Need help?</p>
+              <a
+                href="mailto:support.zoberryenterprise@gmail.com"
+                className="mt-2 block text-sm font-medium text-dark transition-colors hover:text-blue"
+              >
+                support.zoberryenterprise@gmail.com
+              </a>
+            </div>
+          </div>
+
+          <div className="border-t border-gray-3 px-5 py-4">
+            {isLoggedIn ? (
+              <button
+                type="button"
+                onClick={handleLogout}
+                className="flex w-full items-center justify-center rounded-full border border-red/30 px-4 py-3 text-sm font-semibold text-red transition-colors hover:bg-red/5"
+              >
+                Logout
+              </button>
+            ) : (
+              <Link
+                href="/shop-with-sidebar"
+                onClick={closeNavigation}
+                className="flex w-full items-center justify-center rounded-full bg-blue px-4 py-3 text-sm font-semibold text-white"
+              >
+                Start Shopping
+              </Link>
+            )}
+          </div>
+        </aside>
       </div>
-    </header>
+    </>
   );
 };
 

@@ -18,6 +18,17 @@ function getImageUrl(img: string | { url: string; alt?: string; isFeatured?: boo
   return typeof img === "string" ? img : img.url || "";
 }
 
+function getBadge(item: Product): { label: string; color: string } | null {
+  const discount = item.price && item.discountedPrice
+    ? Math.round(((item.price - item.discountedPrice) / item.price) * 100)
+    : 0;
+
+  if (discount >= 50) return { label: `${discount}% OFF`, color: "bg-red text-white" };
+  if (item.ratings?.count && item.ratings.count > 10) return { label: "Top Rated", color: "bg-yellow text-dark" };
+  if (discount >= 20) return { label: "Trending", color: "bg-blue text-white" };
+  return null;
+}
+
 const SingleItem = ({ item }: { item: Product }) => {
   const { openQuickView } = useUI();
   const dispatch = useDispatch<AppDispatch>();
@@ -52,10 +63,19 @@ const SingleItem = ({ item }: { item: Product }) => {
     }
   };
 
+  const badge = getBadge(item);
+
   return (
     <div className="group">
-      <div className="relative overflow-hidden rounded-lg bg-[#F6F7FB] min-h-[403px]">
-        <div className="text-center px-4 py-7.5">
+      <div className="relative overflow-hidden rounded-lg bg-[#F6F7FB] aspect-square">
+        {/* Badge overlay */}
+        {badge && (
+          <span className={`absolute top-2.5 left-2.5 z-10 text-xs font-bold px-2.5 py-1 rounded-md shadow-sm ${badge.color}`}>
+            {badge.label}
+          </span>
+        )}
+
+        <div className="text-center px-4 pt-7.5 pb-2">
           <div className="flex items-center justify-center gap-2.5 mb-2">
             <div className="flex items-center gap-1">
               {[...Array(5)].map((_, i) => (
@@ -63,10 +83,10 @@ const SingleItem = ({ item }: { item: Product }) => {
               ))}
             </div>
 
-            <p className="text-custom-sm">({item.ratings?.count || 0})</p>
+            <p className="text-custom-sm text-gray-400">({item.ratings?.count || 0})</p>
           </div>
 
-          <h3 className="font-medium text-dark ease-out duration-200 hover:text-blue mb-1.5">
+          <h3 className="font-medium text-dark text-sm leading-snug ease-out duration-200 hover:text-blue mb-1.5 line-clamp-2">
             <Link
               href={`/shop-details?id=${item._id}`}
               onClick={() => dispatch(updateproductDetails({ ...item }))}
@@ -77,12 +97,22 @@ const SingleItem = ({ item }: { item: Product }) => {
 
           <span className="flex items-center justify-center gap-2 font-medium text-lg">
             <span className="text-dark">₹{item.discountedPrice}</span>
-            <span className="text-dark-4 line-through">₹{item.price}</span>
+            {item.price !== item.discountedPrice && (
+              <span className="text-dark-4 line-through text-sm">₹{item.price}</span>
+            )}
           </span>
         </div>
 
-        <div className="flex justify-center items-center">
-          <Image src={getImageUrl(item.images?.[0])} alt="" width={280} height={280} />
+        <div className="flex justify-center items-center px-4 pb-4">
+          <div className="relative w-full aspect-square max-w-[220px]">
+            <Image
+              src={getImageUrl(item.images?.[0])}
+              alt=""
+              fill
+              sizes="220px"
+              className="object-contain transition-transform duration-300 ease-out group-hover:scale-105"
+            />
+          </div>
         </div>
 
         <div className="absolute right-0 bottom-0 translate-x-full u-w-full flex flex-col gap-2 p-5.5 ease-linear duration-300 group-hover:translate-x-0">

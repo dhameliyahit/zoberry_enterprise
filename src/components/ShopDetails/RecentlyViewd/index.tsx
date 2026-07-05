@@ -56,7 +56,7 @@ const RecentlyViewdItems = ({ currentProductId }: RecentlyViewdItemsProps) => {
   if (products.length === 0) return null;
 
   return (
-    <section className="overflow-hidden pt-17.5">
+    <section className="overflow-hidden pt-6">
       <div className="max-w-[1170px] w-full mx-auto px-4 sm:px-8 xl:px-0 pb-15 border-b border-gray-3">
         <div className="swiper categories-carousel common-carousel">
           {/* <!-- section title --> */}
@@ -117,8 +117,18 @@ const RecentlyViewdItems = ({ currentProductId }: RecentlyViewdItemsProps) => {
 
           <Swiper
             ref={sliderRef}
-            slidesPerView={4}
+            slidesPerView={1}
             spaceBetween={20}
+            breakpoints={{
+              480: {
+                slidesPerView: 2,
+                spaceBetween: 20,
+              },
+              640: {
+                slidesPerView: 4,
+                spaceBetween: 20,
+              },
+            }}
             className="justify-between"
           >
             {products.map((item, key) => (

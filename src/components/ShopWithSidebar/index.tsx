@@ -3,9 +3,6 @@ import React, { useState, useEffect } from "react";
 import Breadcrumb from "../Common/Breadcrumb";
 import CustomSelect from "./CustomSelect";
 import CategoryDropdown from "./CategoryDropdown";
-import GenderDropdown from "./GenderDropdown";
-import SizeDropdown from "./SizeDropdown";
-import ColorsDropdwon from "./ColorsDropdwon";
 import PriceDropdown from "./PriceDropdown";
 import { productService } from "@/services/product.service";
 import { categoryService } from "@/services/category.service";
@@ -19,10 +16,14 @@ const ShopWithSidebar = () => {
   const [productSidebar, setProductSidebar] = useState(false);
   const [stickyMenu, setStickyMenu] = useState(false);
   const [categories, setCategories] = useState<{ name: string; products: number; isRefined: boolean }[]>([]);
+  const [rawCategories, setRawCategories] = useState<any[]>([]);
+  const [selectedCategories, setSelectedCategories] = useState<string[]>([]);
+  const [priceRange, setPriceRange] = useState<[number, number]>([0, 10000]);
 
   useEffect(() => {
     categoryService.getAll(true).then((catRes) => {
       const cats = catRes.data || [];
+      setRawCategories(cats);
       productService.getAll({ limit: 50 }).then((prodRes) => {
         const prods = prodRes.data || [];
         setProducts(prods);
@@ -43,6 +44,14 @@ const ShopWithSidebar = () => {
     }).catch(() => {});
   }, []);
 
+  const handleToggleCategory = (categoryName: string) => {
+    setSelectedCategories((prev) =>
+      prev.includes(categoryName)
+        ? prev.filter((c) => c !== categoryName)
+        : [...prev, categoryName]
+    );
+  };
+
   const handleStickyMenu = () => {
     if (window.scrollY >= 80) {
       setStickyMenu(true);
@@ -57,20 +66,26 @@ const ShopWithSidebar = () => {
     { label: "Old Products", value: "2" },
   ];
 
-  const genders = [
-    {
-      name: "Men",
-      products: 10,
-    },
-    {
-      name: "Women",
-      products: 23,
-    },
-    {
-      name: "Unisex",
-      products: 8,
-    },
-  ];
+  const filteredProducts = products.filter((product) => {
+    // 1. Category Filter
+    if (selectedCategories.length > 0) {
+      const catId = typeof product.category === "object" ? product.category?._id : product.category;
+      const matchedCategory = rawCategories.find((cat) => cat._id === catId);
+      const catName = matchedCategory ? matchedCategory.name : (typeof product.category === "object" ? product.category?.name : "");
+      
+      if (!catName || !selectedCategories.includes(catName)) {
+        return false;
+      }
+    }
+
+    // 2. Price Filter
+    const price = product.price || 0;
+    if (price < priceRange[0] || price > priceRange[1]) {
+      return false;
+    }
+
+    return true;
+  });
 
   useEffect(() => {
     window.addEventListener("scroll", handleStickyMenu);
@@ -145,25 +160,33 @@ const ShopWithSidebar = () => {
                   {/* <!-- filter box --> */}
                   <div className="bg-white shadow-1 rounded-lg py-4 px-5">
                     <div className="flex items-center justify-between">
-                      <p>Filters:</p>
-                      <button className="text-blue">Clean All</button>
+                      <p className="font-semibold text-dark">Filters:</p>
+                      <button
+                        onClick={(e) => {
+                          e.preventDefault();
+                          setSelectedCategories([]);
+                          setPriceRange([0, 10000]);
+                        }}
+                        className="text-blue hover:text-blue-dark active:scale-95 transition-transform text-sm font-medium"
+                      >
+                        Clean All
+                      </button>
                     </div>
                   </div>
 
                   {/* <!-- category box --> */}
-                  <CategoryDropdown categories={categories} />
-
-                  {/* <!-- gender box --> */}
-                  <GenderDropdown genders={genders} />
-
-                  {/* // <!-- size box --> */}
-                  <SizeDropdown />
-
-                  {/* // <!-- color box --> */}
-                  <ColorsDropdwon />
+                  <CategoryDropdown
+                    categories={categories}
+                    selectedCategories={selectedCategories}
+                    onToggleCategory={handleToggleCategory}
+                  />
 
                   {/* // <!-- price range box --> */}
-                  <PriceDropdown />
+                  <PriceDropdown
+                    minPrice={priceRange[0]}
+                    maxPrice={priceRange[1]}
+                    onPriceChange={(min, max) => setPriceRange([min, max])}
+                  />
                 </div>
               </form>
             </div>
@@ -178,7 +201,7 @@ const ShopWithSidebar = () => {
                     <CustomSelect options={options} />
 
                     <p>
-                      Showing <span className="text-dark">9 of 50</span>{" "}
+                      Showing <span className="text-dark">{filteredProducts.length} of {products.length}</span>{" "}
                       Products
                     </p>
                   </div>
@@ -272,7 +295,7 @@ const ShopWithSidebar = () => {
                     : "flex flex-col gap-7.5"
                 }`}
               >
-                {products.length > 0 ? products.map((item, key) =>
+                {filteredProducts.length > 0 ? filteredProducts.map((item, key) =>
                   productStyle === "grid" ? (
                     <SingleGridItem item={item} key={key} />
                   ) : (

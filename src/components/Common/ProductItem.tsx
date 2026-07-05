@@ -11,11 +11,22 @@ import { useDispatch } from "react-redux";
 import { AppDispatch, useAppSelector } from "@/redux/store";
 import Link from "next/link";
 import { useRouter } from "next/navigation";
-import { Eye, Heart, Star } from "@phosphor-icons/react";
+import { Eye, Heart, Star, ShoppingCart } from "@phosphor-icons/react";
 
 function getImageUrl(img: string | { url: string; alt?: string; isFeatured?: boolean } | undefined): string {
   if (!img) return "";
   return typeof img === "string" ? img : img.url || "";
+}
+
+function getBadge(item: Product): { label: string; color: string } | null {
+  const discount = item.price && item.discountedPrice
+    ? Math.round(((item.price - item.discountedPrice) / item.price) * 100)
+    : 0;
+
+  if (discount >= 50) return { label: `${discount}% OFF`, color: "bg-red text-white" };
+  if (item.ratings?.count && item.ratings.count > 10) return { label: "Top Rated", color: "bg-yellow text-dark" };
+  if (discount >= 20) return { label: "Trending", color: "bg-blue text-white" };
+  return null;
 }
 
 const ProductItem = ({ item }: { item: Product }) => {
@@ -61,10 +72,25 @@ const ProductItem = ({ item }: { item: Product }) => {
     router.push(`/shop-details?id=${item._id}`);
   };
 
+  const badge = getBadge(item);
+
   return (
     <div className="group cursor-pointer" onClick={handleCardClick}>
-      <div className="relative overflow-hidden flex items-center justify-center rounded-lg bg-[#F6F7FB] min-h-[270px] mb-4">
-        <Image src={getImageUrl(item.images?.[0])} alt="" width={250} height={250} />
+      <div className="relative overflow-hidden flex items-center justify-center rounded-lg bg-[#F6F7FB] aspect-square mb-4">
+        {/* Badge overlay */}
+        {badge && (
+          <span className={`absolute top-2.5 left-2.5 z-10 text-xs font-bold px-2.5 py-1 rounded-md shadow-sm ${badge.color}`}>
+            {badge.label}
+          </span>
+        )}
+
+        <Image
+          src={getImageUrl(item.images?.[0])}
+          alt=""
+          fill
+          sizes="(max-width: 640px) 100vw, (max-width: 1024px) 50vw, 25vw"
+          className="object-contain p-4 transition-transform duration-300 ease-out group-hover:scale-105"
+        />
 
         <div className="absolute left-0 bottom-0 translate-y-full w-full flex items-center justify-center gap-2.5 pb-5 ease-linear duration-200 group-hover:translate-y-0">
           <button
@@ -85,8 +111,9 @@ const ProductItem = ({ item }: { item: Product }) => {
               e.stopPropagation();
               handleAddToCart();
             }}
-            className="inline-flex font-medium text-custom-sm py-[7px] px-5 rounded-[5px] bg-blue text-white ease-out duration-200 hover:bg-blue-dark"
+            className="inline-flex items-center gap-1.5 font-medium text-custom-sm py-[7px] px-5 rounded-[5px] bg-blue text-white ease-out duration-200 hover:bg-blue-dark"
           >
+            <ShoppingCart size={14} weight="bold" />
             Add to cart
           </button>
 
@@ -111,11 +138,11 @@ const ProductItem = ({ item }: { item: Product }) => {
           ))}
         </div>
 
-        <p className="text-custom-sm">({item.ratings?.count || 0})</p>
+        <p className="text-custom-sm text-gray-400">({item.ratings?.count || 0})</p>
       </div>
 
       <h3
-        className="font-medium text-dark ease-out duration-200 hover:text-blue mb-1.5"
+        className="font-medium text-dark text-sm leading-snug ease-out duration-200 hover:text-blue mb-1.5 line-clamp-2"
         onClick={() => handleProductDetails()}
       >
         <Link href={`/shop-details?id=${item._id}`}> {item.title} </Link>
@@ -123,7 +150,9 @@ const ProductItem = ({ item }: { item: Product }) => {
 
       <span className="flex items-center gap-2 font-medium text-lg">
         <span className="text-dark">₹{item.discountedPrice}</span>
-        <span className="text-dark-4 line-through">₹{item.price}</span>
+        {item.price !== item.discountedPrice && (
+          <span className="text-dark-4 line-through text-sm">₹{item.price}</span>
+        )}
       </span>
     </div>
   );

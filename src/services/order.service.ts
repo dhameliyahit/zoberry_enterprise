@@ -1,15 +1,9 @@
-import { get, post, put, del } from "./api";
-import type { ApiResponse, PaginatedResponse, Order } from "@/types";
+import { getFromSiteApi, postToSiteApi, putToSiteApi } from "./site-api";
+import type { ApiResponse, Order } from "@/types";
 
 export const orderService = {
-  getAll: (filters?: { status?: string; paymentStatus?: string; page?: number; limit?: number }) =>
-    get<PaginatedResponse<Order>>("/orders", filters),
-
   getMyOrders: () =>
-    get<ApiResponse<Order[]>>("/orders/my-orders"),
-
-  getById: (id: string) =>
-    get<ApiResponse<Order>>(`/orders/${id}`),
+    getFromSiteApi<ApiResponse<Order[]>>("/orders/my-orders"),
 
   create: (data: {
     items: { product: string; title: string; image?: string; price: number; quantity: number }[];
@@ -21,11 +15,8 @@ export const orderService = {
     paymentMethod?: string;
     notes?: string;
   }) =>
-    post<ApiResponse<Order>>("/orders", data),
+    postToSiteApi<ApiResponse<Order>>("/orders", data),
 
-  update: (id: string, data: Partial<Order>) =>
-    put<ApiResponse<Order>>(`/orders/${id}`, data),
-
-  delete: (id: string) =>
-    del<ApiResponse<null>>(`/orders/${id}`),
+  cancel: (id: string) =>
+    putToSiteApi<ApiResponse<Order>>(`/orders/${id}/cancel`),
 };

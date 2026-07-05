@@ -1,4 +1,5 @@
-import { get, post, put, del } from "./api";
+import { post, put, del } from "./api";
+import { getFromSiteApi } from "./site-api";
 import type { ApiResponse, PaginatedResponse, Product } from "@/types";
 
 export interface ProductFilters {
@@ -30,36 +31,35 @@ const normalizeImages = (product: any): any => {
   return product;
 };
 
-const normalizeList = (data: any[]): any[] =>
-  (data || []).map(normalizeImages);
+const normalizeList = (data: any[]): any[] => (data || []).map(normalizeImages);
 
 export const productService = {
   getAll: async (filters?: ProductFilters) => {
-    const res = await get<PaginatedResponse<Product>>("/products", filters as Record<string, any>);
+    const res = await getFromSiteApi<PaginatedResponse<Product>>(
+      "/products",
+      filters as Record<string, any>
+    );
     if (res.data) res.data = normalizeList(res.data);
     return res;
   },
 
   getBySlug: async (slug: string) => {
-    const res = await get<ApiResponse<Product>>(`/products/slug/${slug}`);
+    const res = await getFromSiteApi<ApiResponse<Product>>(`/products/slug/${slug}`);
     if (res.data) res.data = normalizeImages(res.data);
     return res;
   },
 
   getById: async (id: string) => {
-    const res = await get<ApiResponse<Product>>(`/products/${id}`);
+    const res = await getFromSiteApi<ApiResponse<Product>>(`/products/${id}`);
     if (res.data) res.data = normalizeImages(res.data);
     return res;
   },
 
-  create: (data: FormData) =>
-    post<ApiResponse<Product>>("/products", data),
+  create: (data: FormData) => post<ApiResponse<Product>>("/products", data),
 
-  update: (id: string, data: FormData) =>
-    put<ApiResponse<Product>>(`/products/${id}`, data),
+  update: (id: string, data: FormData) => put<ApiResponse<Product>>(`/products/${id}`, data),
 
-  delete: (id: string) =>
-    del<ApiResponse<null>>(`/products/${id}`),
+  delete: (id: string) => del<ApiResponse<null>>(`/products/${id}`),
 
   addReview: (id: string, data: { name?: string; email?: string; rating: number; comment: string }) =>
     post<ApiResponse<Product>>(`/products/${id}/reviews`, data),

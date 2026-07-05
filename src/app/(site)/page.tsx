@@ -2,8 +2,9 @@ import Home from "@/components/Home";
 import { Metadata } from "next";
 
 export const metadata: Metadata = {
-  title: "Zoberry Enterprise | E-commerce",
-  description: "This is Home for Zoberry Enterprise Template",
+  title: "Zoberry Enterprise | Smart Home Utilities & Kitchen Gadgets",
+  description:
+    "Discover trending home utilities, smart kitchen gadgets, and daily-use problem solvers. Shop the best deals on household essentials — up to 50% off.",
   // other metadata
 };
 

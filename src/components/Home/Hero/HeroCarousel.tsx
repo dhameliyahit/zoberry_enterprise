@@ -2,11 +2,10 @@
 import { Swiper, SwiperSlide } from "swiper/react";
 import { Autoplay, Pagination } from "swiper/modules";
 
-// Import Swiper styles
 import "swiper/css/pagination";
 import "swiper/css";
 
-import Image from "next/image";
+import Link from "next/link";
 
 const HeroCarousal = () => {
   return (
@@ -14,7 +13,7 @@ const HeroCarousal = () => {
       spaceBetween={30}
       centeredSlides={true}
       autoplay={{
-        delay: 2500,
+        delay: 3000,
         disableOnInteraction: false,
       }}
       pagination={{
@@ -24,86 +23,67 @@ const HeroCarousal = () => {
       className="hero-carousel"
     >
       <SwiperSlide>
-        <div className="flex items-center pt-6 sm:pt-0 flex-col-reverse sm:flex-row">
-          <div className="max-w-[394px] py-10 sm:py-15 lg:py-24.5 pl-4 sm:pl-7.5 lg:pl-12.5">
-            <div className="flex items-center gap-4 mb-7.5 sm:mb-10">
-              <span className="block font-semibold text-heading-3 sm:text-heading-1 text-blue">
-                30%
-              </span>
-              <span className="block text-dark text-sm sm:text-custom-1 sm:leading-[24px]">
-                Sale
-                <br />
-                Off
-              </span>
-            </div>
-
-            <h1 className="font-semibold text-dark text-xl sm:text-3xl mb-3">
-              <a href="#">True Wireless Noise Cancelling Headphone</a>
+        <div className="flex items-center justify-center py-16 sm:py-20 lg:py-28 px-6 sm:pl-12.5 text-center sm:text-left">
+          <div className="max-w-[480px]">
+            <span className="inline-block font-bold text-sm text-white bg-blue rounded-full px-4 py-1.5 mb-5">
+              50% OFF
+            </span>
+            <h1 className="font-bold text-dark text-2xl sm:text-4xl lg:text-5xl mb-4 leading-tight">
+              Smart Tools for Smarter Homes
             </h1>
-
-            <p>
-            Lorem ipsum dolor sit amet, consectetur adipiscing elit. Morbi at ipsum at risus euismod lobortis in
+            <p className="text-gray-500 text-base sm:text-lg mb-8 leading-relaxed">
+              Premium kitchen &amp; home gadgets that simplify your daily life. Discover trending utilities now.
             </p>
-
-            <a
-              href="#"
-              className="inline-flex font-medium text-white text-custom-sm rounded-md bg-dark py-3 px-9 ease-out duration-200 hover:bg-blue mt-10"
+            <Link
+              href="/shop-with-sidebar"
+              className="inline-flex font-semibold text-white text-sm rounded-lg bg-blue py-3.5 px-10 ease-out duration-200 hover:bg-blue-dark shadow-lg shadow-blue/25"
             >
               Shop Now
-            </a>
-          </div>
-
-          <div>
-            <Image
-              src="/images/hero/hero-01.png"
-              alt="headphone"
-              width={351}
-              height={358}
-              style={{ height: "auto" }}
-            />
+            </Link>
           </div>
         </div>
       </SwiperSlide>
+
       <SwiperSlide>
-        {" "}
-        <div className="flex items-center pt-6 sm:pt-0 flex-col-reverse sm:flex-row">
-          <div className="max-w-[394px] py-10 sm:py-15 lg:py-26 pl-4 sm:pl-7.5 lg:pl-12.5">
-            <div className="flex items-center gap-4 mb-7.5 sm:mb-10">
-              <span className="block font-semibold text-heading-3 sm:text-heading-1 text-blue">
-                30%
-              </span>
-              <span className="block text-dark text-sm sm:text-custom-1 sm:leading-[24px]">
-                Sale
-                <br />
-                Off
-              </span>
-            </div>
-
-            <h1 className="font-semibold text-dark text-xl sm:text-3xl mb-3">
-              <a href="#">True Wireless Noise Cancelling Headphone</a>
+        <div className="flex items-center justify-center py-16 sm:py-20 lg:py-28 px-6 sm:pl-12.5 text-center sm:text-left">
+          <div className="max-w-[480px]">
+            <span className="inline-block font-bold text-sm text-white bg-teal rounded-full px-4 py-1.5 mb-5">
+              40% OFF
+            </span>
+            <h1 className="font-bold text-dark text-2xl sm:text-4xl lg:text-5xl mb-4 leading-tight">
+              Trending Daily Utilities
             </h1>
-
-            <p>
-              Lorem ipsum dolor sit, consectetur elit nunc suscipit non ipsum
-              nec suscipit.
+            <p className="text-gray-500 text-base sm:text-lg mb-8 leading-relaxed">
+              Problem-solving gadgets you didn&apos;t know you needed. Transform your home today.
             </p>
-
-            <a
-              href="#"
-              className="inline-flex font-medium text-white text-custom-sm rounded-md bg-dark py-3 px-9 ease-out duration-200 hover:bg-blue mt-10"
+            <Link
+              href="/shop-with-sidebar"
+              className="inline-flex font-semibold text-white text-sm rounded-lg bg-teal py-3.5 px-10 ease-out duration-200 hover:bg-teal-dark shadow-lg shadow-teal/25"
             >
               Shop Now
-            </a>
+            </Link>
           </div>
+        </div>
+      </SwiperSlide>
 
-          <div>
-            <Image
-              src="/images/hero/hero-01.png"
-              alt="headphone"
-              width={351}
-              height={358}
-              style={{ height: "auto" }}
-            />
+      <SwiperSlide>
+        <div className="flex items-center justify-center py-16 sm:py-20 lg:py-28 px-6 sm:pl-12.5 text-center sm:text-left">
+          <div className="max-w-[480px]">
+            <span className="inline-block font-bold text-sm text-white bg-orange rounded-full px-4 py-1.5 mb-5">
+              30% OFF
+            </span>
+            <h1 className="font-bold text-dark text-2xl sm:text-4xl lg:text-5xl mb-4 leading-tight">
+              Kitchen Organizers &amp; Smart Storage
+            </h1>
+            <p className="text-gray-500 text-base sm:text-lg mb-8 leading-relaxed">
+              Declutter your space with intelligent home solutions. Maximize every inch.
+            </p>
+            <Link
+              href="/shop-with-sidebar"
+              className="inline-flex font-semibold text-white text-sm rounded-lg bg-orange py-3.5 px-10 ease-out duration-200 hover:bg-orange-dark shadow-lg shadow-orange/25"
+            >
+              Shop Now
+            </Link>
           </div>
         </div>
       </SwiperSlide>

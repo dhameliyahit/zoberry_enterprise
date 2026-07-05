@@ -18,6 +18,15 @@
     xl:translate-y-10 xl:opacity-0 xl:invisible xl:absolute xl:flex
     xl:group-hover:opacity-100 xl:group-hover:visible;
   }
+
+  /* Header navigation link with lightweight interactive state */
+  .header-nav-link {
+    @apply text-sm font-medium text-white/75 transition-all duration-150 py-1.5 px-3.5 rounded-lg hover:bg-white/10 hover:text-white block;
+  }
+
+  .header-nav-link-active {
+    @apply bg-white/10 text-white;
+  }
 }
 
 @layer utilities {

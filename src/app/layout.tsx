@@ -2,6 +2,7 @@ import type { Metadata } from "next";
 import "./css/euclid-circular-a-font.css";
 import "./css/style.css";
 import Script from "next/script";
+import FloatingOrderWidget from "@/components/Common/FloatingOrderWidget";
 
 export const metadata: Metadata = {
   title: "Zoberry Enterprise",
@@ -17,6 +18,7 @@ export default function RootLayout({
     <html lang="en" suppressHydrationWarning={true} data-scroll-behavior="smooth">
       <body suppressHydrationWarning={true}>
         {children}
+        <FloatingOrderWidget />
         <Script src="https://accounts.google.com/gsi/client" strategy="afterInteractive" />
       </body>
     </html>

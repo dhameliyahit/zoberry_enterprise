@@ -1,10 +1,10 @@
-import { get, post } from "./api";
+import { getFromSiteApi, postToSiteApi } from "./site-api";
 import type { ApiResponse, Product } from "@/types";
 
 export const recentlyViewedService = {
   getRecentlyViewed: (macAddress: string) =>
-    get<ApiResponse<Product[]>>("/recently-viewed", { macAddress }),
+    getFromSiteApi<ApiResponse<Product[]>>("/recently-viewed", { macAddress }),
 
   addRecentlyViewed: (macAddress: string, productId: string) =>
-    post<ApiResponse<null>>("/recently-viewed", { macAddress, productId }),
+    postToSiteApi<ApiResponse<null>>("/recently-viewed", { macAddress, productId }),
 };
