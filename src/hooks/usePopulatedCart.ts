@@ -2,6 +2,8 @@ import { useState, useEffect } from "react";
 import { useAppSelector } from "@/redux/store";
 import { productService } from "@/services/product.service";
 import { Product } from "@/types";
+import { useDispatch } from "react-redux";
+import { removeItemFromCart } from "@/redux/features/cart-slice";
 
 export interface PopulatedCartItem extends Product {
   quantity: number;
@@ -9,6 +11,7 @@ export interface PopulatedCartItem extends Product {
 
 export function usePopulatedCart() {
   const cartItems = useAppSelector((state) => state.cartReducer.items);
+  const dispatch = useDispatch();
   const [populatedItems, setPopulatedItems] = useState<PopulatedCartItem[]>([]);
   const [loading, setLoading] = useState(false);
 
@@ -62,6 +65,7 @@ export function usePopulatedCart() {
             }
           } catch (err) {
             console.error(`Failed to fetch product details for ID: ${item._id}`, err);
+            dispatch(removeItemFromCart(item._id));
           }
           return null;
         });
@@ -91,7 +95,7 @@ export function usePopulatedCart() {
   }, [cartItems]);
 
   const totalPrice = populatedItems.reduce((total, item) => {
-    const itemPrice = item.discountedPrice !== undefined && item.discountedPrice !== null ? item.discountedPrice : item.price;
+    const itemPrice = item.price;
     return total + itemPrice * item.quantity;
   }, 0);
 

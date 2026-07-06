@@ -3,6 +3,7 @@ import { apiError, apiSuccess, getErrorMessage } from "@/lib/api-response";
 import { connectToDatabase } from "@/lib/db";
 import { StorefrontProduct } from "@/lib/storefront-models/Product";
 import { StorefrontRecentlyViewed } from "@/lib/storefront-models/RecentlyViewed";
+import { StorefrontCategory } from "@/lib/storefront-models/Category";
 
 export const runtime = "nodejs";
 
@@ -65,7 +66,14 @@ export async function POST(request: NextRequest) {
     existing.productIds = existing.productIds.filter((id) => id.toString() !== productId);
     existing.productIds.unshift(productId as never);
     existing.productIds = existing.productIds.slice(0, 8);
-    await existing.save();
+    try {
+      await existing.save();
+    } catch (saveError: any) {
+      if (saveError.name === "VersionError") {
+        return apiSuccess(null);
+      }
+      throw saveError;
+    }
 
     return apiSuccess(null);
   } catch (error) {

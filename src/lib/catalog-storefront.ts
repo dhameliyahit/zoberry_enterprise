@@ -124,7 +124,12 @@ export async function getProducts(params: ProductQueryParams) {
   };
 }
 
+import mongoose from "mongoose";
+
 export async function getProductById(id: string) {
+  if (!mongoose.Types.ObjectId.isValid(id)) {
+    return null;
+  }
   const product = await Product.findById(id)
     .populate("category", "name slug")
     .lean();

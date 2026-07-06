@@ -2,9 +2,12 @@ import { useState, useEffect } from "react";
 import { useAppSelector } from "@/redux/store";
 import { productService } from "@/services/product.service";
 import { Product } from "@/types";
+import { useDispatch } from "react-redux";
+import { removeItemFromWishlist } from "@/redux/features/wishlist-slice";
 
 export function usePopulatedWishlist() {
   const wishlistItems = useAppSelector((state) => state.wishlistReducer.items);
+  const dispatch = useDispatch();
   const [populatedItems, setPopulatedItems] = useState<Product[]>([]);
   const [loading, setLoading] = useState(false);
 
@@ -37,6 +40,7 @@ export function usePopulatedWishlist() {
             }
           } catch (err) {
             console.error(`Failed to fetch wishlist product details for ID: ${id}`, err);
+            dispatch(removeItemFromWishlist(id));
           }
           return null;
         });

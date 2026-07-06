@@ -141,7 +141,7 @@ const ShopDetails = () => {
   };
 
   const selectedVariant = getSelectedVariant();
-  const displayPrice = selectedVariant?.price ?? product.discountedPrice ?? product.price;
+  const displayPrice = selectedVariant?.price ?? product.price;
   const displayCompareAt = selectedVariant?.price ? (product.compareAtPrice || product.price) : (product.compareAtPrice || null);
   const displayStock = selectedVariant?.stock ?? product.stock;
   const displayImage = selectedVariant?.image || productImages[previewImg];
@@ -264,9 +264,9 @@ const ShopDetails = () => {
                       {product.title}
                     </h2>
 
-                    {product.price > product.discountedPrice && (
+                    {product.compareAtPrice && product.compareAtPrice > product.price && (
                       <div className="inline-flex font-medium text-custom-sm text-white bg-blue rounded py-0.5 px-2.5">
-                        {Math.round(((product.price - product.discountedPrice) / product.price) * 100)}% OFF
+                        {Math.round(((product.compareAtPrice - product.price) / product.compareAtPrice) * 100)}% OFF
                       </div>
                     )}
                   </div>
@@ -323,7 +323,7 @@ const ShopDetails = () => {
 
                     <li className="flex items-center gap-2.5">
                       <CheckCircle size={20} weight="fill" className="text-blue" />
-                      Sales {product.price > product.discountedPrice ? Math.round(((product.price - product.discountedPrice) / product.price) * 100) : 30}% Off Use Code: PROMO{product.price > product.discountedPrice ? Math.round(((product.price - product.discountedPrice) / product.price) * 100) : 30}
+                      Sales {product.compareAtPrice && product.compareAtPrice > product.price ? Math.round(((product.compareAtPrice - product.price) / product.compareAtPrice) * 100) : 30}% Off Use Code: PROMO{product.compareAtPrice && product.compareAtPrice > product.price ? Math.round(((product.compareAtPrice - product.price) / product.compareAtPrice) * 100) : 30}
                     </li>
                   </ul>
 

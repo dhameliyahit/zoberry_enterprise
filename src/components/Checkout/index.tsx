@@ -317,7 +317,7 @@ export default function Checkout() {
         product: item._id,
         title: item.title,
         image: (item.images as any)?.[0]?.url || "",
-        price: item.discountedPrice !== null && item.discountedPrice !== undefined ? item.discountedPrice : item.price,
+        price: item.price,
         quantity: item.quantity,
       }));
 
@@ -824,10 +824,7 @@ export default function Checkout() {
                     {/* dynamic product list */}
                     {cartItems.map((item, index) => {
                       const itemPrice =
-                        item.discountedPrice !== null &&
-                        item.discountedPrice !== undefined
-                          ? item.discountedPrice
-                          : item.price;
+                        item.price;
                       return (
                         <div
                           key={index}

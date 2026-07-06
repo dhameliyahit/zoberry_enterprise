@@ -196,9 +196,9 @@ const QuickViewModal = () => {
 
             {/* Right Column: Product Info */}
             <div className="w-full flex flex-col justify-center">
-              {product?.price > product?.discountedPrice && (
+              {product?.compareAtPrice && product?.compareAtPrice > product?.price && (
                 <span className="inline-block self-start text-xs font-semibold text-white py-1 px-3 bg-green mb-4 rounded">
-                  {Math.round(((product.price - product.discountedPrice) / product.price) * 100)}% OFF
+                  {Math.round(((product.compareAtPrice - product.price) / product.compareAtPrice) * 100)}% OFF
                 </span>
               )}
 
@@ -243,11 +243,9 @@ const QuickViewModal = () => {
                   <h4 className="font-semibold text-sm text-dark-3 mb-1.5">Price</h4>
                   <div className="flex items-baseline gap-2">
                     <span className="font-bold text-dark text-xl sm:text-2xl">
-                      ₹{product?.discountedPrice}
-                    </span>
-                    <span className="text-sm font-medium text-gray-4 line-through">
                       ₹{product?.price}
                     </span>
+                    <span className="text-sm font-medium text-gray-4 line-through">\n                      {product?.compareAtPrice && product?.compareAtPrice > product?.price && "₹" + product?.compareAtPrice}\n                    </span>
                   </div>
                 </div>
 
