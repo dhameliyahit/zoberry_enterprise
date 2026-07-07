@@ -9,15 +9,15 @@ export const menuData: Menu[] = [
   },
   {
     id: 2,
-    title: "Shop",
+    title: "Products",
     newTab: false,
     path: "/shop-with-sidebar",
   },
   {
     id: 3,
-    title: "Blog",
+    title: "Category",
     newTab: false,
-    path: "/blogs/blog-grid-with-sidebar",
+    path: "/#categories",
   },
   {
     id: 4,
