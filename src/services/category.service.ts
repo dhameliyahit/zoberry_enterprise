@@ -11,6 +11,8 @@ export const categoryService = {
 
   getById: (id: string) => getFromSiteApi<ApiResponse<Category>>(`/categories/${id}`),
 
+  getBySlug: (slug: string) => getFromSiteApi<ApiResponse<Category>>(`/categories/slug/${slug}`),
+
   create: (data: FormData) => post<ApiResponse<Category>>("/categories", data),
 
   update: (id: string, data: FormData) => put<ApiResponse<Category>>(`/categories/${id}`, data),

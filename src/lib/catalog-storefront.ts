@@ -184,3 +184,7 @@ export async function getCategories(isActive?: string | null) {
 export async function getCategoryById(id: string) {
   return Category.findById(id).lean();
 }
+
+export async function getCategoryBySlug(slug: string) {
+  return Category.findOne({ slug }).lean();
+}
