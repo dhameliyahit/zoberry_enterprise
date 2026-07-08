@@ -17,6 +17,8 @@ import {
   ArrowRight,
   Star,
   Sparkle,
+  ShareNetwork,
+  Heart,
 } from "@phosphor-icons/react";
 
 interface Product {
@@ -62,6 +64,7 @@ export default function HeroVideoPlayer() {
   const [isHovered, setIsHovered] = useState(false);
   const [isLeftHovered, setIsLeftHovered] = useState(false);
   const [isRightHovered, setIsRightHovered] = useState(false);
+  const [isLiked, setIsLiked] = useState(false);
 
   const videoRef = useRef<HTMLVideoElement | null>(null);
 
@@ -151,16 +154,16 @@ export default function HeroVideoPlayer() {
               order: idx,
               product: p
                 ? {
-                    _id: p._id,
-                    title: p.title,
-                    price: p.price,
-                    compareAtPrice: p.compareAtPrice,
-                    description: p.description || "Premium unboxing showcase of top trending e-commerce gadget utility.",
-                    stock: p.stock || 25,
-                    ratings: p.ratings || { average: 4.8, count: 42 },
-                    images: p.images,
-                    isFeatured: p.isFeatured,
-                  }
+                  _id: p._id,
+                  title: p.title,
+                  price: p.price,
+                  compareAtPrice: p.compareAtPrice,
+                  description: p.description || "Premium unboxing showcase of top trending e-commerce gadget utility.",
+                  stock: p.stock || 25,
+                  ratings: p.ratings || { average: 4.8, count: 42 },
+                  images: p.images,
+                  isFeatured: p.isFeatured,
+                }
                 : undefined,
             };
           });
@@ -179,7 +182,7 @@ export default function HeroVideoPlayer() {
   useEffect(() => {
     if (videoRef.current) {
       if (isPlaying) {
-        videoRef.current.play().catch(() => {});
+        videoRef.current.play().catch(() => { });
       } else {
         videoRef.current.pause();
       }
@@ -196,7 +199,15 @@ export default function HeroVideoPlayer() {
 
   // Unified Auto-Progress Timer (Instagram Stories Style)
   useEffect(() => {
-    if (!isPlaying || isHovered || videos.length === 0) return;
+    if (!isPlaying || videos.length === 0) return;
+
+    const currentVid = videos[activeIndex];
+    const isIframe = getYoutubeId(currentVid.url) || getInstagramId(currentVid.url);
+
+    // If it's a native video, progress and next-video advance are handled by onTimeUpdate and onEnded.
+    if (!isIframe) return;
+
+    if (isHovered) return;
 
     const interval = setInterval(() => {
       setProgress((prev) => {
@@ -204,12 +215,13 @@ export default function HeroVideoPlayer() {
           handleNext();
           return 0;
         }
-        return prev + 1;
+        // Fallback 15 seconds for iframes
+        return prev + (100 / (15000 / 80));
       });
-    }, 80); // 80ms * 100 ticks = 8000ms (8 seconds)
+    }, 80);
 
     return () => clearInterval(interval);
-  }, [isPlaying, isHovered, activeIndex, videos.length]);
+  }, [isPlaying, isHovered, activeIndex, videos]);
 
   const handleNext = () => {
     setActiveIndex((prev) => (prev + 1) % videos.length);
@@ -242,9 +254,9 @@ export default function HeroVideoPlayer() {
       const container = document.getElementById("active-video-card-container");
       if (container) {
         if (!document.fullscreenElement) {
-          container.requestFullscreen().catch(() => {});
+          container.requestFullscreen().catch(() => { });
         } else {
-          document.exitFullscreen().catch(() => {});
+          document.exitFullscreen().catch(() => { });
         }
       }
     } catch (e) {
@@ -300,9 +312,9 @@ export default function HeroVideoPlayer() {
       stars.push(
         <Star
           key={i}
-          size={14}
-          weight={i <= rounded ? "fill" : "regular"}
-          className={i <= rounded ? "text-amber-400" : "text-white/25"}
+          size={16}
+          weight={i <= rounded ? "fill" : "fill"}
+          className={i <= rounded ? "text-[#2B355A]" : "text-gray-300"}
         />
       );
     }
@@ -343,10 +355,11 @@ export default function HeroVideoPlayer() {
       onTouchStart={handleTouchStart}
       onTouchMove={handleTouchMove}
       onTouchEnd={handleTouchEnd}
-      className="relative flex flex-col lg:flex-row h-auto lg:h-[500px] w-full select-none items-center justify-between overflow-hidden rounded-[16px] py-4 gap-8 lg:gap-10 transition-all duration-300"
+      className="relative flex flex-col lg:flex-row h-auto lg:min-h-[540px] w-full select-none items-center justify-between overflow-visible rounded-[16px] py-4 lg:py-8 gap-8 lg:gap-10 transition-all duration-300"
     >
       {/* Dynamic Keyframes for Content transition */}
-      <style dangerouslySetInnerHTML={{ __html: `
+      <style dangerouslySetInnerHTML={{
+        __html: `
         @keyframes fadeInUp {
           from { opacity: 0; transform: translateY(12px) scale(0.98); }
           to { opacity: 1; transform: translateY(0) scale(1); }
@@ -357,8 +370,8 @@ export default function HeroVideoPlayer() {
       `}} />
 
       {/* LEFT SIDE: Cinematic 3D Deck Carousel */}
-      <div className="relative z-10 flex h-[440px] lg:h-full w-full lg:w-[54%] items-center justify-center [perspective:1000px]">
-        
+      <div className="relative z-10 flex h-[440px] lg:h-[500px] w-full lg:w-[54%] items-center justify-center [perspective:1000px]">
+
         {/* PREVIOUS CARD PREVIEW (Desktop Only - Avoids duplicates in 2-video arrays) */}
         {videos.length > 2 && (
           <div
@@ -367,8 +380,8 @@ export default function HeroVideoPlayer() {
             onMouseLeave={() => setIsLeftHovered(false)}
             className="absolute left-6 lg:left-12 hidden md:block h-[380px] w-[110px] shrink-0 rounded-xl overflow-hidden opacity-45 cursor-pointer border border-white/5 transition-all duration-500 hover:opacity-85 select-none"
             style={{
-              transform: isLeftHovered 
-                ? "rotateY(10deg) scale(0.9) translateZ(-20px) translateX(-5%)" 
+              transform: isLeftHovered
+                ? "rotateY(10deg) scale(0.9) translateZ(-20px) translateX(-5%)"
                 : "rotateY(20deg) scale(0.85) translateZ(-50px) translateX(-10%)",
             }}
           >
@@ -412,7 +425,7 @@ export default function HeroVideoPlayer() {
           {/* Inner Video Stream Panel */}
           <div className="flex-1 w-full bg-slate-950 relative overflow-hidden">
             {/* Mobile gesture cover overlay to block iframe touch capture and allow swipes / play toggles */}
-            <div 
+            <div
               className="absolute inset-0 z-20 cursor-pointer lg:hidden"
               onClick={(e) => {
                 e.stopPropagation();
@@ -442,18 +455,25 @@ export default function HeroVideoPlayer() {
                 src={currentVideo.url}
                 autoPlay
                 muted={isMuted}
-                loop
                 playsInline
                 className="h-full w-full object-cover"
+                onTimeUpdate={(e) => {
+                  const target = e.currentTarget;
+                  if (target.duration) {
+                    setProgress((target.currentTime / target.duration) * 100);
+                  }
+                }}
+                onEnded={() => {
+                  handleNext();
+                }}
               />
             )}
           </div>
 
           {/* Micro-Interaction Controller Overlay (Shown on Hover / Touch) */}
           <div
-            className={`absolute inset-0 z-35 flex items-center justify-center gap-4 bg-black/45 backdrop-blur-[1px] transition-all duration-300 ${
-              isHovered ? "opacity-100 visible" : "opacity-0 invisible"
-            }`}
+            className={`absolute inset-0 z-35 flex items-center justify-center gap-4 bg-black/45 backdrop-blur-[1px] transition-all duration-300 ${isHovered ? "opacity-100 visible" : "opacity-0 invisible"
+              }`}
           >
             <button
               onClick={(e) => {
@@ -548,8 +568,8 @@ export default function HeroVideoPlayer() {
             onMouseLeave={() => setIsRightHovered(false)}
             className="absolute right-6 lg:right-12 hidden md:block h-[380px] w-[110px] shrink-0 rounded-xl overflow-hidden opacity-45 cursor-pointer border border-white/5 transition-all duration-500 hover:opacity-85 select-none"
             style={{
-              transform: isRightHovered 
-                ? "rotateY(-10deg) scale(0.9) translateZ(-20px) translateX(5%)" 
+              transform: isRightHovered
+                ? "rotateY(-10deg) scale(0.9) translateZ(-20px) translateX(5%)"
                 : "rotateY(-20deg) scale(0.85) translateZ(-50px) translateX(10%)",
             }}
           >
@@ -584,102 +604,134 @@ export default function HeroVideoPlayer() {
       </div>
 
       {/* RIGHT SIDE: Premium Product Information Panel (Animate-on-Change) */}
-      <div className="relative z-10 flex flex-col w-full lg:w-[43%] h-auto lg:h-full justify-between bg-[#0F172A]/95 border border-white/10 rounded-2xl p-5 sm:p-7 md:p-8 shadow-2xl">
+      <div className="relative z-10 flex w-full lg:w-[45%] h-auto justify-center items-center gap-6 p-2 sm:p-4 md:p-6 lg:p-4">
         {currentVideo.product ? (
-          <div key={currentVideo._id} className="animate-fadeInUp flex flex-col h-full justify-between gap-4">
-            
-            {/* Header Block: Product Thumbnail Left + Badges & Ratings Right (Improved spacing and layout hierarchy) */}
-            <div className="flex items-center gap-4 border-b border-white/10 pb-4">
-              {/* Product Image Thumbnail */}
-              <div className="relative h-16 w-16 shrink-0 rounded-xl border border-white/10 overflow-hidden shadow-lg bg-slate-900 transition-transform duration-300 hover:scale-105">
-                <img
-                  src={getProductImage(currentVideo.product)}
-                  alt={currentVideo.product.title}
-                  className="h-full w-full object-cover"
-                />
-              </div>
-              
-              {/* Category Tag & Star Ratings */}
-              <div className="flex flex-col gap-1.5 items-start">
-                <span className="flex items-center gap-1 bg-blue/15 border border-blue/30 text-blue font-extrabold text-[9px] tracking-wider uppercase rounded-full px-2.5 py-0.5">
-                  <Sparkle size={9} weight="fill" />
-                  {getDynamicBadge(currentVideo.product)}
-                </span>
-                <div className="flex items-center gap-1.5">
-                  <div className="flex">{renderRatingStars(currentVideo.product.ratings?.average)}</div>
-                  <span className="text-[10px] font-bold text-white/50">
-                    ({currentVideo.product.ratings?.count || 12} reviews)
-                  </span>
-                </div>
-              </div>
-            </div>
-
-            {/* Core Title and description flow */}
-            <div className="py-2">
-              <h2 className="text-white text-xl sm:text-2xl font-black tracking-tight mb-2 line-clamp-2 hover:text-blue transition-colors duration-150">
-                {currentVideo.product.title}
-              </h2>
-              <p className="text-slate-200 text-xs sm:text-sm leading-relaxed line-clamp-3 font-medium">
-                {currentVideo.product.description || "Detailed unboxing demonstration. Enhance your smart home style and make daily life easier with this premium trending utility gadget."}
-              </p>
-            </div>
-
-            {/* Stock Warning Badge */}
-            <div className="inline-flex">
-              {currentVideo.product.stock && currentVideo.product.stock < 12 ? (
-                <span className="text-[9px] font-bold uppercase tracking-wider text-amber-400 bg-amber-400/10 border border-amber-400/20 px-2 py-0.5 rounded">
-                  Only {currentVideo.product.stock} left - Order Fast!
-                </span>
+          <>
+            {/* Product Image Thumbnails (Vertical Strip) */}
+            <div className="hidden md:flex flex-col gap-3">
+              {currentVideo.product.images && currentVideo.product.images.length > 0 ? (
+                currentVideo.product.images.slice(0, 4).map((img, idx) => (
+                  <div key={idx} className="relative h-16 w-16 rounded-xl border border-gray-200 overflow-hidden shadow-sm bg-white hover:border-blue-300 transition-colors cursor-pointer">
+                    <img
+                      src={img.url}
+                      alt={img.alt || currentVideo.product?.title}
+                      className="h-full w-full object-cover"
+                    />
+                    {idx === 3 && currentVideo.product!.images!.length > 4 && (
+                      <div className="absolute inset-0 bg-white/60 backdrop-blur-[2px] flex items-center justify-center">
+                        <span className="text-gray-800 font-bold text-sm">+{currentVideo.product!.images!.length - 4}</span>
+                      </div>
+                    )}
+                  </div>
+                ))
               ) : (
-                <span className="text-[9px] font-bold uppercase tracking-wider text-emerald-400 bg-emerald-400/10 border border-emerald-400/20 px-2 py-0.5 rounded">
-                  In Stock - Ready to Ship
-                </span>
+                <div className="relative h-16 w-16 rounded-xl border border-gray-200 overflow-hidden shadow-sm bg-gray-50 flex items-center justify-center">
+                  <img
+                    src={getProductImage(currentVideo.product)}
+                    alt={currentVideo.product.title}
+                    className="h-full w-full object-cover"
+                  />
+                </div>
               )}
             </div>
 
-            {/* Price block & Savings Indicator (Optimized font sizes and dimmed comparables) */}
-            <div className="flex items-end justify-between border-t border-white/10 pt-3">
-              <div>
-                <p className="text-[9px] uppercase tracking-wider text-white/50 mb-0.5">Special Price</p>
-                <div className="flex items-end gap-3">
-                  <span className="text-3xl font-black text-white leading-none">₹{currentVideo.product.price}</span>
+            <div key={currentVideo._id} className="animate-fadeInUp flex-1 flex flex-col h-full justify-center gap-4">
+
+              {/* Header Block: Badges & Ratings */}
+              <div className="flex flex-col items-start gap-4">
+                <span className="flex items-center gap-1.5 bg-white border border-gray-200 shadow-sm text-gray-700 font-bold text-[11px] px-3.5 py-1.5 rounded-full uppercase tracking-wider">
+                  🔥 {getDynamicBadge(currentVideo.product) === "Hot Deal" ? "HOT DEAL" : getDynamicBadge(currentVideo.product)}
+                </span>
+                <div className="flex items-center gap-2">
+                  <div className="flex gap-0.5">{renderRatingStars(currentVideo.product.ratings?.average)}</div>
+                  <div className="flex items-center gap-1.5 ml-1">
+                    <span className="text-sm font-bold text-[#2B355A]">
+                      {currentVideo.product.ratings?.average || 4.8}
+                    </span>
+                    <span className="text-sm font-medium text-gray-500">
+                      ({currentVideo.product.ratings?.count || 12} reviews)
+                    </span>
+                  </div>
+                </div>
+              </div>
+
+              {/* Core Title and description flow */}
+              <div className="flex flex-col gap-1 mt-1">
+                <h2 className="text-[#2B355A] text-3xl sm:text-4xl font-black tracking-tight leading-tight uppercase">
+                  {currentVideo.product.title.replace(/\s*\(.*\)\s*/, '')}
+                </h2>
+                {currentVideo.product.title.includes('(') ? (
+                  <h3 className="text-[#845EC2] text-xl sm:text-2xl font-bold tracking-tight uppercase">
+                    ({currentVideo.product.title.split('(')[1].split(')')[0]})
+                  </h3>
+                ) : (
+                  /* Fallback for the specific design if the product doesn't have a variant in title */
+                  currentVideo.product.title.toLowerCase().includes('umbrella') && (
+                    <h3 className="text-[#845EC2] text-xl sm:text-2xl font-bold tracking-tight uppercase">
+                      (MIX COLOR)
+                    </h3>
+                  )
+                )}
+
+                <p className="text-[#64748B] text-[13px] sm:text-sm leading-relaxed line-clamp-4 font-medium mt-2">
+                  {currentVideo.product.description || "Add a touch of style and functionality to your daily commute with the Bottle Umbrella, available in a mix of vibrant colors. This innovative accessory combines a compact umbrella with a water bottle holder, keeping you..."}
+                </p>
+              </div>
+
+              {/* Stock Warning Badge */}
+              <div className="inline-flex mt-2">
+                {currentVideo.product.stock && currentVideo.product.stock < 12 ? (
+                  <span className="text-[10px] font-bold uppercase tracking-wider text-gray-600 bg-transparent px-3 py-1.5 rounded-[4px] border border-gray-400">
+                    ONLY {currentVideo.product.stock} LEFT - ORDER FAST!
+                  </span>
+                ) : (
+                  <span className="text-[10px] font-bold uppercase tracking-wider text-gray-600 bg-transparent px-3 py-1.5 rounded-[4px] border border-gray-400">
+                    IN STOCK • READY TO SHIP
+                  </span>
+                )}
+              </div>
+
+              {/* Price block */}
+              <div className="flex flex-col mt-2">
+                <p className="text-[12px] text-gray-500 mb-0.5 font-medium">Special Price</p>
+                <div className="flex items-center gap-3">
+                  <span className="text-4xl font-black text-[#2B355A] leading-none">₹{currentVideo.product.price}</span>
                   {currentVideo.product.compareAtPrice && currentVideo.product.compareAtPrice > currentVideo.product.price && (
-                    <div className="flex items-center gap-1.5 leading-none mb-0.5">
-                      <span className="text-white/30 line-through text-xs font-semibold">
+                    <>
+                      <span className="text-gray-500 line-through text-[15px] font-bold">
                         ₹{currentVideo.product.compareAtPrice}
                       </span>
-                      <span className="text-[9px] font-bold text-red bg-red/10 border border-red/20 px-1.5 py-0.5 rounded">
+                      <span className="text-[10px] font-bold text-[#FF497C] bg-[#FFF0F4] px-2.5 py-1 rounded-[4px] ml-1 uppercase">
                         {getDiscountPercent(currentVideo.product.price, currentVideo.product.compareAtPrice)}% OFF
                       </span>
-                    </div>
+                    </>
                   )}
                 </div>
               </div>
-            </div>
 
-            {/* Dual Shopping Calls-to-Action (Using standard Zoberry storefront button styles) */}
-            <div className="flex gap-3.5 w-full mt-3">
-              <button
-                onClick={(e) => handleAddToCartFlow(e, currentVideo.product!)}
-                className="flex-[1.3] inline-flex items-center justify-center gap-2 font-medium text-white bg-blue py-3.5 px-6 rounded-md ease-out duration-200 hover:bg-blue-dark cursor-pointer text-sm shadow-sm transition-all duration-150"
-              >
-                <ShoppingCart size={16} weight="fill" />
-                Buy Now
-              </button>
-              <Link
-                href={productRedirectUrl}
-                className="flex-1 inline-flex items-center justify-center gap-1.5 font-medium text-white bg-dark py-3.5 px-6 rounded-md ease-out duration-200 hover:bg-blue cursor-pointer text-sm transition-all duration-150 border border-white/5"
-              >
-                View Details
-                <ArrowRight size={14} weight="bold" />
-              </Link>
+              {/* Buttons */}
+              <div className="flex gap-4 w-full mt-4 pb-2">
+                <button
+                  onClick={(e) => handleAddToCartFlow(e, currentVideo.product!)}
+                  className="flex-1 inline-flex items-center justify-center gap-2 font-bold text-white bg-[#3B5998] py-3.5 px-6 rounded-md ease-out duration-200 hover:bg-[#2b4273] cursor-pointer text-sm shadow-sm transition-all duration-150"
+                >
+                  <ShoppingCart size={18} weight="fill" />
+                  Buy Now
+                </button>
+                <Link
+                  href={productRedirectUrl}
+                  className="flex-[0.85] inline-flex items-center justify-center gap-2 font-bold text-[#3B4149] bg-white py-3.5 px-6 rounded-md ease-out duration-200 hover:bg-gray-50 cursor-pointer text-sm transition-all duration-150 border border-gray-300 shadow-sm"
+                >
+                  View Details
+                  <ArrowRight size={16} weight="bold" />
+                </Link>
+              </div>
             </div>
-
-          </div>
+          </>
         ) : (
-          <div className="flex flex-col h-full items-center justify-center text-white/40 py-10">
-            <ShoppingCart size={40} weight="thin" className="mb-2" />
-            <p className="text-xs">No linked product configured</p>
+          <div className="flex flex-col h-full items-center justify-center text-gray-400 py-10">
+            <ShoppingCart size={40} weight="thin" className="mb-2 text-gray-300" />
+            <p className="text-xs font-medium">No linked product configured</p>
           </div>
         )}
       </div>

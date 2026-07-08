@@ -168,15 +168,13 @@ const Header = () => {
   return (
     <>
       <header
-        className={`fixed left-0 top-0 z-9999 w-full bg-blue-dark text-white transition-all duration-300 ${
-          stickyMenu ? "shadow-xl shadow-slate-950/10" : ""
-        }`}
+        className={`fixed left-0 top-0 z-9999 w-full bg-blue-dark text-white transition-all duration-300 ${stickyMenu ? "shadow-xl shadow-slate-950/10" : ""
+          }`}
       >
         {/* Top Utility Row (Desktop Only) */}
         <div
-          className={`hidden lg:block border-b border-white/10 transition-all duration-300 ease-in-out ${
-            stickyMenu ? "h-0 opacity-0 overflow-hidden" : "h-9 opacity-100"
-          }`}
+          className={`hidden lg:block border-b border-white/10 transition-all duration-300 ease-in-out ${stickyMenu ? "h-0 opacity-0 overflow-hidden" : "h-9 opacity-100"
+            }`}
         >
           <div className="mx-auto max-w-[1170px] h-full px-4 sm:px-7.5 xl:px-0 flex items-center justify-between">
             {/* Support Info */}
@@ -235,9 +233,8 @@ const Header = () => {
                         <li key={menuItem.id}>
                           <Link
                             href={menuItem.path || "/"}
-                            className={`header-nav-link ${
-                              active ? "header-nav-link-active" : ""
-                            }`}
+                            className={`header-nav-link ${active ? "header-nav-link-active" : ""
+                              }`}
                           >
                             {menuItem.title}
                           </Link>
@@ -250,22 +247,21 @@ const Header = () => {
                 {/* Search Bar (Desktop: lg and above) */}
                 <div className="hidden min-w-0 flex-1 lg:block lg:max-w-[320px] xl:max-w-[400px]">
                   <form onSubmit={handleSearchSubmit}>
-                    <div className="relative w-full">
+                    <div className="group relative w-full flex items-center">
                       <input
                         onChange={(event) => setSearchQuery(event.target.value)}
                         value={searchQuery}
                         type="search"
                         name="search"
                         id="desktop-search"
-                        placeholder="Search products, brands or categories..."
+                        placeholder="Search for amazing products..."
                         autoComplete="off"
-                        className="peer w-full rounded-full border border-gray-3 bg-white py-1.5 pl-5 pr-11 text-xs text-dark placeholder-gray-4 outline-none duration-150 focus:border-blue focus:ring-2 focus:ring-blue/15 shadow-sm"
+                        className="peer w-full rounded-full border border-white/20 bg-white/10 backdrop-blur-md py-2.5 pl-6 pr-14 text-[13px] font-medium text-white placeholder-white/60 outline-none transition-all duration-300 focus:border-white/40 focus:bg-white/20 focus:ring-4 focus:ring-white/10 shadow-inner hover:bg-white/15 [&::-webkit-search-cancel-button]:hidden [&::-webkit-search-decoration]:hidden"
                       />
-
                       <button
                         type="submit"
                         aria-label="Search products"
-                        className="absolute right-4 top-1/2 flex -translate-y-1/2 items-center justify-center text-gray-4 transition-colors hover:text-blue"
+                        className="absolute right-1.5 top-1/2 flex h-8 w-8 -translate-y-1/2 items-center justify-center rounded-full bg-white text-blue-dark transition-all duration-300 hover:scale-105 active:scale-95 shadow-md hover:shadow-lg peer-focus:bg-blue peer-focus:text-white"
                       >
                         <MagnifyingGlass size={16} weight="bold" />
                       </button>
@@ -300,9 +296,8 @@ const Header = () => {
                           Hi, {userName.split(" ")[0]}
                         </span>
                         <svg
-                          className={`h-3 w-3 text-white/50 transition-transform duration-200 ${
-                            profileDropdownOpen ? "rotate-180 text-white" : ""
-                          }`}
+                          className={`h-3 w-3 text-white/50 transition-transform duration-200 ${profileDropdownOpen ? "rotate-180 text-white" : ""
+                            }`}
                           fill="none"
                           viewBox="0 0 24 24"
                           stroke="currentColor"
@@ -389,20 +384,20 @@ const Header = () => {
               {/* Mobile Search Row */}
               <div className="mt-2.5 lg:hidden">
                 <form onSubmit={handleSearchSubmit}>
-                  <div className="relative">
+                  <div className="group relative w-full flex items-center">
                     <input
                       onChange={(event) => setSearchQuery(event.target.value)}
                       value={searchQuery}
                       type="search"
                       name="mobile-search"
-                      placeholder="Search products, brands or categories..."
+                      placeholder="Search for amazing products..."
                       autoComplete="off"
-                      className="w-full rounded-full border border-gray-3 bg-white px-4 py-2 pr-11 text-sm text-dark outline-none duration-150 focus:border-blue focus:ring-2 focus:ring-blue/15 shadow-sm placeholder-gray-4"
+                      className="peer w-full rounded-full border border-white/20 bg-white/10 backdrop-blur-md py-3 pl-6 pr-14 text-sm font-medium text-white placeholder-white/60 outline-none transition-all duration-300 focus:border-white/40 focus:bg-white/20 focus:ring-4 focus:ring-white/10 shadow-inner hover:bg-white/15 [&::-webkit-search-cancel-button]:hidden [&::-webkit-search-decoration]:hidden"
                     />
                     <button
                       type="submit"
                       aria-label="Search products"
-                      className="absolute right-3.5 top-1/2 flex -translate-y-1/2 items-center justify-center text-gray-4 transition-colors hover:text-blue"
+                      className="absolute right-2 top-1/2 flex h-9 w-9 -translate-y-1/2 items-center justify-center rounded-full bg-white text-blue-dark transition-all duration-300 hover:scale-105 active:scale-95 shadow-md peer-focus:bg-blue peer-focus:text-white"
                     >
                       <MagnifyingGlass size={18} weight="bold" />
                     </button>
@@ -416,24 +411,21 @@ const Header = () => {
 
       {/* Navigation drawer (mobile menu) */}
       <div
-        className={`fixed inset-0 z-[10000] xl:hidden ${
-          navigationOpen ? "pointer-events-auto" : "pointer-events-none"
-        }`}
+        className={`fixed inset-0 z-[10000] xl:hidden ${navigationOpen ? "pointer-events-auto" : "pointer-events-none"
+          }`}
         aria-hidden={!navigationOpen}
       >
         <button
           type="button"
           aria-label="Close navigation overlay"
           onClick={closeNavigation}
-          className={`absolute inset-0 bg-slate-950/45 transition-opacity duration-300 ${
-            navigationOpen ? "opacity-100" : "opacity-0"
-          }`}
+          className={`absolute inset-0 bg-slate-950/45 transition-opacity duration-300 ${navigationOpen ? "opacity-100" : "opacity-0"
+            }`}
         />
 
         <aside
-          className={`absolute right-0 top-0 flex h-full w-[360px] max-w-[88vw] flex-col bg-white text-dark shadow-2xl transition-transform duration-300 ${
-            navigationOpen ? "translate-x-0" : "translate-x-full"
-          }`}
+          className={`absolute right-0 top-0 flex h-full w-[360px] max-w-[88vw] flex-col bg-white text-dark shadow-2xl transition-transform duration-300 ${navigationOpen ? "translate-x-0" : "translate-x-full"
+            }`}
         >
           <div className="flex items-center justify-between border-b border-gray-3 px-5 py-4">
             <div>
@@ -500,17 +492,15 @@ const Header = () => {
                     <Link
                       href={menuItem.path || "/"}
                       onClick={closeNavigation}
-                      className={`flex items-center justify-between rounded-xl border px-4 py-3.5 text-base font-medium transition-colors ${
-                        isActivePath(menuItem.path || "/")
+                      className={`flex items-center justify-between rounded-xl border px-4 py-3.5 text-base font-medium transition-colors ${isActivePath(menuItem.path || "/")
                           ? "border-blue bg-blue/5 text-blue"
                           : "border-gray-3 text-dark hover:border-blue/40 hover:bg-gray-1"
-                      }`}
+                        }`}
                     >
                       <span>{menuItem.title}</span>
                       <svg
-                        className={`h-4 w-4 transition-colors ${
-                          isActivePath(menuItem.path || "/") ? "text-blue" : "text-gray-4"
-                        }`}
+                        className={`h-4 w-4 transition-colors ${isActivePath(menuItem.path || "/") ? "text-blue" : "text-gray-4"
+                          }`}
                         fill="none"
                         viewBox="0 0 24 24"
                         stroke="currentColor"
@@ -533,11 +523,10 @@ const Header = () => {
                     key={link.path}
                     href={link.path}
                     onClick={closeNavigation}
-                    className={`rounded-xl border px-4 py-4 text-sm font-medium transition-colors ${
-                      isActivePath(link.path)
+                    className={`rounded-xl border px-4 py-4 text-sm font-medium transition-colors ${isActivePath(link.path)
                         ? "border-blue bg-blue/5 text-blue"
                         : "border-gray-3 text-dark hover:border-blue/40 hover:bg-gray-1"
-                    }`}
+                      }`}
                   >
                     {link.label}
                   </Link>
