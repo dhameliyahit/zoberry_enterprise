@@ -41,11 +41,6 @@ const SingleListItem = ({ item }: { item: Product }) => {
   };
 
   const handleItemToWishList = () => {
-    const token = typeof window !== "undefined" ? localStorage.getItem("zoberry_token") : null;
-    if (!token) {
-      router.push("/signin");
-      return;
-    }
     if (isInWishlist) {
       dispatch(removeItemFromWishlist(item._id));
     } else {
@@ -53,15 +48,25 @@ const SingleListItem = ({ item }: { item: Product }) => {
     }
   };
 
+  const handleProductDetails = () => {
+    dispatch(updateproductDetails({ ...item }));
+  };
+
+  const handleCardClick = () => {
+    handleProductDetails();
+    router.push(`/shop-details?id=${item._id}`);
+  };
+
   return (
-    <div className="group rounded-lg bg-white shadow-1">
+    <div className="group rounded-lg bg-white shadow-1 cursor-pointer" onClick={handleCardClick}>
       <div className="flex">
         <div className="shadow-list relative overflow-hidden flex items-center justify-center max-w-[270px] w-full sm:min-h-[270px] p-4">
           <Image src={getImageUrl(item.images?.[0])} alt="" width={250} height={250} />
 
           <div className="absolute left-0 bottom-0 translate-y-full w-full flex items-center justify-center gap-2.5 pb-5 ease-linear duration-200 group-hover:translate-y-0">
             <button
-              onClick={() => {
+              onClick={(e) => {
+                e.stopPropagation();
                 openQuickView(item);
                 handleQuickViewUpdate();
               }}
@@ -72,14 +77,20 @@ const SingleListItem = ({ item }: { item: Product }) => {
             </button>
 
             <button
-              onClick={() => handleAddToCart()}
+              onClick={(e) => {
+                e.stopPropagation();
+                handleAddToCart();
+              }}
               className="inline-flex font-medium text-custom-sm py-[7px] px-5 rounded-[5px] bg-blue text-white ease-out duration-200 hover:bg-blue-dark"
             >
               Add to cart
             </button>
 
             <button
-              onClick={() => handleItemToWishList()}
+              onClick={(e) => {
+                e.stopPropagation();
+                handleItemToWishList();
+              }}
               aria-label="button for favorite select"
               className="flex items-center justify-center w-9 h-9 rounded-[5px] shadow-1 ease-out duration-200 bg-white hover:text-blue"
             >
@@ -101,7 +112,9 @@ const SingleListItem = ({ item }: { item: Product }) => {
 
             <span className="flex items-center gap-2 font-medium text-lg">
               <span className="text-dark">₹{item.price}</span>
-              <span className="text-dark-4 line-through">₹{item.price}</span>
+              {item.compareAtPrice && item.compareAtPrice > item.price && (
+                <span className="text-dark-4 line-through text-sm">₹{item.compareAtPrice}</span>
+              )}
             </span>
           </div>
 

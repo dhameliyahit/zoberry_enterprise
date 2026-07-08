@@ -28,6 +28,10 @@ const Testimonials = () => {
     sliderRef.current.swiper.slideNext();
   }, []);
 
+  if (testimonials.length === 0) {
+    return null;
+  }
+
   return (
     <section className="overflow-hidden pb-16.5">
       <div className="max-w-[1170px] w-full mx-auto px-4 sm:px-8 xl:px-0">

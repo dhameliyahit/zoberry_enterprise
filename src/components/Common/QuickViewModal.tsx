@@ -29,11 +29,6 @@ const QuickViewModal = () => {
 
   const handleItemToWishList = () => {
     if (!product) return;
-    const token = typeof window !== "undefined" ? localStorage.getItem("zoberry_token") : null;
-    if (!token) {
-      router.push("/signin");
-      return;
-    }
     if (isInWishlist) {
       dispatch(removeItemFromWishlist(product._id));
     } else {

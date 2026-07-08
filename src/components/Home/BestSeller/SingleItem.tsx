@@ -51,11 +51,6 @@ const SingleItem = ({ item }: { item: Product }) => {
   };
 
   const handleItemToWishList = () => {
-    const token = typeof window !== "undefined" ? localStorage.getItem("zoberry_token") : null;
-    if (!token) {
-      router.push("/signin");
-      return;
-    }
     if (isInWishlist) {
       dispatch(removeItemFromWishlist(item._id));
     } else {

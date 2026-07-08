@@ -9,8 +9,10 @@ import { useAppSelector } from "@/redux/store";
 import { recentlyViewedService, productService, authService } from "@/services";
 import { useDispatch } from "react-redux";
 import { updateproductDetails } from "@/redux/features/product-details";
+import { addItemToCart } from "@/redux/features/cart-slice";
+import { addItemToWishlist, removeItemFromWishlist } from "@/redux/features/wishlist-slice";
 import toast from "react-hot-toast";
-import { useSearchParams } from "next/navigation";
+import { useSearchParams, useRouter } from "next/navigation";
 import { MagnifyingGlassPlus, Minus, Plus, Heart, CheckCircle, Star } from "@phosphor-icons/react";
 
 const ShopDetails = () => {
@@ -83,6 +85,43 @@ const ShopDetails = () => {
   const product = useAppSelector(
     (state) => state.productDetailsReducer.value
   );
+
+  const wishlistItems = useAppSelector((state) => state.wishlistReducer.items);
+  const isInWishlist = product ? wishlistItems.includes(product._id) : false;
+  const router = useRouter();
+
+  const handleAddToCart = () => {
+    if (!product?._id) return;
+    dispatch(
+      addItemToCart({
+        _id: product._id,
+        quantity,
+      })
+    );
+    toast.success("Added to Cart!");
+  };
+
+  const handlePurchaseNow = () => {
+    if (!product?._id) return;
+    dispatch(
+      addItemToCart({
+        _id: product._id,
+        quantity,
+      })
+    );
+    router.push("/cart");
+  };
+
+  const handleItemToWishList = () => {
+    if (!product?._id) return;
+    if (isInWishlist) {
+      dispatch(removeItemFromWishlist(product._id));
+      toast.success("Removed from Watchlist");
+    } else {
+      dispatch(addItemToWishlist(product._id));
+      toast.success("Added to Watchlist");
+    }
+  };
 
   const rawImages = product.images && product.images.length > 0
     ? product.images
@@ -401,19 +440,26 @@ const ShopDetails = () => {
                       </button>
                     </div>
 
-                    <a
-                      href="#"
+                    <button
+                      onClick={handlePurchaseNow}
                       className="inline-flex font-medium text-white bg-blue py-3 px-7 rounded-md ease-out duration-200 hover:bg-blue-dark"
                     >
                       Purchase Now
-                    </a>
+                    </button>
 
-                    <a
-                      href="#"
+                    <button
+                      onClick={handleAddToCart}
+                      className="inline-flex font-medium text-white bg-dark py-3 px-7 rounded-md ease-out duration-200 hover:bg-blue"
+                    >
+                      Add to Cart
+                    </button>
+
+                    <button
+                      onClick={handleItemToWishList}
                       className="flex items-center justify-center w-12 h-12 rounded-md border border-gray-3 ease-out duration-200 hover:text-white hover:bg-dark hover:border-transparent"
                     >
-                      <Heart size={24} weight="bold" />
-                    </a>
+                      <Heart size={24} weight={isInWishlist ? "fill" : "bold"} className={isInWishlist ? "text-red" : "text-dark"} />
+                    </button>
                   </div>
                 </div>
               </div>
