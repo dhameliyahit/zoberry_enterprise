@@ -45,6 +45,37 @@ export default function RootLayout({
       <head>
         {/* google adsense */}
         <meta name="google-site-verification" content="sCKkEWiWbTZSbAgU3SI_ORWmv7njv-zK09zR9kgX41w" />
+        {/* Google Structured Data / JSON-LD for Sitelinks & Searchbox */}
+        <script
+          type="application/ld+json"
+          dangerouslySetInnerHTML={{
+            __html: JSON.stringify([
+              {
+                "@context": "https://schema.org",
+                "@type": "WebSite",
+                "name": "Zoberry Enterprise",
+                "url": "https://www.zoberryenterprise.shop",
+                "potentialAction": {
+                  "@type": "SearchAction",
+                  "target": "https://www.zoberryenterprise.shop/shop-with-sidebar?search={search_term_string}",
+                  "query-input": "required name=search_term_string"
+                }
+              },
+              {
+                "@context": "https://schema.org",
+                "@type": "Organization",
+                "name": "Zoberry Enterprise",
+                "url": "https://www.zoberryenterprise.shop",
+                "logo": "https://www.zoberryenterprise.shop/images/logo/logo.svg",
+                "contactPoint": {
+                  "@type": "ContactPoint",
+                  "telephone": "+91-9638601192",
+                  "contactType": "customer service"
+                }
+              }
+            ])
+          }}
+        />
       </head>
       <body suppressHydrationWarning={true}>
         {/* Google Analytics Script */}
