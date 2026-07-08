@@ -1,6 +1,6 @@
 import { MetadataRoute } from "next";
 import { connectToDatabase } from "@/lib/db";
-import mongoose from "mongoose";
+import { StorefrontProduct } from "@/lib/storefront-models/Product";
 
 export default async function sitemap(): Promise<MetadataRoute.Sitemap> {
   const baseUrl = "https://www.zoberryenterprise.shop";
@@ -23,8 +23,7 @@ export default async function sitemap(): Promise<MetadataRoute.Sitemap> {
     await connectToDatabase();
     
     // Dynamically retrieve all active products to add to sitemap
-    const ProductModel = mongoose.models.Product || mongoose.model("Product", new mongoose.Schema({}));
-    const products = await ProductModel.find({ isActive: { $ne: false } }, "_id updatedAt").lean() as any[];
+    const products = await StorefrontProduct.find({ isActive: { $ne: false } }, "_id updatedAt").lean() as any[];
 
     const productRoutes = products.map((prod) => ({
       url: `${baseUrl}/shop-details?id=${prod._id}`,
