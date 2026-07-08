@@ -33,7 +33,7 @@ export default function SiteLayout({
         localStorage.setItem("zoberry_mac_address", generatedMac);
       }
     }
-    setTimeout(() => setLoading(false), 1000);
+    setLoading(false);
   }, []);
 
   return (

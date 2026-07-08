@@ -1,7 +1,10 @@
 import { StorefrontProduct as Product } from "@/lib/storefront-models/Product";
 import { StorefrontCategory as Category } from "@/lib/storefront-models/Category";
 import { StorefrontReview as Review } from "@/lib/storefront-models/Review";
+import { StorefrontHeroSlide as HeroSlide } from "@/lib/storefront-models/HeroSlide";
 import "@/lib/storefront-models/User";
+import { cacheProducts, cacheProductById, cacheProductBySlug, cacheCategories, cacheCategoryById, cacheCategoryBySlug, cacheHeroSlides, cacheHeroSlideById } from "@/lib/cache";
+import mongoose from "mongoose";
 
 type ProductQueryParams = {
   brand?: string;
@@ -96,7 +99,7 @@ async function attachReviews(product: any) {
   };
 }
 
-export async function getProducts(params: ProductQueryParams) {
+export const getProducts = cacheProducts(async (params: ProductQueryParams) => {
   const page = Math.max(Number(params.page || "1"), 1);
   const limit = Math.max(Number(params.limit || "20"), 1);
   const skip = (page - 1) * limit;
@@ -122,11 +125,9 @@ export async function getProducts(params: ProductQueryParams) {
       pages: Math.ceil(total / limit),
     },
   };
-}
+});
 
-import mongoose from "mongoose";
-
-export async function getProductById(id: string) {
+export const getProductById = cacheProductById(async (id: string) => {
   if (!mongoose.Types.ObjectId.isValid(id)) {
     return null;
   }
@@ -139,9 +140,9 @@ export async function getProductById(id: string) {
   }
 
   return attachReviews(product);
-}
+});
 
-export async function getProductBySlug(slug: string) {
+export const getProductBySlug = cacheProductBySlug(async (slug: string) => {
   const product = await Product.findOne({ slug, status: "active" })
     .populate("category", "name slug")
     .lean();
@@ -151,13 +152,13 @@ export async function getProductBySlug(slug: string) {
   }
 
   return attachReviews(product);
-}
+});
 
-export async function getCategories(isActive?: string | null) {
+export const getCategories = cacheCategories(async (isActive?: boolean) => {
   const filter: Record<string, unknown> = {};
 
-  if (isActive !== undefined && isActive !== null) {
-    filter.isActive = isActive === "true";
+  if (isActive !== undefined) {
+    filter.isActive = isActive;
   }
 
   const categories = await Category.find(filter).sort({ name: 1 }).lean();
@@ -179,12 +180,30 @@ export async function getCategories(isActive?: string | null) {
     success: true as const,
     data: categoriesWithCounts,
   };
-}
+});
 
-export async function getCategoryById(id: string) {
+export const getCategoryById = cacheCategoryById(async (id: string) => {
   return Category.findById(id).lean();
-}
+});
 
-export async function getCategoryBySlug(slug: string) {
+export const getCategoryBySlug = cacheCategoryBySlug(async (slug: string) => {
   return Category.findOne({ slug }).lean();
-}
+});
+
+export const getHeroSlides = cacheHeroSlides(async (isActive?: boolean) => {
+  const filter: Record<string, boolean> = {};
+  if (isActive !== undefined) {
+    filter.isActive = isActive;
+  }
+
+  const slides = await HeroSlide.find(filter).sort({ order: 1, createdAt: -1 }).lean();
+
+  return {
+    success: true as const,
+    data: slides,
+  };
+});
+
+export const getHeroSlideById = cacheHeroSlideById(async (id: string) => {
+  return HeroSlide.findById(id).lean();
+});

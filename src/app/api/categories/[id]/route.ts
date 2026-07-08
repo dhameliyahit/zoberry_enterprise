@@ -21,7 +21,11 @@ export async function GET(
       );
     }
 
-    return NextResponse.json({ success: true, data: category });
+    return NextResponse.json({ success: true, data: category }, {
+      headers: {
+        "Cache-Control": "s-maxage=300, stale-while-revalidate=300",
+      },
+    });
   } catch (error) {
     return NextResponse.json(
       {
