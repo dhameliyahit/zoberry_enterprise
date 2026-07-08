@@ -42,6 +42,10 @@ export default function RootLayout({
 }) {
   return (
     <html lang="en" suppressHydrationWarning={true} data-scroll-behavior="smooth">
+      <head>
+        {/* google adsense */}
+        <meta name="google-site-verification" content="sCKkEWiWbTZSbAgU3SI_ORWmv7njv-zK09zR9kgX41w" />
+      </head>
       <body suppressHydrationWarning={true}>
         {/* Google Analytics Script */}
         <Script
