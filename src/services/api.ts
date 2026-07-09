@@ -20,12 +20,59 @@ class ApiError extends Error {
   }
 }
 
+const inflightRequests = new Map<string, Promise<any>>();
+
 async function request<T>(
   endpoint: string,
   options: RequestInit = {}
 ): Promise<T> {
+  const method = options.method || "GET";
   const url = `${getBaseUrl()}${endpoint}`;
   const token = getToken();
+
+  if (method.toUpperCase() === "GET") {
+    const cacheKey = `${url}::${token || ""}`;
+
+    if (inflightRequests.has(cacheKey)) {
+      return inflightRequests.get(cacheKey) as Promise<T>;
+    }
+
+    const promise = (async () => {
+      try {
+        const headers: Record<string, string> = {
+          ...(options.headers as Record<string, string>),
+        };
+
+        if (token) {
+          headers["Authorization"] = `Bearer ${token}`;
+        }
+
+        if (!(options.body instanceof FormData)) {
+          headers["Content-Type"] = "application/json";
+        }
+
+        const response = await fetch(url, {
+          ...options,
+          headers,
+        });
+
+        const data = await response.json();
+
+        if (!response.ok) {
+          throw new ApiError(data.error || "Request failed", response.status);
+        }
+
+        return data;
+      } finally {
+        setTimeout(() => {
+          inflightRequests.delete(cacheKey);
+        }, 1000);
+      }
+    })();
+
+    inflightRequests.set(cacheKey, promise);
+    return promise;
+  }
 
   const headers: Record<string, string> = {
     ...(options.headers as Record<string, string>),

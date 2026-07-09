@@ -1,5 +1,6 @@
 "use client";
 import React from "react";
+import UroPayPayment from "../Checkout/UroPayPayment";
 
 interface OrderDetailsProps {
   orderItem: any;
@@ -34,6 +35,14 @@ const OrderDetails = ({ orderItem }: OrderDetailsProps) => {
 
   return (
     <div className="space-y-8 print:p-0">
+      {orderItem.paymentMethod === "uropay" && orderItem.paymentStatus !== "paid" && (
+        <UroPayPayment
+          orderId={orderItem._id}
+          orderNumber={orderItem.orderNumber}
+          amount={orderItem.total}
+        />
+      )}
+
       {/* Header section */}
       <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center border-b border-gray-3 pb-6 print:border-b-2">
         <div>

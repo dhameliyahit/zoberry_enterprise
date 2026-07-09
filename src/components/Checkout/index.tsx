@@ -10,6 +10,7 @@ import { usePopulatedCart } from "@/hooks/usePopulatedCart";
 import { removeAllItemsFromCart } from "@/redux/features/cart-slice";
 import { authService } from "@/services/auth.service";
 import { orderService } from "@/services/order.service";
+import UroPayPayment from "./UroPayPayment";
 import { useUI } from "@/app/context/UIContext";
 
 interface SavedAddress {
@@ -70,6 +71,9 @@ export default function Checkout() {
   const [notes, setNotes] = useState("");
   const [loading, setLoading] = useState(false);
 
+  // Admin-controlled payment configuration
+  const [paymentConfig, setPaymentConfig] = useState<any>(null);
+
   // Success states
   const [placedOrder, setPlacedOrder] = useState<any>(null);
 
@@ -85,6 +89,18 @@ export default function Checkout() {
       setIsAuthenticated(true);
       fetchUserData();
     }
+  }, []);
+
+  useEffect(() => {
+    orderService
+      .getPaymentConfig()
+      .then((res) => {
+        if (res.success && res.data) {
+          setPaymentConfig(res.data);
+          if (res.data.defaultMethod) setPaymentMethod(res.data.defaultMethod);
+        }
+      })
+      .catch(() => {});
   }, []);
 
   const handleFillTestData = (e: React.MouseEvent) => {
@@ -350,11 +366,18 @@ export default function Checkout() {
     }
   };
 
-  // If order was successfully placed, render a receipt screen
+  // If order was successfully placed, render a receipt / payment screen
   if (placedOrder) {
+    const isUpi = placedOrder.paymentMethod === "uropay";
+    const orderNo =
+      placedOrder.orderNumber || `ZOB-${placedOrder._id.slice(-5).toUpperCase()}`;
+
     return (
       <>
-        <Breadcrumb title={"Order Success"} pages={["Checkout", "Success"]} />
+        <Breadcrumb
+          title={isUpi ? "Complete Payment" : "Order Success"}
+          pages={["Checkout", isUpi ? "Pay" : "Success"]}
+        />
         <section className="py-20 bg-gray-2 flex items-center justify-center min-h-[70vh]">
           <div className="max-w-[700px] w-full bg-white shadow-xl rounded-2xl p-6 sm:p-10 border border-gray-3 text-center">
             <div className="mx-auto w-16 h-16 bg-green-light-6 text-green flex items-center justify-center rounded-full mb-6">
@@ -375,15 +398,32 @@ export default function Checkout() {
               </svg>
             </div>
 
-            <h2 className="font-semibold text-3xl text-dark mb-2">
-              Thank You for Your Order!
-            </h2>
-            <p className="text-dark-4 text-base mb-8">
-              Your order has been placed successfully. Order Number:{" "}
-              <span className="font-bold text-blue">
-                {placedOrder.orderNumber || `ZOB-${placedOrder._id.slice(-5).toUpperCase()}`}
-              </span>
-            </p>
+            {isUpi ? (
+              <>
+                <h2 className="font-semibold text-3xl text-dark mb-2">
+                  Complete Your Payment
+                </h2>
+                <p className="text-dark-4 text-base mb-8">
+                  Order <span className="font-bold text-blue">{orderNo}</span> created.
+                  Please pay ₹{placedOrder.total} via UPI below.
+                </p>
+                <UroPayPayment
+                  orderId={placedOrder._id}
+                  orderNumber={orderNo}
+                  amount={placedOrder.total}
+                />
+              </>
+            ) : (
+              <>
+                <h2 className="font-semibold text-3xl text-dark mb-2">
+                  Thank You for Your Order!
+                </h2>
+                <p className="text-dark-4 text-base mb-8">
+                  Your order has been placed successfully. Order Number:{" "}
+                  <span className="font-bold text-blue">{orderNo}</span>
+                </p>
+              </>
+            )}
 
             <div className="border border-gray-3 rounded-xl p-6 text-left mb-8 space-y-4">
               <h3 className="font-medium text-lg text-dark border-b border-gray-3 pb-3">
@@ -941,57 +981,42 @@ export default function Checkout() {
                 {/* Payment Selector */}
                 <div className="bg-white shadow-1 rounded-[10px] mt-7.5">
                   <div className="border-b border-gray-3 py-5 px-4 sm:px-8.5">
-                    <h3 className="font-medium text-xl text-dark">Payment Method</h3>
+                  <h3 className="font-medium text-xl text-dark">Payment Method</h3>
+                </div>
+
+                <div className="p-4 sm:p-8.5">
+                  <div className="flex flex-col gap-4">
+                    {(paymentConfig?.enabledMethods || ["cod"]).map((m: string) => (
+                      <label
+                        key={m}
+                        htmlFor={`pay-${m}`}
+                        className="flex cursor-pointer select-none items-center gap-3.5"
+                      >
+                        <input
+                          type="radio"
+                          name="payment"
+                          id={`pay-${m}`}
+                          checked={paymentMethod === m}
+                          onChange={() => setPaymentMethod(m)}
+                          className="h-4 w-4 text-blue border-gray-3"
+                        />
+                        <span>
+                          {m === "cod"
+                            ? "Cash on Delivery"
+                            : m === "uropay"
+                            ? "UPI (UroPay)"
+                            : m === "netbanking"
+                            ? "Direct Bank Transfer (Netbanking)"
+                            : m === "wallet"
+                            ? "PayPal (Digital Wallet)"
+                            : m === "card"
+                            ? "Card Payment"
+                            : m}
+                        </span>
+                      </label>
+                    ))}
                   </div>
-
-                  <div className="p-4 sm:p-8.5">
-                    <div className="flex flex-col gap-4">
-                      <label
-                        htmlFor="payCod"
-                        className="flex cursor-pointer select-none items-center gap-3.5"
-                      >
-                        <input
-                          type="radio"
-                          name="payment"
-                          id="payCod"
-                          checked={paymentMethod === "cod"}
-                          onChange={() => setPaymentMethod("cod")}
-                          className="h-4 w-4 text-blue border-gray-3"
-                        />
-                        <span>Cash on Delivery</span>
-                      </label>
-
-                      <label
-                        htmlFor="payNet"
-                        className="flex cursor-pointer select-none items-center gap-3.5"
-                      >
-                        <input
-                          type="radio"
-                          name="payment"
-                          id="payNet"
-                          checked={paymentMethod === "netbanking"}
-                          onChange={() => setPaymentMethod("netbanking")}
-                          className="h-4 w-4 text-blue border-gray-3"
-                        />
-                        <span>Direct Bank Transfer (Netbanking)</span>
-                      </label>
-
-                      <label
-                        htmlFor="payWallet"
-                        className="flex cursor-pointer select-none items-center gap-3.5"
-                      >
-                        <input
-                          type="radio"
-                          name="payment"
-                          id="payWallet"
-                          checked={paymentMethod === "wallet"}
-                          onChange={() => setPaymentMethod("wallet")}
-                          className="h-4 w-4 text-blue border-gray-3"
-                        />
-                        <span>PayPal (Digital Wallet)</span>
-                      </label>
-                    </div>
-                  </div>
+                </div>
                 </div>
 
                 {/* checkout button */}

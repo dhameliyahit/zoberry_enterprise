@@ -1,4 +1,58 @@
+const inflightRequests = new Map<string, Promise<any>>();
+
 async function request<T>(url: string, options: RequestInit = {}): Promise<T> {
+  const method = options.method || "GET";
+
+  if (method.toUpperCase() === "GET") {
+    let token = "";
+    if (typeof window !== "undefined") {
+      token = localStorage.getItem("zoberry_token") || "";
+    }
+    const cacheKey = `${url}::${token}`;
+
+    if (inflightRequests.has(cacheKey)) {
+      return inflightRequests.get(cacheKey) as Promise<T>;
+    }
+
+    const promise = (async () => {
+      try {
+        const headers: Record<string, string> = {
+          ...(options.headers as Record<string, string>),
+        };
+
+        if (typeof window !== "undefined") {
+          const token = localStorage.getItem("zoberry_token");
+          if (token) {
+            headers.Authorization = `Bearer ${token}`;
+          }
+        }
+
+        if (!(options.body instanceof FormData) && !headers["Content-Type"]) {
+          headers["Content-Type"] = "application/json";
+        }
+
+        const response = await fetch(url, {
+          ...options,
+          headers,
+        });
+        const data = await response.json();
+
+        if (!response.ok) {
+          throw new Error(data.error || "Request failed");
+        }
+
+        return data;
+      } finally {
+        setTimeout(() => {
+          inflightRequests.delete(cacheKey);
+        }, 1000);
+      }
+    })();
+
+    inflightRequests.set(cacheKey, promise);
+    return promise;
+  }
+
   const headers: Record<string, string> = {
     ...(options.headers as Record<string, string>),
   };

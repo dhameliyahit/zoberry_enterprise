@@ -5,16 +5,20 @@ import { requireAuthenticatedUser } from "@/lib/customer-auth";
 import { connectToDatabase } from "@/lib/db";
 import { StorefrontOrder } from "@/lib/storefront-models/Order";
 import { StorefrontProduct } from "@/lib/storefront-models/Product";
+import { getPaymentConfig } from "@/lib/payment-config";
 
 const indianPhonePattern = /^(?:\+91|0)?[6-9]\d{9}$/;
 const indianPincodePattern = /^\d{6}$/;
+// Only these shipping costs are valid (free / FedEx / DHL) — prevents tampering.
+const ALLOWED_SHIPPING_COSTS = [0, 150, 250];
+const VALID_PAYMENT_METHODS = ["cod", "card", "upi", "netbanking", "wallet", "uropay"];
 
 type CreateOrderPayload = {
   items?: {
     product: string;
     title: string;
     image?: string;
-    price: number;
+    price?: number;
     quantity: number;
   }[];
   shippingAddress?: {
@@ -30,7 +34,7 @@ type CreateOrderPayload = {
   shippingCost?: number;
   tax?: number;
   total?: number;
-  paymentMethod?: "cod" | "card" | "upi" | "netbanking" | "wallet";
+  paymentMethod?: string;
   notes?: string;
 };
 
@@ -41,29 +45,11 @@ export async function POST(request: NextRequest) {
 
   try {
     await connectToDatabase();
-    
-    let user;
-    try {
-      user = await requireAuthenticatedUser(request);
-    } catch (err) {
-      // Fallback to a dummy Guest User for guest checkouts & verification testing
-      const StorefrontUser = (await import("@/lib/storefront-models/User")).StorefrontUser;
-      let guestUser = await StorefrontUser.findOne({ email: "guest@zoberry.com" });
-      if (!guestUser) {
-        guestUser = await StorefrontUser.create({
-          name: "Guest Tester",
-          email: "guest@zoberry.com",
-          phone: "9876543210",
-          passwordHash: "dummyhash",
-          isActive: true,
-          role: "customer",
-        });
-      }
-      user = guestUser;
-    }
+
+    // HARD authentication — no guest fallback. Order placement requires a real user.
+    const user = await requireAuthenticatedUser(request);
 
     const body = (await request.json()) as CreateOrderPayload;
-
     const items = body.items || [];
     const shippingAddress = body.shippingAddress;
 
@@ -94,6 +80,20 @@ export async function POST(request: NextRequest) {
       return apiError("Please enter a valid 6-digit Indian pincode");
     }
 
+    // Validate payment method against the admin-controlled configuration.
+    const config = await getPaymentConfig();
+    const requestedMethod = body.paymentMethod || "cod";
+    if (
+      !VALID_PAYMENT_METHODS.includes(requestedMethod) ||
+      !config.enabledMethods.includes(requestedMethod)
+    ) {
+      return apiError("Selected payment method is not available");
+    }
+
+    const shippingCost = ALLOWED_SHIPPING_COSTS.includes(Number(body.shippingCost))
+      ? Number(body.shippingCost)
+      : 0;
+
     const productIds = items.map((item) => new mongoose.Types.ObjectId(item.product));
 
     session.startTransaction();
@@ -103,7 +103,11 @@ export async function POST(request: NextRequest) {
       isActive: true,
     }).session(session);
 
-    const productMap = new Map(products.map((product) => [product._id.toString(), product]));
+    const productMap = new Map(
+      products.map((product) => [product._id.toString(), product])
+    );
+
+    let subtotal = 0;
 
     for (const item of items) {
       if (!item.product || item.quantity < 1) {
@@ -121,7 +125,19 @@ export async function POST(request: NextRequest) {
       }
 
       product.stock -= item.quantity;
+      subtotal += product.price * item.quantity;
       await product.save({ session });
+    }
+
+    // Server-authoritative pricing: never trust client totals.
+    const tax = Math.round(subtotal * 0.05);
+    const total = subtotal + shippingCost + tax;
+
+    if (
+      body.total !== undefined &&
+      Math.abs(total - Number(body.total)) > 1
+    ) {
+      throw new Error("Order total mismatch. Please refresh and try again.");
     }
 
     const order = await StorefrontOrder.create(
@@ -132,7 +148,7 @@ export async function POST(request: NextRequest) {
             product: new mongoose.Types.ObjectId(item.product),
             title: item.title,
             image: item.image || "",
-            price: item.price,
+            price: productMap.get(item.product).price, // server source of truth
             quantity: item.quantity,
           })),
           shippingAddress: {
@@ -144,11 +160,11 @@ export async function POST(request: NextRequest) {
             zip: shippingAddress.zip.trim(),
             country: shippingAddress.country.trim(),
           },
-          subtotal: body.subtotal || 0,
-          shippingCost: body.shippingCost || 0,
-          tax: body.tax || 0,
-          total: body.total || 0,
-          paymentMethod: body.paymentMethod || "cod",
+          subtotal,
+          shippingCost,
+          tax,
+          total,
+          paymentMethod: requestedMethod,
           notes: body.notes?.trim() || "",
         },
       ],

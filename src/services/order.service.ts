@@ -19,4 +19,18 @@ export const orderService = {
 
   cancel: (id: string) =>
     putToSiteApi<ApiResponse<Order>>(`/orders/${id}/cancel`),
+
+  // UroPay (UPI gateway) flows
+  getPaymentConfig: () => getFromSiteApi<ApiResponse<any>>("/config/payment"),
+  createUroPay: (orderId: string) =>
+    postToSiteApi<ApiResponse<any>>("/payments/uropay/create", { orderId }),
+  submitUtr: (orderId: string, referenceNumber: string) =>
+    postToSiteApi<ApiResponse<any>>("/payments/uropay/utr", {
+      orderId,
+      referenceNumber,
+    }),
+  getUroPayStatus: (uroPayOrderId: string) =>
+    getFromSiteApi<ApiResponse<any>>(
+      `/payments/uropay/status?uroPayOrderId=${encodeURIComponent(uroPayOrderId)}`
+    ),
 };

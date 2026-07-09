@@ -91,7 +91,7 @@ const getProductImage = (product?: Product): string => {
 
 export default function HeroVideoPlayer() {
   const dispatch = useDispatch<AppDispatch>();
-  const { openCartSidebar } = useUI();
+  const { openCartSidebar, setHomeLoading } = useUI();
 
   const [videos, setVideos] = useState<HeroVideo[]>([]);
   const [activeIndex, setActiveIndex] = useState(0);
@@ -170,10 +170,11 @@ export default function HeroVideoPlayer() {
         console.error(err);
       } finally {
         setLoading(false);
+        setHomeLoading(false);
       }
     };
     loadData();
-  }, []);
+  }, [setHomeLoading]);
 
   if (loading || videos.length === 0) {
     return (

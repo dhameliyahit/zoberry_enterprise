@@ -15,6 +15,28 @@ import toast from "react-hot-toast";
 import { useSearchParams, useRouter } from "next/navigation";
 import { MagnifyingGlassPlus, Minus, Plus, Heart, CheckCircle, Star } from "@phosphor-icons/react";
 
+const getYoutubeId = (url: string): string => {
+  const regExp = /^.*(youtu.be\/|v\/|u\/\w\/|embed\/|watch\?v=|\&v=|shorts\/)([^#\&\?]*).*/;
+  const match = url?.match(regExp);
+  return match && match[2].length === 11 ? match[2] : "";
+};
+
+const getThumbnailUrl = (url: string): string => {
+  const ytId = getYoutubeId(url);
+  if (ytId) {
+    return `https://img.youtube.com/vi/${ytId}/hqdefault.jpg`;
+  }
+  return "/images/placeholder.png";
+};
+
+const getEmbedUrl = (url: string): string => {
+  const ytId = getYoutubeId(url);
+  if (ytId) {
+    return `https://www.youtube.com/embed/${ytId}?autoplay=1&mute=1&controls=1`;
+  }
+  return url;
+};
+
 const ShopDetails = () => {
   const dispatch = useDispatch();
   const searchParams = useSearchParams();
@@ -130,6 +152,13 @@ const ShopDetails = () => {
     typeof img === "string" ? img : img.url
   );
 
+  const media = [
+    ...(productImages?.map((img: string) => ({ type: "image" as const, url: img })) || []),
+    ...(product.videos?.map((vid: any) => ({ type: "video" as const, url: vid.url, title: vid.title })) || [])
+  ];
+
+  const currentMedia = media[previewImg] || media[0];
+
   const fetchedIdRef = useRef<string | null>(null);
 
   useEffect(() => {
@@ -183,7 +212,7 @@ const ShopDetails = () => {
   const displayPrice = selectedVariant?.price ?? product.price;
   const displayCompareAt = selectedVariant?.price ? (product.compareAtPrice || product.price) : (product.compareAtPrice || null);
   const displayStock = selectedVariant?.stock ?? product.stock;
-  const displayImage = selectedVariant?.image || productImages[previewImg];
+  const displayImage = selectedVariant?.image || (currentMedia?.type === "image" ? currentMedia.url : productImages[0]);
 
   useEffect(() => {
     if (product && product._id) {
@@ -254,44 +283,92 @@ const ShopDetails = () => {
                 <div className="lg:max-w-[570px] w-full flex flex-col-reverse sm:flex-row gap-6">
                   {/* Thumbnail Gallery */}
                   <div className="flex flex-row sm:flex-col gap-4.5 justify-start min-w-[80px]">
-                    {productImages?.map((item, key) => (
+                    {media?.map((item, key) => (
                       <button
                         onClick={() => setPreviewImg(key)}
                         key={key}
-                        className={`flex items-center justify-center w-15 sm:w-20 h-15 sm:h-20 overflow-hidden rounded-lg bg-gray-2 shadow-1 ease-out duration-200 border-2 hover:border-blue ${key === previewImg
+                        className={`flex items-center justify-center w-15 sm:w-20 h-15 sm:h-20 overflow-hidden rounded-lg bg-gray-2 shadow-1 ease-out duration-200 border-2 hover:border-blue relative ${key === previewImg
                           ? "border-blue"
                           : "border-transparent"
                           }`}
                       >
-                        <Image
-                          width={50}
-                          height={50}
-                          src={item}
-                          alt="thumbnail"
-                        />
+                        {item.type === "image" ? (
+                          <Image
+                            width={50}
+                            height={50}
+                            src={item.url}
+                            alt="thumbnail"
+                          />
+                        ) : (
+                          <div className="w-full h-full flex flex-col items-center justify-center bg-dark/10 relative">
+                            {getYoutubeId(item.url) ? (
+                              <>
+                                <Image
+                                  width={50}
+                                  height={50}
+                                  src={getThumbnailUrl(item.url)}
+                                  alt="video thumbnail"
+                                  className="opacity-70 object-cover w-full h-full"
+                                />
+                                <div className="absolute inset-0 flex items-center justify-center text-white bg-black/40 hover:bg-black/20 transition-colors">
+                                  <svg className="w-6 h-6 fill-current" viewBox="0 0 24 24">
+                                    <path d="M8 5v14l11-7z" />
+                                  </svg>
+                                </div>
+                              </>
+                            ) : (
+                              <div className="w-full h-full flex items-center justify-center bg-gray-200">
+                                <svg className="w-8 h-8 text-gray-500 fill-current" viewBox="0 0 24 24">
+                                  <path d="M8 5v14l11-7z" />
+                                </svg>
+                              </div>
+                            )}
+                          </div>
+                        )}
                       </button>
                     ))}
                   </div>
 
-                  {/* Main Product Image */}
+                  {/* Main Product Image or Video */}
                   <div className="flex-1 lg:min-h-[512px] w-full rounded-lg shadow-1 bg-gray-2 p-4 sm:p-7.5 relative flex items-center justify-center">
-                    <div>
-                      <button
-                        onClick={handlePreviewSlider}
-                        aria-label="button for zoom"
-                        className="gallery__Image w-11 h-11 rounded-[5px] bg-gray-1 shadow-1 flex items-center justify-center ease-out duration-200 text-dark hover:text-blue absolute top-4 lg:top-6 right-4 lg:right-6 z-50"
-                      >
-                        <MagnifyingGlassPlus size={22} weight="bold" />
-                      </button>
+                    <div className="w-full h-full flex items-center justify-center">
+                      {currentMedia?.type === "image" && (
+                        <button
+                          onClick={handlePreviewSlider}
+                          aria-label="button for zoom"
+                          className="gallery__Image w-11 h-11 rounded-[5px] bg-gray-1 shadow-1 flex items-center justify-center ease-out duration-200 text-dark hover:text-blue absolute top-4 lg:top-6 right-4 lg:right-6 z-50"
+                        >
+                          <MagnifyingGlassPlus size={22} weight="bold" />
+                        </button>
+                      )}
 
-                      {productImages?.[previewImg] && (
+                      {currentMedia?.type === "image" ? (
                         <Image
-                          src={productImages[previewImg]}
+                          src={currentMedia.url}
                           alt="products-details"
                           width={400}
                           height={400}
                         />
-                      )}
+                      ) : currentMedia?.type === "video" ? (
+                        <div className="w-full h-full absolute inset-0 rounded-lg overflow-hidden flex items-center justify-center bg-black">
+                          {getYoutubeId(currentMedia.url) ? (
+                            <iframe
+                              src={getEmbedUrl(currentMedia.url)}
+                              className="w-full h-full absolute inset-0 object-cover scale-[1.02]"
+                              allow="autoplay; encrypted-media; picture-in-picture"
+                              allowFullScreen
+                              title={currentMedia.title || "Product video"}
+                            />
+                          ) : (
+                            <video
+                              src={currentMedia.url}
+                              controls
+                              autoPlay
+                              className="w-full h-full object-contain"
+                            />
+                          )}
+                        </div>
+                      ) : null}
                     </div>
                   </div>
                 </div>
