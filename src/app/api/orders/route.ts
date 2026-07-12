@@ -11,7 +11,7 @@ const indianPhonePattern = /^(?:\+91|0)?[6-9]\d{9}$/;
 const indianPincodePattern = /^\d{6}$/;
 // Only these shipping costs are valid (free / FedEx / DHL) — prevents tampering.
 const ALLOWED_SHIPPING_COSTS = [0, 150, 250];
-const VALID_PAYMENT_METHODS = ["cod", "card", "upi", "netbanking", "wallet", "uropay"];
+const VALID_PAYMENT_METHODS = ["cod", "card", "upi", "netbanking", "uropay", "directupi"];
 
 type CreateOrderPayload = {
   items?: {
@@ -165,6 +165,10 @@ export async function POST(request: NextRequest) {
           tax,
           total,
           paymentMethod: requestedMethod,
+          upiVpa:
+            requestedMethod === "directupi"
+              ? config.providers?.directupi?.vpa || ""
+              : "",
           notes: body.notes?.trim() || "",
         },
       ],

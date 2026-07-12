@@ -12,6 +12,7 @@ export interface GatewayPaymentInput {
 export interface GatewayPaymentResult {
   gatewayOrderId: string;
   qr?: string | null;
+  deepLink?: string;
   raw?: any;
 }
 

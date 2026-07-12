@@ -21,7 +21,7 @@ export type PaymentConfig = {
 // The admin panel persists the real config into the shared `configs` collection,
 // which then becomes the source of truth for both admin and storefront.
 const DEFAULT_PAYMENT_CONFIG: PaymentConfig = {
-  enabledMethods: ["cod", "uropay"],
+  enabledMethods: ["cod", "uropay", "directupi"],
   defaultMethod: "cod",
   providers: {
     uropay: {
@@ -31,6 +31,13 @@ const DEFAULT_PAYMENT_CONFIG: PaymentConfig = {
       secret: process.env.UROPAY_SECRET || "",
       vpa: process.env.UROPAY_VPA || "",
       vpaName: process.env.UROPAY_VPA_NAME || "Zoberry",
+    },
+    // Static UPI QR: customer scans and pays directly to your VPA.
+    // No automatic confirmation — buyer submits UTR, merchant verifies manually.
+    directupi: {
+      enabled: true,
+      vpa: process.env.UPI_VPA || "heetdhameliya59-2@oksbi",
+      vpaName: process.env.UPI_VPA_NAME || "Zoberry",
     },
   },
 };

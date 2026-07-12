@@ -33,4 +33,11 @@ export const orderService = {
     getFromSiteApi<ApiResponse<any>>(
       `/payments/uropay/status?uroPayOrderId=${encodeURIComponent(uroPayOrderId)}`
     ),
+
+  // Static Direct UPI (QR scanned to merchant VPA) — manual UTR verification
+  submitDirectUpiUtr: (orderId: string, referenceNumber: string) =>
+    postToSiteApi<ApiResponse<any>>("/payments/directupi/utr", {
+      orderId,
+      referenceNumber,
+    }),
 };

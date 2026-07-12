@@ -64,7 +64,7 @@ const storefrontOrderSchema = new Schema(
     },
     paymentMethod: {
       type: String,
-      enum: ["cod", "card", "upi", "netbanking", "wallet", "uropay"],
+      enum: ["cod", "card", "upi", "netbanking", "uropay", "directupi"],
       default: "cod",
     },
     notes: { type: String, default: "", trim: true },
@@ -72,6 +72,15 @@ const storefrontOrderSchema = new Schema(
     // UroPay (UPI gateway) linkage
     uroPayOrderId: { type: String, default: "" },
     uroPayStatus: { type: String, default: "" },
+
+    // Static Direct UPI linkage (QR scanned to your VPA)
+    upiVpa: { type: String, default: "" },
+    utr: { type: String, default: "" },
+    utrStatus: {
+      type: String,
+      enum: ["", "submitted", "verified", "rejected"],
+      default: "",
+    },
   },
   { timestamps: true }
 );

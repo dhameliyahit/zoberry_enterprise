@@ -10,7 +10,6 @@ import { usePopulatedCart } from "@/hooks/usePopulatedCart";
 import { removeAllItemsFromCart } from "@/redux/features/cart-slice";
 import { authService } from "@/services/auth.service";
 import { orderService } from "@/services/order.service";
-import UroPayPayment from "./UroPayPayment";
 import { useUI } from "@/app/context/UIContext";
 
 interface SavedAddress {
@@ -67,7 +66,7 @@ export default function Checkout() {
 
   // Shipping cost & payment states
   const [shippingMethod, setShippingMethod] = useState("free"); // free, fedex, dhl
-  const [paymentMethod, setPaymentMethod] = useState("cod"); // cod, netbanking, wallet
+  const [paymentMethod, setPaymentMethod] = useState("cod"); // cod, uropay, netbanking, card
   const [notes, setNotes] = useState("");
   const [loading, setLoading] = useState(false);
 
@@ -352,9 +351,12 @@ export default function Checkout() {
       const res = await orderService.create(payload);
       if (res.success && res.data) {
         setPlacedOrder(res.data);
-        toast.success("Order Placed Successfully!");
-        // Clear Redux Cart & LocalStorage
-        dispatch(removeAllItemsFromCart());
+        if (res.data.paymentMethod === "uropay" || res.data.paymentMethod === "directupi") {
+          router.push(`/pay/${res.data._id}`);
+        } else {
+          toast.success("Order Placed Successfully!");
+          dispatch(removeAllItemsFromCart());
+        }
       } else {
         toast.error(res.error || "Failed to place order.");
       }
@@ -368,15 +370,14 @@ export default function Checkout() {
 
   // If order was successfully placed, render a receipt / payment screen
   if (placedOrder) {
-    const isUpi = placedOrder.paymentMethod === "uropay";
     const orderNo =
       placedOrder.orderNumber || `ZOB-${placedOrder._id.slice(-5).toUpperCase()}`;
 
     return (
       <>
         <Breadcrumb
-          title={isUpi ? "Complete Payment" : "Order Success"}
-          pages={["Checkout", isUpi ? "Pay" : "Success"]}
+          title="Order Success"
+          pages={["Checkout", "Success"]}
         />
         <section className="py-20 bg-gray-2 flex items-center justify-center min-h-[70vh]">
           <div className="max-w-[700px] w-full bg-white shadow-xl rounded-2xl p-6 sm:p-10 border border-gray-3 text-center">
@@ -398,32 +399,13 @@ export default function Checkout() {
               </svg>
             </div>
 
-            {isUpi ? (
-              <>
-                <h2 className="font-semibold text-3xl text-dark mb-2">
-                  Complete Your Payment
-                </h2>
-                <p className="text-dark-4 text-base mb-8">
-                  Order <span className="font-bold text-blue">{orderNo}</span> created.
-                  Please pay ₹{placedOrder.total} via UPI below.
-                </p>
-                <UroPayPayment
-                  orderId={placedOrder._id}
-                  orderNumber={orderNo}
-                  amount={placedOrder.total}
-                />
-              </>
-            ) : (
-              <>
-                <h2 className="font-semibold text-3xl text-dark mb-2">
-                  Thank You for Your Order!
-                </h2>
-                <p className="text-dark-4 text-base mb-8">
-                  Your order has been placed successfully. Order Number:{" "}
-                  <span className="font-bold text-blue">{orderNo}</span>
-                </p>
-              </>
-            )}
+            <h2 className="font-semibold text-3xl text-dark mb-2">
+              Thank You for Your Order!
+            </h2>
+            <p className="text-dark-4 text-base mb-8">
+              Your order has been placed successfully. Order Number:{" "}
+              <span className="font-bold text-blue">{orderNo}</span>
+            </p>
 
             <div className="border border-gray-3 rounded-xl p-6 text-left mb-8 space-y-4">
               <h3 className="font-medium text-lg text-dark border-b border-gray-3 pb-3">
@@ -1005,10 +987,10 @@ export default function Checkout() {
                             ? "Cash on Delivery"
                             : m === "uropay"
                             ? "UPI (UroPay)"
+                            : m === "directupi"
+                            ? "UPI (Scan & Pay)"
                             : m === "netbanking"
                             ? "Direct Bank Transfer (Netbanking)"
-                            : m === "wallet"
-                            ? "PayPal (Digital Wallet)"
                             : m === "card"
                             ? "Card Payment"
                             : m}

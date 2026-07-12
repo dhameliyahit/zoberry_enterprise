@@ -4,8 +4,14 @@ import { requireAuthenticatedUser } from "@/lib/customer-auth";
 import { connectToDatabase } from "@/lib/db";
 import { StorefrontOrder } from "@/lib/storefront-models/Order";
 import { getGateway } from "@/lib/payment-gateways";
+import { getPaymentConfig } from "@/lib/payment-config";
 
 export const runtime = "nodejs";
+
+function buildUpiDeepLink(config: any, amount: number, merchantOrderId: string, note?: string): string {
+  const provider = config.providers?.uropay || {};
+  return `upi://pay?pa=${encodeURIComponent(provider.vpa || "")}&pn=${encodeURIComponent(provider.vpaName || "Zoberry")}&am=${amount}&tn=${encodeURIComponent(note || `Order ${merchantOrderId}`)}&tr=${encodeURIComponent(merchantOrderId)}&cu=INR`;
+}
 
 // Creates a UroPay order (QR) for an existing storefront order.
 export async function POST(request: NextRequest) {
@@ -20,11 +26,14 @@ export async function POST(request: NextRequest) {
       return apiError("Order is not a UroPay order", 400);
     }
 
+    const config = await getPaymentConfig(false);
+
     if (order.uroPayOrderId) {
       return apiSuccess({
         uroPayOrderId: order.uroPayOrderId,
         amount: order.total,
         alreadyCreated: true,
+        deepLink: buildUpiDeepLink(config, order.total, order.orderNumber),
       });
     }
 
@@ -43,6 +52,7 @@ export async function POST(request: NextRequest) {
     return apiSuccess({
       uroPayOrderId: result.gatewayOrderId,
       qr: result.qr,
+      deepLink: result.deepLink || buildUpiDeepLink(config, order.total, order.orderNumber),
       amount: order.total,
     });
   } catch (error) {

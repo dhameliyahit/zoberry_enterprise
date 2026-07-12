@@ -1,4 +1,4 @@
-import React from "react";
+import React, { Suspense } from "react";
 import ShopDetails from "@/components/ShopDetails";
 import { Metadata } from "next";
 import { connectToDatabase } from "@/lib/db";
@@ -73,7 +73,9 @@ export async function generateMetadata({ searchParams }: Props): Promise<Metadat
 const ShopDetailsPage = () => {
   return (
     <main>
-      <ShopDetails />
+      <Suspense fallback={<div>Loading...</div>}>
+        <ShopDetails />
+      </Suspense>
     </main>
   );
 };

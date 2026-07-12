@@ -54,7 +54,13 @@ export class UroPayGateway implements PaymentGateway {
     const qr =
       data.qrCode || data.qr || data.qrImage || data.qrDataUrl || null;
 
-    return { gatewayOrderId: data.uroPayOrderId, qr, raw: data };
+    const deepLink = `upi://pay?pa=${encodeURIComponent(
+      this.cfg.vpa || ""
+    )}&pn=${encodeURIComponent(this.cfg.vpaName || "Zoberry")}&am=${input.amount}&tn=${encodeURIComponent(
+      input.notes || `Order ${input.merchantOrderId}`
+    )}&tr=${encodeURIComponent(input.merchantOrderId)}&cu=INR`;
+
+    return { gatewayOrderId: data.uroPayOrderId, qr, deepLink, raw: data };
   }
 
   async submitReference(gatewayOrderId: string, reference: string) {

@@ -284,15 +284,6 @@ const Footer = () => {
                     style={{ height: "auto" }}
                   />
                 </a>
-                <a href="#" aria-label="payment system with paypal">
-                  <Image
-                    src="/images/payment/payment-02.svg"
-                    alt="paypal"
-                    width={18}
-                    height={21}
-                    style={{ height: "auto" }}
-                  />
-                </a>
                 <a href="#" aria-label="payment system with master card">
                   <Image
                     src="/images/payment/payment-03.svg"
