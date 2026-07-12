@@ -17,23 +17,10 @@ export type PaymentConfig = {
   providers: Record<string, ProviderConfig>;
 };
 
-// Bootstrap defaults come from env so the gateway works immediately.
-// The admin panel persists the real config into the shared `configs` collection,
-// which then becomes the source of truth for both admin and storefront.
 const DEFAULT_PAYMENT_CONFIG: PaymentConfig = {
-  enabledMethods: ["cod", "uropay", "directupi"],
-  defaultMethod: "cod",
+  enabledMethods: ["directupi"],
+  defaultMethod: "directupi",
   providers: {
-    uropay: {
-      enabled: true,
-      mode: process.env.UROPAY_MODE || "test",
-      apiKey: process.env.UROPAY_API_KEY || "",
-      secret: process.env.UROPAY_SECRET || "",
-      vpa: process.env.UROPAY_VPA || "",
-      vpaName: process.env.UROPAY_VPA_NAME || "Zoberry",
-    },
-    // Static UPI QR: customer scans and pays directly to your VPA.
-    // No automatic confirmation — buyer submits UTR, merchant verifies manually.
     directupi: {
       enabled: true,
       vpa: process.env.UPI_VPA || "heetdhameliya59-2@oksbi",
@@ -41,6 +28,30 @@ const DEFAULT_PAYMENT_CONFIG: PaymentConfig = {
     },
   },
 };
+
+const ALLOWED_PAYMENT_METHODS = new Set(["card", "upi", "netbanking", "directupi"]);
+
+function sanitizeConfig(config: PaymentConfig): PaymentConfig {
+  const providers: Record<string, ProviderConfig> = {};
+  for (const [name, p] of Object.entries(config.providers || {})) {
+    if (p?.enabled && ALLOWED_PAYMENT_METHODS.has(name)) {
+      providers[name] = { ...p };
+    }
+  }
+
+  const enabledMethods = (config.enabledMethods || [])
+    .filter((m) => ALLOWED_PAYMENT_METHODS.has(m));
+
+  if (enabledMethods.length === 0) {
+    enabledMethods.push("directupi");
+  }
+
+  const defaultMethod = ALLOWED_PAYMENT_METHODS.has(config.defaultMethod)
+    ? config.defaultMethod
+    : enabledMethods[0];
+
+  return { enabledMethods, defaultMethod, providers };
+}
 
 let cache: PaymentConfig | null = null;
 
@@ -54,7 +65,7 @@ export async function getPaymentConfig(useCache = true): Promise<PaymentConfig> 
     doc = await StorefrontConfig.create({ key: "payment", value: DEFAULT_PAYMENT_CONFIG });
   }
 
-  cache = (doc.value as PaymentConfig) || DEFAULT_PAYMENT_CONFIG;
+  cache = sanitizeConfig((doc.value as PaymentConfig) || DEFAULT_PAYMENT_CONFIG);
   return cache;
 }
 

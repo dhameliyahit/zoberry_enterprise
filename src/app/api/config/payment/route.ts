@@ -18,8 +18,8 @@ export async function GET(request: NextRequest) {
     }
 
     return apiSuccess({
-      enabledMethods: config.enabledMethods || ["cod"],
-      defaultMethod: config.defaultMethod || "cod",
+      enabledMethods: config.enabledMethods || ["directupi"],
+      defaultMethod: config.defaultMethod || "directupi",
       providers,
     });
   } catch (error) {

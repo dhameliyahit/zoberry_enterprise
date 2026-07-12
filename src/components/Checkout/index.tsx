@@ -1,13 +1,10 @@
 "use client";
 import React, { useState, useEffect } from "react";
-import { useDispatch } from "react-redux";
 import { useRouter } from "next/navigation";
 import toast from "react-hot-toast";
-import Image from "next/image";
 import Link from "next/link";
 import Breadcrumb from "../Common/Breadcrumb";
 import { usePopulatedCart } from "@/hooks/usePopulatedCart";
-import { removeAllItemsFromCart } from "@/redux/features/cart-slice";
 import { authService } from "@/services/auth.service";
 import { orderService } from "@/services/order.service";
 import { useUI } from "@/app/context/UIContext";
@@ -25,7 +22,6 @@ interface SavedAddress {
 }
 
 export default function Checkout() {
-  const dispatch = useDispatch();
   const router = useRouter();
   const { items: cartItems, totalPrice } = usePopulatedCart();
   const { openAuthModal } = useUI();
@@ -66,12 +62,19 @@ export default function Checkout() {
 
   // Shipping cost & payment states
   const [shippingMethod, setShippingMethod] = useState("free"); // free, fedex, dhl
-  const [paymentMethod, setPaymentMethod] = useState("cod"); // cod, uropay, netbanking, card
+  const [paymentMethod, setPaymentMethod] = useState("directupi"); // directupi (UPI only)
   const [notes, setNotes] = useState("");
   const [loading, setLoading] = useState(false);
 
   // Admin-controlled payment configuration
   const [paymentConfig, setPaymentConfig] = useState<any>(null);
+
+  const PAYMENT_METHOD_LABELS: Record<string, string> = {
+    directupi: "UPI (Online)",
+    upi: "UPI (Online)",
+    card: "Card Payment",
+    netbanking: "Direct Bank Transfer",
+  };
 
   // Success states
   const [placedOrder, setPlacedOrder] = useState<any>(null);
@@ -351,12 +354,7 @@ export default function Checkout() {
       const res = await orderService.create(payload);
       if (res.success && res.data) {
         setPlacedOrder(res.data);
-        if (res.data.paymentMethod === "uropay" || res.data.paymentMethod === "directupi") {
-          router.push(`/pay/${res.data._id}`);
-        } else {
-          toast.success("Order Placed Successfully!");
-          dispatch(removeAllItemsFromCart());
-        }
+        router.push(`/pay/${res.data._id}`);
       } else {
         toast.error(res.error || "Failed to place order.");
       }
@@ -968,7 +966,7 @@ export default function Checkout() {
 
                 <div className="p-4 sm:p-8.5">
                   <div className="flex flex-col gap-4">
-                    {(paymentConfig?.enabledMethods || ["cod"]).map((m: string) => (
+                     {(paymentConfig?.enabledMethods || ["directupi"]).map((m: string) => (
                       <label
                         key={m}
                         htmlFor={`pay-${m}`}
@@ -983,17 +981,7 @@ export default function Checkout() {
                           className="h-4 w-4 text-blue border-gray-3"
                         />
                         <span>
-                          {m === "cod"
-                            ? "Cash on Delivery"
-                            : m === "uropay"
-                            ? "UPI (UroPay)"
-                            : m === "directupi"
-                            ? "UPI (Scan & Pay)"
-                            : m === "netbanking"
-                            ? "Direct Bank Transfer (Netbanking)"
-                            : m === "card"
-                            ? "Card Payment"
-                            : m}
+                          {PAYMENT_METHOD_LABELS[m] || m}
                         </span>
                       </label>
                     ))}

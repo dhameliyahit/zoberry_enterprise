@@ -11,7 +11,7 @@ const indianPhonePattern = /^(?:\+91|0)?[6-9]\d{9}$/;
 const indianPincodePattern = /^\d{6}$/;
 // Only these shipping costs are valid (free / FedEx / DHL) — prevents tampering.
 const ALLOWED_SHIPPING_COSTS = [0, 150, 250];
-const VALID_PAYMENT_METHODS = ["cod", "card", "upi", "netbanking", "uropay", "directupi"];
+const VALID_PAYMENT_METHODS = ["card", "upi", "netbanking", "directupi"];
 
 type CreateOrderPayload = {
   items?: {
@@ -82,12 +82,15 @@ export async function POST(request: NextRequest) {
 
     // Validate payment method against the admin-controlled configuration.
     const config = await getPaymentConfig();
-    const requestedMethod = body.paymentMethod || "cod";
+    const requestedMethod = body.paymentMethod || "directupi";
     if (
       !VALID_PAYMENT_METHODS.includes(requestedMethod) ||
       !config.enabledMethods.includes(requestedMethod)
     ) {
-      return apiError("Selected payment method is not available");
+      return apiError(
+        `Payment method "${requestedMethod}" is not available. Enabled: ${config.enabledMethods.join(", ")}`,
+        400
+      );
     }
 
     const shippingCost = ALLOWED_SHIPPING_COSTS.includes(Number(body.shippingCost))

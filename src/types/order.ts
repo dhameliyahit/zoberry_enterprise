@@ -28,7 +28,7 @@ export type Order = {
   total: number;
   status: "pending" | "confirmed" | "processing" | "shipped" | "delivered" | "cancelled";
   paymentStatus: "pending" | "paid" | "failed" | "refunded";
-  paymentMethod: "cod" | "card" | "upi" | "netbanking" | "uropay" | "directupi";
+  paymentMethod: "card" | "upi" | "netbanking" | "directupi";
   notes: string;
   createdAt: string;
   uroPayOrderId?: string;

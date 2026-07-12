@@ -4,9 +4,7 @@ import { useRouter, useParams } from "next/navigation";
 import toast from "react-hot-toast";
 import { orderService } from "@/services/order.service";
 import { authService } from "@/services/auth.service";
-import UroPayPayment from "@/components/Checkout/UroPayPayment";
 import UpiQrPayment from "@/components/Checkout/UpiQrPayment";
-import Image from "next/image";
 
 export default function PayPage() {
   const router = useRouter();
@@ -39,24 +37,16 @@ export default function PayPage() {
           return;
         }
 
-        if (foundOrder.paymentMethod === "uropay") {
-          const res = await orderService.createUroPay(orderId);
-          if (!res.success) {
-            setError(res.error || "Payment not available");
-            setLoading(false);
-            return;
-          }
-          foundOrder.uroPayOrderId = res.data?.uroPayOrderId || foundOrder.uroPayOrderId;
-        } else if (foundOrder.paymentMethod === "directupi") {
-          const configRes = await orderService.getPaymentConfig();
-          const vpaValue =
-            configRes?.data?.providers?.directupi?.vpa || "heetdhameliya59-2@oksbi";
-          setVpa(vpaValue);
-        } else {
+        if (foundOrder.paymentMethod !== "directupi") {
           setError("This order does not use UPI payment");
           setLoading(false);
           return;
         }
+
+        const configRes = await orderService.getPaymentConfig();
+        const vpaValue =
+          configRes?.data?.providers?.directupi?.vpa || "heetdhameliya59-2@oksbi";
+        setVpa(vpaValue);
 
         setOrder(foundOrder);
         setLoading(false);
@@ -119,21 +109,12 @@ export default function PayPage() {
                 Order <span className="font-bold text-blue">{orderNo}</span> created.
                 Please pay ₹{order.total} via UPI below.
               </p>
-              {order.paymentMethod === "directupi" ? (
-                <UpiQrPayment
-                  orderId={order._id}
-                  orderNumber={orderNo}
-                  amount={order.total}
-                  vpa={vpa}
-                />
-              ) : (
-                <UroPayPayment
-                  orderId={order._id}
-                  orderNumber={orderNo}
-                  amount={order.total}
-                  uroPayOrderId={order.uroPayOrderId}
-                />
-              )}
+              <UpiQrPayment
+                orderId={order._id}
+                orderNumber={orderNo}
+                amount={order.total}
+                vpa={vpa}
+              />
             </div>
           </div>
 
