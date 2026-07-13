@@ -2,6 +2,7 @@
 import React, { useState, useEffect } from "react";
 import { useRouter } from "next/navigation";
 import toast from "react-hot-toast";
+import Swal from "sweetalert2";
 import Link from "next/link";
 import Breadcrumb from "../Common/Breadcrumb";
 import { usePopulatedCart } from "@/hooks/usePopulatedCart";
@@ -36,6 +37,9 @@ export default function Checkout() {
   const [pincodeError, setPincodeError] = useState("");
   const [shippingPincodeError, setShippingPincodeError] = useState("");
 
+  // Field-level errors for visual inline validation
+  const [fieldErrors, setFieldErrors] = useState<Record<string, string>>({});
+
   // Form states
   const [billingAddress, setBillingAddress] = useState({
     fullName: "",
@@ -49,6 +53,7 @@ export default function Checkout() {
   const [saveToProfile, setSaveToProfile] = useState(false);
 
   // Shipping to different address logic
+  const [shipSameAsBilling, setShipSameAsBilling] = useState(true);
   const [shipToDifferent, setShipToDifferent] = useState(false);
   const [shippingAddress, setShippingAddress] = useState({
     fullName: "",
@@ -184,6 +189,13 @@ export default function Checkout() {
     }
   }, [shippingAddress.zip]);
 
+  // Sync shipping address from billing when "same as billing" is checked
+  useEffect(() => {
+    if (shipSameAsBilling) {
+      setShippingAddress({ ...billingAddress });
+    }
+  }, [shipSameAsBilling, billingAddress]);
+
   const fetchUserData = async () => {
     try {
       const res = await authService.getMe();
@@ -248,75 +260,67 @@ export default function Checkout() {
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
+
     if (!isAuthenticated) {
+      Swal.fire({
+        icon: "warning",
+        title: "Login Required",
+        text: "Please sign in to place an order.",
+        confirmButtonColor: "#3085d6",
+      });
       openAuthModal();
       return;
     }
 
     if (cartItems.length === 0) {
-      toast.error("Your cart is empty!");
+      Swal.fire({
+        icon: "warning",
+        title: "Cart is Empty",
+        text: "Please add items to your cart before checkout.",
+        confirmButtonColor: "#3085d6",
+      });
       return;
     }
 
-    // Form validation
-    const targetBilling = billingAddress;
-    if (
-      !targetBilling.fullName ||
-      !targetBilling.phone ||
-      !targetBilling.street ||
-      !targetBilling.city ||
-      !targetBilling.zip ||
-      !targetBilling.country
-    ) {
-      toast.error("Please fill in all required billing details.");
-      return;
-    }
-
-    // Phone & Pincode regex validation
+    // --- Field-level validation ---
     const phoneRegex = /^(?:\+91|0)?[6-9]\d{9}$/;
-    if (!phoneRegex.test(targetBilling.phone.trim())) {
-      toast.error("Please enter a valid 10-digit Indian phone number for Billing.");
-      return;
-    }
-
     const zipRegex = /^\d{6}$/;
-    if (!zipRegex.test(targetBilling.zip.trim())) {
-      toast.error("Please enter a valid 6-digit Indian Pincode for Billing.");
-      return;
+    const errors: Record<string, string> = {};
+    const b = billingAddress;
+
+    if (!b.fullName.trim()) errors.fullName = "Full name is required.";
+    if (!b.street.trim()) errors.street = "Street address is required.";
+    if (!b.city.trim()) errors.city = "City is required.";
+    if (!b.zip.trim()) errors.zip = "Pincode is required.";
+    else if (!zipRegex.test(b.zip.trim())) errors.zip = "Enter a valid 6-digit Indian pincode.";
+    else if (pincodeError) errors.zip = pincodeError;
+    if (!b.country.trim()) errors.country = "Country is required.";
+    if (!b.phone.trim()) errors.phone = "Phone number is required.";
+    else if (!phoneRegex.test(b.phone.trim())) errors.phone = "Enter a valid 10-digit Indian phone number.";
+
+    if (!shipSameAsBilling) {
+      const s = shippingAddress;
+      if (!s.fullName.trim()) errors.shipFullName = "Full name is required.";
+      if (!s.street.trim()) errors.shipStreet = "Street address is required.";
+      if (!s.city.trim()) errors.shipCity = "City is required.";
+      if (!s.zip.trim()) errors.shipZip = "Pincode is required.";
+      else if (!zipRegex.test(s.zip.trim())) errors.shipZip = "Enter a valid 6-digit Indian pincode.";
+      else if (shippingPincodeError) errors.shipZip = shippingPincodeError;
+      if (!s.country.trim()) errors.shipCountry = "Country is required.";
+      if (!s.phone.trim()) errors.shipPhone = "Phone number is required.";
+      else if (!phoneRegex.test(s.phone.trim())) errors.shipPhone = "Enter a valid 10-digit Indian phone number.";
     }
 
-    if (pincodeError) {
-      toast.error(pincodeError);
+    setFieldErrors(errors);
+
+    if (Object.keys(errors).length > 0) {
+      Swal.fire({
+        icon: "error",
+        title: "Please fill all required fields",
+        text: "Some required fields are missing or invalid. Please check the highlighted fields and try again.",
+        confirmButtonColor: "#d33",
+      });
       return;
-    }
-
-    if (shipToDifferent) {
-      if (
-        !shippingAddress.fullName ||
-        !shippingAddress.phone ||
-        !shippingAddress.street ||
-        !shippingAddress.city ||
-        !shippingAddress.zip ||
-        !shippingAddress.country
-      ) {
-        toast.error("Please fill in all shipping details.");
-        return;
-      }
-
-      if (!phoneRegex.test(shippingAddress.phone.trim())) {
-        toast.error("Please enter a valid 10-digit Indian phone number for Shipping.");
-        return;
-      }
-
-      if (!zipRegex.test(shippingAddress.zip.trim())) {
-        toast.error("Please enter a valid 6-digit Indian Pincode for Shipping.");
-        return;
-      }
-
-      if (shippingPincodeError) {
-        toast.error(shippingPincodeError);
-        return;
-      }
     }
 
     setLoading(true);
@@ -330,7 +334,7 @@ export default function Checkout() {
       }
 
       // 2. Prepare payload
-      const finalShippingAddress = shipToDifferent ? shippingAddress : billingAddress;
+      const finalShippingAddress = shipSameAsBilling ? billingAddress : shippingAddress;
       const orderItems = cartItems.map((item) => ({
         product: item._id,
         title: item.title,
@@ -360,7 +364,11 @@ export default function Checkout() {
       }
     } catch (err: any) {
       console.error(err);
-      toast.error(err.message || "An error occurred while creating order.");
+      Swal.fire({
+        icon: "error",
+        title: "Order Failed",
+        text: err.message || "An error occurred while creating your order. Please try again.",
+      });
     } finally {
       setLoading(false);
     }
@@ -544,11 +552,11 @@ export default function Checkout() {
                         name="fullName"
                         id="fullName"
                         value={billingAddress.fullName}
-                        onChange={handleBillingChange}
+                        onChange={(e) => { handleBillingChange(e); setFieldErrors(prev => ({ ...prev, fullName: "" })); }}
                         placeholder="John Doe"
-                        className="rounded-md border border-gray-3 bg-gray-1 placeholder:text-dark-5 w-full py-2.5 px-5 outline-none focus:border-transparent focus:shadow-input focus:ring-2 focus:ring-blue/20"
-                        required
+                        className={`rounded-md border bg-gray-1 placeholder:text-dark-5 w-full py-2.5 px-5 outline-none focus:border-transparent focus:shadow-input focus:ring-2 focus:ring-blue/20 ${fieldErrors.fullName ? "border-red" : "border-gray-3"}`}
                       />
+                      {fieldErrors.fullName && <p className="text-red text-xs mt-1">{fieldErrors.fullName}</p>}
                     </div>
 
                     <div className="mb-5">
@@ -560,11 +568,11 @@ export default function Checkout() {
                         name="street"
                         id="street"
                         value={billingAddress.street}
-                        onChange={handleBillingChange}
+                        onChange={(e) => { handleBillingChange(e); setFieldErrors(prev => ({ ...prev, street: "" })); }}
                         placeholder="House number and street name"
-                        className="rounded-md border border-gray-3 bg-gray-1 placeholder:text-dark-5 w-full py-2.5 px-5 outline-none focus:border-transparent focus:shadow-input focus:ring-2 focus:ring-blue/20"
-                        required
+                        className={`rounded-md border bg-gray-1 placeholder:text-dark-5 w-full py-2.5 px-5 outline-none focus:border-transparent focus:shadow-input focus:ring-2 focus:ring-blue/20 ${fieldErrors.street ? "border-red" : "border-gray-3"}`}
                       />
+                      {fieldErrors.street && <p className="text-red text-xs mt-1">{fieldErrors.street}</p>}
                     </div>
 
                     <div className="flex gap-4 mb-5">
@@ -577,11 +585,11 @@ export default function Checkout() {
                           name="city"
                           id="city"
                           value={billingAddress.city}
-                          onChange={handleBillingChange}
+                          onChange={(e) => { handleBillingChange(e); setFieldErrors(prev => ({ ...prev, city: "" })); }}
                           placeholder="Mumbai"
-                          className="rounded-md border border-gray-3 bg-gray-1 placeholder:text-dark-5 w-full py-2.5 px-5 outline-none focus:border-transparent focus:shadow-input focus:ring-2 focus:ring-blue/20"
-                          required
+                          className={`rounded-md border bg-gray-1 placeholder:text-dark-5 w-full py-2.5 px-5 outline-none focus:border-transparent focus:shadow-input focus:ring-2 focus:ring-blue/20 ${fieldErrors.city ? "border-red" : "border-gray-3"}`}
                         />
+                        {fieldErrors.city && <p className="text-red text-xs mt-1">{fieldErrors.city}</p>}
                       </div>
                       <div className="w-1/2">
                         <label htmlFor="state" className="block mb-2.5">
@@ -609,11 +617,12 @@ export default function Checkout() {
                           name="zip"
                           id="zip"
                           value={billingAddress.zip}
-                          onChange={handleBillingChange}
+                          onChange={(e) => { handleBillingChange(e); setFieldErrors(prev => ({ ...prev, zip: "" })); }}
                           placeholder="400001"
-                          className="rounded-md border border-gray-3 bg-gray-1 placeholder:text-dark-5 w-full py-2.5 px-5 outline-none focus:border-transparent focus:shadow-input focus:ring-2 focus:ring-blue/20"
-                          required
+                          className={`rounded-md border bg-gray-1 placeholder:text-dark-5 w-full py-2.5 px-5 outline-none focus:border-transparent focus:shadow-input focus:ring-2 focus:ring-blue/20 ${fieldErrors.zip ? "border-red" : "border-gray-3"}`}
                         />
+                        {fieldErrors.zip && <p className="text-red text-xs mt-1">{fieldErrors.zip}</p>}
+                        {pincodeError && !fieldErrors.zip && <p className="text-red text-xs mt-1">{pincodeError}</p>}
                       </div>
                       <div className="w-1/2">
                         <label htmlFor="country" className="block mb-2.5">
@@ -624,11 +633,11 @@ export default function Checkout() {
                           name="country"
                           id="country"
                           value={billingAddress.country}
-                          onChange={handleBillingChange}
+                          onChange={(e) => { handleBillingChange(e); setFieldErrors(prev => ({ ...prev, country: "" })); }}
                           placeholder="India"
-                          className="rounded-md border border-gray-3 bg-gray-1 placeholder:text-dark-5 w-full py-2.5 px-5 outline-none focus:border-transparent focus:shadow-input focus:ring-2 focus:ring-blue/20"
-                          required
+                          className={`rounded-md border bg-gray-1 placeholder:text-dark-5 w-full py-2.5 px-5 outline-none focus:border-transparent focus:shadow-input focus:ring-2 focus:ring-blue/20 ${fieldErrors.country ? "border-red" : "border-gray-3"}`}
                         />
+                        {fieldErrors.country && <p className="text-red text-xs mt-1">{fieldErrors.country}</p>}
                       </div>
                     </div>
 
@@ -641,11 +650,11 @@ export default function Checkout() {
                         name="phone"
                         id="phone"
                         value={billingAddress.phone}
-                        onChange={handleBillingChange}
+                        onChange={(e) => { handleBillingChange(e); setFieldErrors(prev => ({ ...prev, phone: "" })); }}
                         placeholder="+91 9999999999"
-                        className="rounded-md border border-gray-3 bg-gray-1 placeholder:text-dark-5 w-full py-2.5 px-5 outline-none focus:border-transparent focus:shadow-input focus:ring-2 focus:ring-blue/20"
-                        required
+                        className={`rounded-md border bg-gray-1 placeholder:text-dark-5 w-full py-2.5 px-5 outline-none focus:border-transparent focus:shadow-input focus:ring-2 focus:ring-blue/20 ${fieldErrors.phone ? "border-red" : "border-gray-3"}`}
                       />
+                      {fieldErrors.phone && <p className="text-red text-xs mt-1">{fieldErrors.phone}</p>}
                     </div>
 
                     {isAuthenticated && (
@@ -665,138 +674,155 @@ export default function Checkout() {
                   </div>
                 </div>
 
-                {/* Shipping box different address dropdown */}
+                {/* Shipping Address Section */}
                 <div className="bg-white shadow-1 rounded-[10px] mt-7.5">
-                  <div
-                    onClick={() => setShipToDifferent(!shipToDifferent)}
-                    className="cursor-pointer flex items-center gap-2.5 font-medium text-lg text-dark py-5 px-5.5"
-                  >
-                    Ship to a different address?
-                    <svg
-                      className={`fill-current ease-out duration-200 ${
-                        shipToDifferent && "rotate-180"
-                      }`}
-                      width="22"
-                      height="22"
-                      viewBox="0 0 22 22"
-                      fill="none"
-                      xmlns="http://www.w3.org/2000/svg"
-                    >
-                      <path
-                        fillRule="evenodd"
-                        clipRule="evenodd"
-                        d="M4.06103 7.80259C4.30813 7.51431 4.74215 7.48092 5.03044 7.72802L10.9997 12.8445L16.9689 7.72802C17.2572 7.48092 17.6912 7.51431 17.9383 7.80259C18.1854 8.09088 18.1521 8.5249 17.8638 8.772L11.4471 14.272C11.1896 14.4927 10.8097 14.4927 10.5523 14.272L4.1356 8.772C3.84731 8.5249 3.81393 8.09088 4.06103 7.80259Z"
-                        fill="currentColor"
-                      />
-                    </svg>
+                  <div className="py-5 px-5.5 border-b border-gray-3 flex items-center justify-between">
+                    <h3 className="font-medium text-lg text-dark">Shipping Address</h3>
+                    {/* Same as billing checkbox */}
+                    <label className="flex items-center gap-2.5 cursor-pointer select-none">
+                      <div className="relative">
+                        <input
+                          type="checkbox"
+                          className="sr-only peer"
+                          checked={shipSameAsBilling}
+                          onChange={(e) => setShipSameAsBilling(e.target.checked)}
+                        />
+                        <div className="w-5 h-5 rounded border-2 border-gray-3 peer-checked:border-blue peer-checked:bg-blue flex items-center justify-center transition-all">
+                          {shipSameAsBilling && (
+                            <svg width="12" height="9" viewBox="0 0 12 9" fill="none">
+                              <path d="M1 4L4.5 7.5L11 1" stroke="white" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" />
+                            </svg>
+                          )}
+                        </div>
+                      </div>
+                      <span className="text-sm font-medium text-dark">
+                        Same as billing address
+                      </span>
+                    </label>
                   </div>
 
-                  <div className={`p-4 sm:p-8.5 border-t border-gray-3 ${shipToDifferent ? "block" : "hidden"}`}>
-                    <div className="mb-5">
-                      <label htmlFor="shipFullName" className="block mb-2.5">
-                        Full Name <span className="text-red">*</span>
-                      </label>
-                      <input
-                        type="text"
-                        name="fullName"
-                        value={shippingAddress.fullName}
-                        onChange={handleShippingChange}
-                        placeholder="John Doe"
-                        className="rounded-md border border-gray-3 bg-gray-1 placeholder:text-dark-5 w-full py-2.5 px-5 outline-none focus:border-transparent focus:shadow-input focus:ring-2 focus:ring-blue/20"
-                        required={shipToDifferent}
-                      />
-                    </div>
-
-                    <div className="mb-5">
-                      <label htmlFor="shipStreet" className="block mb-2.5">
-                        Street Address <span className="text-red">*</span>
-                      </label>
-                      <input
-                        type="text"
-                        name="street"
-                        value={shippingAddress.street}
-                        onChange={handleShippingChange}
-                        placeholder="House number and street name"
-                        className="rounded-md border border-gray-3 bg-gray-1 placeholder:text-dark-5 w-full py-2.5 px-5 outline-none focus:border-transparent focus:shadow-input focus:ring-2 focus:ring-blue/20"
-                        required={shipToDifferent}
-                      />
-                    </div>
-
-                    <div className="flex gap-4 mb-5">
-                      <div className="w-1/2">
-                        <label htmlFor="shipCity" className="block mb-2.5">
-                          Town/ City <span className="text-red">*</span>
-                        </label>
-                        <input
-                          type="text"
-                          name="city"
-                          value={shippingAddress.city}
-                          onChange={handleShippingChange}
-                          placeholder="Mumbai"
-                          className="rounded-md border border-gray-3 bg-gray-1 placeholder:text-dark-5 w-full py-2.5 px-5 outline-none focus:border-transparent focus:shadow-input focus:ring-2 focus:ring-blue/20"
-                          required={shipToDifferent}
-                        />
+                  <div className="p-4 sm:p-8.5">
+                    {shipSameAsBilling ? (
+                      // Show read-only summary when same as billing
+                      <div className="bg-blue/5 border border-blue/20 rounded-lg p-4 text-sm text-dark-4 space-y-1">
+                        <p className="font-medium text-dark">{billingAddress.fullName || "—"}</p>
+                        <p>{billingAddress.street || "—"}</p>
+                        <p>{[billingAddress.city, billingAddress.state].filter(Boolean).join(", ")} {billingAddress.zip}</p>
+                        <p>{billingAddress.country}</p>
+                        <p>📞 {billingAddress.phone || "—"}</p>
+                        <p className="text-xs text-blue mt-2">Shipping to the same address as billing. Uncheck above to change.</p>
                       </div>
-                      <div className="w-1/2">
-                        <label htmlFor="shipState" className="block mb-2.5">
-                          State / County
-                        </label>
-                        <input
-                          type="text"
-                          name="state"
-                          value={shippingAddress.state}
-                          onChange={handleShippingChange}
-                          placeholder="Maharashtra"
-                          className="rounded-md border border-gray-3 bg-gray-1 placeholder:text-dark-5 w-full py-2.5 px-5 outline-none focus:border-transparent focus:shadow-input focus:ring-2 focus:ring-blue/20"
-                        />
-                      </div>
-                    </div>
+                    ) : (
+                      // Show editable shipping form
+                      <>
+                        <div className="mb-5">
+                          <label htmlFor="shipFullName" className="block mb-2.5">
+                            Full Name <span className="text-red">*</span>
+                          </label>
+                          <input
+                            type="text"
+                            name="fullName"
+                            value={shippingAddress.fullName}
+                            onChange={(e) => { handleShippingChange(e); setFieldErrors(prev => ({ ...prev, shipFullName: "" })); }}
+                            placeholder="John Doe"
+                            className={`rounded-md border bg-gray-1 placeholder:text-dark-5 w-full py-2.5 px-5 outline-none focus:border-transparent focus:shadow-input focus:ring-2 focus:ring-blue/20 ${fieldErrors.shipFullName ? "border-red" : "border-gray-3"}`}
+                          />
+                          {fieldErrors.shipFullName && <p className="text-red text-xs mt-1">{fieldErrors.shipFullName}</p>}
+                        </div>
 
-                    <div className="flex gap-4 mb-5">
-                      <div className="w-1/2">
-                        <label htmlFor="shipZip" className="block mb-2.5">
-                          Zip / Postal Code <span className="text-red">*</span>
-                        </label>
-                        <input
-                          type="text"
-                          name="zip"
-                          value={shippingAddress.zip}
-                          onChange={handleShippingChange}
-                          placeholder="400001"
-                          className="rounded-md border border-gray-3 bg-gray-1 placeholder:text-dark-5 w-full py-2.5 px-5 outline-none focus:border-transparent focus:shadow-input focus:ring-2 focus:ring-blue/20"
-                          required={shipToDifferent}
-                        />
-                      </div>
-                      <div className="w-1/2">
-                        <label htmlFor="shipCountry" className="block mb-2.5">
-                          Country <span className="text-red">*</span>
-                        </label>
-                        <input
-                          type="text"
-                          name="country"
-                          value={shippingAddress.country}
-                          onChange={handleShippingChange}
-                          placeholder="India"
-                          className="rounded-md border border-gray-3 bg-gray-1 placeholder:text-dark-5 w-full py-2.5 px-5 outline-none focus:border-transparent focus:shadow-input focus:ring-2 focus:ring-blue/20"
-                          required={shipToDifferent}
-                        />
-                      </div>
-                    </div>
+                        <div className="mb-5">
+                          <label htmlFor="shipStreet" className="block mb-2.5">
+                            Street Address <span className="text-red">*</span>
+                          </label>
+                          <input
+                            type="text"
+                            name="street"
+                            value={shippingAddress.street}
+                            onChange={(e) => { handleShippingChange(e); setFieldErrors(prev => ({ ...prev, shipStreet: "" })); }}
+                            placeholder="House number and street name"
+                            className={`rounded-md border bg-gray-1 placeholder:text-dark-5 w-full py-2.5 px-5 outline-none focus:border-transparent focus:shadow-input focus:ring-2 focus:ring-blue/20 ${fieldErrors.shipStreet ? "border-red" : "border-gray-3"}`}
+                          />
+                          {fieldErrors.shipStreet && <p className="text-red text-xs mt-1">{fieldErrors.shipStreet}</p>}
+                        </div>
 
-                    <div className="mb-5">
-                      <label htmlFor="shipPhone" className="block mb-2.5">
-                        Phone <span className="text-red">*</span>
-                      </label>
-                      <input
-                        type="text"
-                        name="phone"
-                        value={shippingAddress.phone}
-                        onChange={handleShippingChange}
-                        placeholder="+91 9999999999"
-                        className="rounded-md border border-gray-3 bg-gray-1 placeholder:text-dark-5 w-full py-2.5 px-5 outline-none focus:border-transparent focus:shadow-input focus:ring-2 focus:ring-blue/20"
-                        required={shipToDifferent}
-                      />
-                    </div>
+                        <div className="flex gap-4 mb-5">
+                          <div className="w-1/2">
+                            <label htmlFor="shipCity" className="block mb-2.5">
+                              Town/ City <span className="text-red">*</span>
+                            </label>
+                            <input
+                              type="text"
+                              name="city"
+                              value={shippingAddress.city}
+                              onChange={(e) => { handleShippingChange(e); setFieldErrors(prev => ({ ...prev, shipCity: "" })); }}
+                              placeholder="Mumbai"
+                              className={`rounded-md border bg-gray-1 placeholder:text-dark-5 w-full py-2.5 px-5 outline-none focus:border-transparent focus:shadow-input focus:ring-2 focus:ring-blue/20 ${fieldErrors.shipCity ? "border-red" : "border-gray-3"}`}
+                            />
+                            {fieldErrors.shipCity && <p className="text-red text-xs mt-1">{fieldErrors.shipCity}</p>}
+                          </div>
+                          <div className="w-1/2">
+                            <label htmlFor="shipState" className="block mb-2.5">
+                              State / County
+                            </label>
+                            <input
+                              type="text"
+                              name="state"
+                              value={shippingAddress.state}
+                              onChange={handleShippingChange}
+                              placeholder="Maharashtra"
+                              className="rounded-md border border-gray-3 bg-gray-1 placeholder:text-dark-5 w-full py-2.5 px-5 outline-none focus:border-transparent focus:shadow-input focus:ring-2 focus:ring-blue/20"
+                            />
+                          </div>
+                        </div>
+
+                        <div className="flex gap-4 mb-5">
+                          <div className="w-1/2">
+                            <label htmlFor="shipZip" className="block mb-2.5">
+                              Zip / Postal Code <span className="text-red">*</span>
+                            </label>
+                            <input
+                              type="text"
+                              name="zip"
+                              value={shippingAddress.zip}
+                              onChange={(e) => { handleShippingChange(e); setFieldErrors(prev => ({ ...prev, shipZip: "" })); }}
+                              placeholder="400001"
+                              className={`rounded-md border bg-gray-1 placeholder:text-dark-5 w-full py-2.5 px-5 outline-none focus:border-transparent focus:shadow-input focus:ring-2 focus:ring-blue/20 ${fieldErrors.shipZip ? "border-red" : "border-gray-3"}`}
+                            />
+                            {fieldErrors.shipZip && <p className="text-red text-xs mt-1">{fieldErrors.shipZip}</p>}
+                            {shippingPincodeError && !fieldErrors.shipZip && <p className="text-red text-xs mt-1">{shippingPincodeError}</p>}
+                          </div>
+                          <div className="w-1/2">
+                            <label htmlFor="shipCountry" className="block mb-2.5">
+                              Country <span className="text-red">*</span>
+                            </label>
+                            <input
+                              type="text"
+                              name="country"
+                              value={shippingAddress.country}
+                              onChange={(e) => { handleShippingChange(e); setFieldErrors(prev => ({ ...prev, shipCountry: "" })); }}
+                              placeholder="India"
+                              className={`rounded-md border bg-gray-1 placeholder:text-dark-5 w-full py-2.5 px-5 outline-none focus:border-transparent focus:shadow-input focus:ring-2 focus:ring-blue/20 ${fieldErrors.shipCountry ? "border-red" : "border-gray-3"}`}
+                            />
+                            {fieldErrors.shipCountry && <p className="text-red text-xs mt-1">{fieldErrors.shipCountry}</p>}
+                          </div>
+                        </div>
+
+                        <div className="mb-5">
+                          <label htmlFor="shipPhone" className="block mb-2.5">
+                            Phone <span className="text-red">*</span>
+                          </label>
+                          <input
+                            type="text"
+                            name="phone"
+                            value={shippingAddress.phone}
+                            onChange={(e) => { handleShippingChange(e); setFieldErrors(prev => ({ ...prev, shipPhone: "" })); }}
+                            placeholder="+91 9999999999"
+                            className={`rounded-md border bg-gray-1 placeholder:text-dark-5 w-full py-2.5 px-5 outline-none focus:border-transparent focus:shadow-input focus:ring-2 focus:ring-blue/20 ${fieldErrors.shipPhone ? "border-red" : "border-gray-3"}`}
+                          />
+                          {fieldErrors.shipPhone && <p className="text-red text-xs mt-1">{fieldErrors.shipPhone}</p>}
+                        </div>
+                      </>
+                    )}
                   </div>
                 </div>
 
