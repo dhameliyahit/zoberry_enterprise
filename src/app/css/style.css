@@ -233,3 +233,8 @@ input[type='search']::-webkit-search-results-decoration {
   --bc: 230 25% 25%;
   --br: 0.5rem;
 }
+
+/* Ensure SweetAlert displays above modals (z-99999) */
+.swal2-container {
+  z-index: 9999999 !important;
+}

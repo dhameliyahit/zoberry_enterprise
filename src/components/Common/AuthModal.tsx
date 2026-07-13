@@ -3,7 +3,7 @@ import React, { useEffect, useState } from "react";
 import { useUI } from "@/app/context/UIContext";
 import { authService } from "@/services";
 import toast from "react-hot-toast";
-
+import Swal from "sweetalert2";
 const AuthModal = () => {
   const { authModalOpen, closeAuthModal, authModalTab, setAuthModalTab } = useUI();
   
@@ -16,6 +16,16 @@ const AuthModal = () => {
   const [signUpEmail, setSignUpEmail] = useState("");
   const [signUpPassword, setSignUpPassword] = useState("");
   const [rePassword, setRePassword] = useState("");
+
+  const [errors, setErrors] = useState<{ 
+    signinEmail?: string; 
+    signinPassword?: string;
+    signupName?: string;
+    signupEmail?: string;
+    signupPassword?: string;
+    signupConfirm?: string;
+  }>({});
+  const [loading, setLoading] = useState(false);
 
   useEffect(() => {
     function handleClickOutside(event: MouseEvent) {
@@ -31,13 +41,14 @@ const AuthModal = () => {
 
     return () => {
       document.removeEventListener("mousedown", handleClickOutside);
-      // Clear forms on close
+      // Clear forms and errors on close
       setEmail("");
       setPassword("");
       setName("");
       setSignUpEmail("");
       setSignUpPassword("");
       setRePassword("");
+      setErrors({});
     };
   }, [authModalOpen, closeAuthModal]);
 
@@ -53,15 +64,29 @@ const AuthModal = () => {
         if (res.success && res.data?.token) {
           authService.setToken(res.data.token);
           localStorage.setItem("zoberry_user", JSON.stringify(res.data));
-          toast.success(authModalTab === "signin" ? "Logged in successfully!" : "Signed up and logged in successfully!");
+          Swal.fire({
+            icon: 'success',
+            title: 'Welcome!',
+            text: authModalTab === "signin" ? "Logged in successfully!" : "Signed up and logged in successfully!",
+            timer: 1500,
+            showConfirmButton: false
+          });
           closeAuthModal();
-          window.location.reload();
+          setTimeout(() => window.location.reload(), 1500);
         } else {
-          toast.error(res.error || "Authentication failed");
+          Swal.fire({
+            icon: 'error',
+            title: 'Authentication Failed',
+            text: res.error || "Authentication failed"
+          });
         }
       } catch (err: any) {
         console.error(err);
-        toast.error(err.message || "Google Authentication failed");
+        Swal.fire({
+          icon: 'error',
+          title: 'Error',
+          text: err.message || "Google Authentication failed"
+        });
       }
     };
 
@@ -103,53 +128,117 @@ const AuthModal = () => {
     };
   }, [authModalOpen, authModalTab, closeAuthModal]);
 
+  const validateSignIn = () => {
+    const newErrors: any = {};
+    if (!email) {
+      newErrors.signinEmail = "Email is required";
+    } else if (!/\S+@\S+\.\S+/.test(email)) {
+      newErrors.signinEmail = "Invalid email format";
+    }
+    if (!password) {
+      newErrors.signinPassword = "Password is required";
+    }
+    setErrors(newErrors);
+    return Object.keys(newErrors).length === 0;
+  };
+
+  const validateSignUp = () => {
+    const newErrors: any = {};
+    if (!name.trim()) {
+      newErrors.signupName = "Full Name is required";
+    }
+    if (!signUpEmail) {
+      newErrors.signupEmail = "Email is required";
+    } else if (!/\S+@\S+\.\S+/.test(signUpEmail)) {
+      newErrors.signupEmail = "Invalid email format";
+    }
+    if (!signUpPassword) {
+      newErrors.signupPassword = "Password is required";
+    } else if (signUpPassword.length < 6) {
+      newErrors.signupPassword = "Password must be at least 6 characters";
+    }
+    if (!rePassword) {
+      newErrors.signupConfirm = "Confirm Password is required";
+    } else if (signUpPassword !== rePassword) {
+      newErrors.signupConfirm = "Passwords do not match";
+    }
+    setErrors(newErrors);
+    return Object.keys(newErrors).length === 0;
+  };
+
   const handleSignInSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
-    if (!email || !password) {
-      toast.error("Please fill in all fields");
-      return;
-    }
+    if (!validateSignIn()) return;
+
+    setLoading(true);
     try {
       const res = await authService.login({ email, password });
       if (res.success && res.data?.token) {
         authService.setToken(res.data.token);
         localStorage.setItem("zoberry_user", JSON.stringify(res.data));
-        toast.success("Logged in successfully!");
+        Swal.fire({
+          icon: 'success',
+          title: 'Success!',
+          text: 'Logged in successfully!',
+          timer: 1500,
+          showConfirmButton: false
+        });
         closeAuthModal();
-        window.location.reload();
+        setTimeout(() => window.location.reload(), 1500);
       } else {
-        toast.error(res.error || "Invalid credentials");
+        Swal.fire({
+          icon: 'error',
+          title: 'Invalid Credentials',
+          text: res.error || "Invalid email or password. Please try again."
+        });
       }
     } catch (err: any) {
       console.error(err);
-      toast.error(err.response?.data?.error || err.message || "Login failed");
+      Swal.fire({
+        icon: 'error',
+        title: 'Login Failed',
+        text: err.response?.data?.error || err.message || "Login failed due to a server error."
+      });
+    } finally {
+      setLoading(false);
     }
   };
 
   const handleSignUpSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
-    if (!name || !signUpEmail || !signUpPassword || !rePassword) {
-      toast.error("Please fill in all required fields");
-      return;
-    }
-    if (signUpPassword !== rePassword) {
-      toast.error("Passwords do not match!");
-      return;
-    }
+    if (!validateSignUp()) return;
+
+    setLoading(true);
     try {
       const res = await authService.register({ name, email: signUpEmail, password: signUpPassword });
       if (res.success && res.data?.token) {
         authService.setToken(res.data.token);
         localStorage.setItem("zoberry_user", JSON.stringify(res.data));
-        toast.success("Signed up and logged in successfully!");
+        Swal.fire({
+          icon: 'success',
+          title: 'Account Created!',
+          text: 'Signed up and logged in successfully!',
+          timer: 1500,
+          showConfirmButton: false
+        });
         closeAuthModal();
-        window.location.reload();
+        setTimeout(() => window.location.reload(), 1500);
       } else {
-        toast.error(res.error || "Registration failed");
+        Swal.fire({
+          icon: 'error',
+          title: 'Registration Failed',
+          text: res.error || "Registration failed. Please try again."
+        });
       }
     } catch (err: any) {
       console.error(err);
-      toast.error(err.response?.data?.error || err.message || "Registration failed");
+      Swal.fire({
+        icon: 'error',
+        title: 'Registration Failed',
+        text: err.response?.data?.error || err.message || "Registration failed due to a server error."
+      });
+    } finally {
+      setLoading(false);
     }
   };
 
@@ -183,7 +272,10 @@ const AuthModal = () => {
         {/* Modal Tabs */}
         <div className="flex border-b border-gray-3 mt-4">
           <button
-            onClick={() => setAuthModalTab("signin")}
+            onClick={() => {
+              setAuthModalTab("signin");
+              setErrors({});
+            }}
             className={`w-1/2 pb-3 font-semibold text-center border-b-2 transition-all ${
               authModalTab === "signin"
                 ? "border-blue text-blue"
@@ -193,7 +285,10 @@ const AuthModal = () => {
             Sign In
           </button>
           <button
-            onClick={() => setAuthModalTab("signup")}
+            onClick={() => {
+              setAuthModalTab("signup");
+              setErrors({});
+            }}
             className={`w-1/2 pb-3 font-semibold text-center border-b-2 transition-all ${
               authModalTab === "signup"
                 ? "border-blue text-blue"
@@ -215,10 +310,14 @@ const AuthModal = () => {
                 <input
                   type="email"
                   value={email}
-                  onChange={(e) => setEmail(e.target.value)}
+                  onChange={(e) => {
+                    setEmail(e.target.value);
+                    if (errors.signinEmail) setErrors({ ...errors, signinEmail: undefined });
+                  }}
                   placeholder="Enter your email"
-                  className="rounded-lg border border-gray-3 bg-gray-1 placeholder:text-dark-5 w-full py-2.5 px-4 outline-none duration-200 focus:border-transparent focus:shadow-input focus:ring-2 focus:ring-blue/20"
+                  className={`rounded-lg border bg-gray-1 placeholder:text-dark-5 w-full py-2.5 px-4 outline-none duration-200 focus:shadow-input focus:ring-2 focus:ring-blue/20 ${errors.signinEmail ? 'border-red focus:border-red' : 'border-gray-3 focus:border-transparent'}`}
                 />
+                {errors.signinEmail && <p className="text-red text-xs mt-1">{errors.signinEmail}</p>}
               </div>
               <div>
                 <label className="block mb-2 text-custom-sm font-medium text-dark">
@@ -227,18 +326,23 @@ const AuthModal = () => {
                 <input
                   type="password"
                   value={password}
-                  onChange={(e) => setPassword(e.target.value)}
+                  onChange={(e) => {
+                    setPassword(e.target.value);
+                    if (errors.signinPassword) setErrors({ ...errors, signinPassword: undefined });
+                  }}
                   placeholder="Enter your password"
                   autoComplete="on"
-                  className="rounded-lg border border-gray-3 bg-gray-1 placeholder:text-dark-5 w-full py-2.5 px-4 outline-none duration-200 focus:border-transparent focus:shadow-input focus:ring-2 focus:ring-blue/20"
+                  className={`rounded-lg border bg-gray-1 placeholder:text-dark-5 w-full py-2.5 px-4 outline-none duration-200 focus:shadow-input focus:ring-2 focus:ring-blue/20 ${errors.signinPassword ? 'border-red focus:border-red' : 'border-gray-3 focus:border-transparent'}`}
                 />
+                {errors.signinPassword && <p className="text-red text-xs mt-1">{errors.signinPassword}</p>}
               </div>
 
               <button
                 type="submit"
-                className="w-full flex justify-center font-medium text-white bg-dark py-2.5 px-6 rounded-lg ease-out duration-200 hover:bg-blue mt-4"
+                disabled={loading}
+                className="w-full flex justify-center font-medium text-white bg-dark py-2.5 px-6 rounded-lg ease-out duration-200 hover:bg-blue mt-4 disabled:opacity-70"
               >
-                Sign In
+                {loading ? "Signing In..." : "Sign In"}
               </button>
 
               <div className="relative z-1 block font-medium text-center my-2">
@@ -252,7 +356,10 @@ const AuthModal = () => {
                 Don&apos;t have an account?{" "}
                 <button
                   type="button"
-                  onClick={() => setAuthModalTab("signup")}
+                  onClick={() => {
+                    setAuthModalTab("signup");
+                    setErrors({});
+                  }}
                   className="text-blue hover:underline font-medium"
                 >
                   Sign Up Now
@@ -270,10 +377,14 @@ const AuthModal = () => {
                 <input
                   type="text"
                   value={name}
-                  onChange={(e) => setName(e.target.value)}
+                  onChange={(e) => {
+                    setName(e.target.value);
+                    if (errors.signupName) setErrors({ ...errors, signupName: undefined });
+                  }}
                   placeholder="Enter your full name"
-                  className="rounded-lg border border-gray-3 bg-gray-1 placeholder:text-dark-5 w-full py-2.5 px-4 outline-none duration-200 focus:border-transparent focus:shadow-input focus:ring-2 focus:ring-blue/20"
+                  className={`rounded-lg border bg-gray-1 placeholder:text-dark-5 w-full py-2.5 px-4 outline-none duration-200 focus:shadow-input focus:ring-2 focus:ring-blue/20 ${errors.signupName ? 'border-red focus:border-red' : 'border-gray-3 focus:border-transparent'}`}
                 />
+                {errors.signupName && <p className="text-red text-xs mt-1">{errors.signupName}</p>}
               </div>
               <div>
                 <label className="block mb-1.5 text-custom-sm font-medium text-dark">
@@ -282,10 +393,14 @@ const AuthModal = () => {
                 <input
                   type="email"
                   value={signUpEmail}
-                  onChange={(e) => setSignUpEmail(e.target.value)}
+                  onChange={(e) => {
+                    setSignUpEmail(e.target.value);
+                    if (errors.signupEmail) setErrors({ ...errors, signupEmail: undefined });
+                  }}
                   placeholder="Enter your email"
-                  className="rounded-lg border border-gray-3 bg-gray-1 placeholder:text-dark-5 w-full py-2.5 px-4 outline-none duration-200 focus:border-transparent focus:shadow-input focus:ring-2 focus:ring-blue/20"
+                  className={`rounded-lg border bg-gray-1 placeholder:text-dark-5 w-full py-2.5 px-4 outline-none duration-200 focus:shadow-input focus:ring-2 focus:ring-blue/20 ${errors.signupEmail ? 'border-red focus:border-red' : 'border-gray-3 focus:border-transparent'}`}
                 />
+                {errors.signupEmail && <p className="text-red text-xs mt-1">{errors.signupEmail}</p>}
               </div>
               <div>
                 <label className="block mb-1.5 text-custom-sm font-medium text-dark">
@@ -294,11 +409,15 @@ const AuthModal = () => {
                 <input
                   type="password"
                   value={signUpPassword}
-                  onChange={(e) => setSignUpPassword(e.target.value)}
+                  onChange={(e) => {
+                    setSignUpPassword(e.target.value);
+                    if (errors.signupPassword) setErrors({ ...errors, signupPassword: undefined });
+                  }}
                   placeholder="Enter your password"
                   autoComplete="on"
-                  className="rounded-lg border border-gray-3 bg-gray-1 placeholder:text-dark-5 w-full py-2.5 px-4 outline-none duration-200 focus:border-transparent focus:shadow-input focus:ring-2 focus:ring-blue/20"
+                  className={`rounded-lg border bg-gray-1 placeholder:text-dark-5 w-full py-2.5 px-4 outline-none duration-200 focus:shadow-input focus:ring-2 focus:ring-blue/20 ${errors.signupPassword ? 'border-red focus:border-red' : 'border-gray-3 focus:border-transparent'}`}
                 />
+                {errors.signupPassword && <p className="text-red text-xs mt-1">{errors.signupPassword}</p>}
               </div>
               <div>
                 <label className="block mb-1.5 text-custom-sm font-medium text-dark">
@@ -307,18 +426,23 @@ const AuthModal = () => {
                 <input
                   type="password"
                   value={rePassword}
-                  onChange={(e) => setRePassword(e.target.value)}
+                  onChange={(e) => {
+                    setRePassword(e.target.value);
+                    if (errors.signupConfirm) setErrors({ ...errors, signupConfirm: undefined });
+                  }}
                   placeholder="Re-type your password"
                   autoComplete="on"
-                  className="rounded-lg border border-gray-3 bg-gray-1 placeholder:text-dark-5 w-full py-2.5 px-4 outline-none duration-200 focus:border-transparent focus:shadow-input focus:ring-2 focus:ring-blue/20"
+                  className={`rounded-lg border bg-gray-1 placeholder:text-dark-5 w-full py-2.5 px-4 outline-none duration-200 focus:shadow-input focus:ring-2 focus:ring-blue/20 ${errors.signupConfirm ? 'border-red focus:border-red' : 'border-gray-3 focus:border-transparent'}`}
                 />
+                {errors.signupConfirm && <p className="text-red text-xs mt-1">{errors.signupConfirm}</p>}
               </div>
 
               <button
                 type="submit"
-                className="w-full flex justify-center font-medium text-white bg-dark py-2.5 px-6 rounded-lg ease-out duration-200 hover:bg-blue mt-4"
+                disabled={loading}
+                className="w-full flex justify-center font-medium text-white bg-dark py-2.5 px-6 rounded-lg ease-out duration-200 hover:bg-blue mt-4 disabled:opacity-70"
               >
-                Create Account
+                {loading ? "Creating Account..." : "Create Account"}
               </button>
 
               <div className="relative z-1 block font-medium text-center my-2">
@@ -332,7 +456,10 @@ const AuthModal = () => {
                 Already have an account?{" "}
                 <button
                   type="button"
-                  onClick={() => setAuthModalTab("signin")}
+                  onClick={() => {
+                    setAuthModalTab("signin");
+                    setErrors({});
+                  }}
                   className="text-blue hover:underline font-medium"
                 >
                   Sign In Now

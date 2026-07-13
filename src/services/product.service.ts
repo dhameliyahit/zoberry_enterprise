@@ -1,5 +1,5 @@
 import { post, put, del } from "./api";
-import { getFromSiteApi } from "./site-api";
+import { getFromSiteApi, postToSiteApi } from "./site-api";
 import type { ApiResponse, PaginatedResponse, Product } from "@/types";
 
 export interface ProductFilters {
@@ -62,5 +62,5 @@ export const productService = {
   delete: (id: string) => del<ApiResponse<null>>(`/products/${id}`),
 
   addReview: (id: string, data: { name?: string; email?: string; rating: number; comment: string }) =>
-    post<ApiResponse<Product>>(`/products/${id}/reviews`, data),
+    postToSiteApi<ApiResponse<Product>>(`/products/${id}/reviews`, data),
 };

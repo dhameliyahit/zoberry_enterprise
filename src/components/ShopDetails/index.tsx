@@ -1,5 +1,6 @@
 "use client";
 import React, { useEffect, useState, useRef } from "react";
+import Swal from "sweetalert2";
 import Breadcrumb from "../Common/Breadcrumb";
 import Image from "next/image";
 import Newsletter from "../Common/Newsletter";
@@ -235,33 +236,57 @@ const ShopDetails = () => {
     if (!product?._id) return;
 
     if (!authService.isAuthenticated()) {
-      toast.error("Please sign in to submit a review");
+      Swal.fire({
+        icon: "warning",
+        title: "Login Required",
+        text: "Please sign in to submit a review.",
+        confirmButtonColor: "#3085d6",
+      });
       openAuthModal("signin");
       return;
     }
 
-    if (!reviewComment) {
-      toast.error("Please fill out the comment field");
+    if (!reviewComment.trim()) {
+      Swal.fire({
+        icon: "warning",
+        title: "Comment Required",
+        text: "Please write a comment before submitting.",
+        confirmButtonColor: "#3085d6",
+      });
       return;
     }
 
     try {
       const res = await productService.addReview(product._id, {
         rating: reviewRating,
-        comment: reviewComment,
+        comment: reviewComment.trim(),
       });
 
       if (res.success && res.data) {
         dispatch(updateproductDetails(res.data));
-        toast.success("Review submitted successfully!");
+        Swal.fire({
+          icon: "success",
+          title: "Review Submitted!",
+          text: "Thank you for your feedback.",
+          timer: 2000,
+          showConfirmButton: false,
+        });
         setReviewComment("");
         setReviewRating(5);
       } else {
-        toast.error("Failed to submit review");
+        Swal.fire({
+          icon: "error",
+          title: "Submission Failed",
+          text: "Could not submit your review. Please try again.",
+        });
       }
     } catch (error: any) {
       console.error(error);
-      toast.error(error.response?.data?.error || error.message || "Failed to submit review");
+      Swal.fire({
+        icon: "error",
+        title: "Error",
+        text: error.message || "Failed to submit review. Please try again.",
+      });
     }
   };
 

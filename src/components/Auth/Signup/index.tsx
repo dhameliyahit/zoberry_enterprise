@@ -1,11 +1,65 @@
 "use client";
 import Breadcrumb from "@/components/Common/Breadcrumb";
 import Link from "next/link";
-import React, { useEffect } from "react";
+import React, { useEffect, useState } from "react";
 import { authService } from "@/services";
 import toast from "react-hot-toast";
 
 const Signup = () => {
+  const [name, setName] = useState("");
+  const [email, setEmail] = useState("");
+  const [password, setPassword] = useState("");
+  const [confirmPassword, setConfirmPassword] = useState("");
+  const [errors, setErrors] = useState<{ name?: string; email?: string; password?: string; confirmPassword?: string }>({});
+  const [loading, setLoading] = useState(false);
+
+  const validateForm = () => {
+    const newErrors: { name?: string; email?: string; password?: string; confirmPassword?: string } = {};
+    if (!name.trim()) {
+      newErrors.name = "Full Name is required";
+    }
+    if (!email) {
+      newErrors.email = "Email is required";
+    } else if (!/\S+@\S+\.\S+/.test(email)) {
+      newErrors.email = "Email address is invalid";
+    }
+    if (!password) {
+      newErrors.password = "Password is required";
+    } else if (password.length < 6) {
+      newErrors.password = "Password must be at least 6 characters";
+    }
+    if (!confirmPassword) {
+      newErrors.confirmPassword = "Confirm Password is required";
+    } else if (password !== confirmPassword) {
+      newErrors.confirmPassword = "Passwords do not match";
+    }
+    setErrors(newErrors);
+    return Object.keys(newErrors).length === 0;
+  };
+
+  const handleSubmit = async (e: React.FormEvent) => {
+    e.preventDefault();
+    if (!validateForm()) return;
+
+    setLoading(true);
+    try {
+      const res = await authService.register({ name, email, password });
+      if (res.success && res.data?.token) {
+        authService.setToken(res.data.token);
+        localStorage.setItem("zoberry_user", JSON.stringify(res.data));
+        toast.success("Account created successfully!");
+        window.location.href = "/";
+      } else {
+        toast.error(res.error || "Registration failed");
+      }
+    } catch (err: any) {
+      console.error(err);
+      toast.error(err.response?.data?.message || err.message || "Registration failed");
+    } finally {
+      setLoading(false);
+    }
+  };
+
   useEffect(() => {
     const googleClientId = process.env.NEXT_PUBLIC_GOOGLE_CLIENT_ID || "1068863641775-mockgoogleclientid123456789.apps.googleusercontent.com";
 
@@ -78,70 +132,91 @@ const Signup = () => {
             </span>
 
             <div className="mt-5.5">
-              <form>
+              <form onSubmit={handleSubmit}>
                 <div className="mb-5">
                   <label htmlFor="name" className="block mb-2.5">
                     Full Name <span className="text-red">*</span>
                   </label>
-
                   <input
                     type="text"
                     name="name"
                     id="name"
+                    value={name}
+                    onChange={(e) => {
+                      setName(e.target.value);
+                      if (errors.name) setErrors({ ...errors, name: undefined });
+                    }}
                     placeholder="Enter your full name"
-                    className="rounded-lg border border-gray-3 bg-gray-1 placeholder:text-dark-5 w-full py-3 px-5 outline-none duration-200 focus:border-transparent focus:shadow-input focus:ring-2 focus:ring-blue/20"
+                    className={`rounded-lg border bg-gray-1 placeholder:text-dark-5 w-full py-3 px-5 outline-none duration-200 focus:shadow-input focus:ring-2 focus:ring-blue/20 ${errors.name ? 'border-red focus:border-red' : 'border-gray-3 focus:border-transparent'}`}
                   />
+                  {errors.name && <p className="text-red text-sm mt-1">{errors.name}</p>}
                 </div>
 
                 <div className="mb-5">
                   <label htmlFor="email" className="block mb-2.5">
                     Email Address <span className="text-red">*</span>
                   </label>
-
                   <input
                     type="email"
                     name="email"
                     id="email"
+                    value={email}
+                    onChange={(e) => {
+                      setEmail(e.target.value);
+                      if (errors.email) setErrors({ ...errors, email: undefined });
+                    }}
                     placeholder="Enter your email address"
-                    className="rounded-lg border border-gray-3 bg-gray-1 placeholder:text-dark-5 w-full py-3 px-5 outline-none duration-200 focus:border-transparent focus:shadow-input focus:ring-2 focus:ring-blue/20"
+                    className={`rounded-lg border bg-gray-1 placeholder:text-dark-5 w-full py-3 px-5 outline-none duration-200 focus:shadow-input focus:ring-2 focus:ring-blue/20 ${errors.email ? 'border-red focus:border-red' : 'border-gray-3 focus:border-transparent'}`}
                   />
+                  {errors.email && <p className="text-red text-sm mt-1">{errors.email}</p>}
                 </div>
 
                 <div className="mb-5">
                   <label htmlFor="password" className="block mb-2.5">
                     Password <span className="text-red">*</span>
                   </label>
-
                   <input
                     type="password"
                     name="password"
                     id="password"
+                    value={password}
+                    onChange={(e) => {
+                      setPassword(e.target.value);
+                      if (errors.password) setErrors({ ...errors, password: undefined });
+                    }}
                     placeholder="Enter your password"
                     autoComplete="on"
-                    className="rounded-lg border border-gray-3 bg-gray-1 placeholder:text-dark-5 w-full py-3 px-5 outline-none duration-200 focus:border-transparent focus:shadow-input focus:ring-2 focus:ring-blue/20"
+                    className={`rounded-lg border bg-gray-1 placeholder:text-dark-5 w-full py-3 px-5 outline-none duration-200 focus:shadow-input focus:ring-2 focus:ring-blue/20 ${errors.password ? 'border-red focus:border-red' : 'border-gray-3 focus:border-transparent'}`}
                   />
+                  {errors.password && <p className="text-red text-sm mt-1">{errors.password}</p>}
                 </div>
 
                 <div className="mb-5.5">
                   <label htmlFor="re-type-password" className="block mb-2.5">
                     Re-type Password <span className="text-red">*</span>
                   </label>
-
                   <input
                     type="password"
                     name="re-type-password"
                     id="re-type-password"
+                    value={confirmPassword}
+                    onChange={(e) => {
+                      setConfirmPassword(e.target.value);
+                      if (errors.confirmPassword) setErrors({ ...errors, confirmPassword: undefined });
+                    }}
                     placeholder="Re-type your password"
                     autoComplete="on"
-                    className="rounded-lg border border-gray-3 bg-gray-1 placeholder:text-dark-5 w-full py-3 px-5 outline-none duration-200 focus:border-transparent focus:shadow-input focus:ring-2 focus:ring-blue/20"
+                    className={`rounded-lg border bg-gray-1 placeholder:text-dark-5 w-full py-3 px-5 outline-none duration-200 focus:shadow-input focus:ring-2 focus:ring-blue/20 ${errors.confirmPassword ? 'border-red focus:border-red' : 'border-gray-3 focus:border-transparent'}`}
                   />
+                  {errors.confirmPassword && <p className="text-red text-sm mt-1">{errors.confirmPassword}</p>}
                 </div>
 
                 <button
                   type="submit"
-                  className="w-full flex justify-center font-medium text-white bg-dark py-3 px-6 rounded-lg ease-out duration-200 hover:bg-blue mt-7.5"
+                  disabled={loading}
+                  className="w-full flex justify-center font-medium text-white bg-dark py-3 px-6 rounded-lg ease-out duration-200 hover:bg-blue mt-7.5 disabled:opacity-70"
                 >
-                  Create Account
+                  {loading ? "Creating Account..." : "Create Account"}
                 </button>
 
                 <p className="text-center mt-6">
@@ -163,3 +238,4 @@ const Signup = () => {
 };
 
 export default Signup;
+
