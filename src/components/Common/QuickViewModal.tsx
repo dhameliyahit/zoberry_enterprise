@@ -15,6 +15,28 @@ function getImageUrl(img: string | { url: string; alt?: string; isFeatured?: boo
   return typeof img === "string" ? img : img.url || "";
 }
 
+const getYoutubeId = (url: string): string => {
+  const regExp = /^.*(youtu.be\/|v\/|u\/\w\/|embed\/|watch\?v=|\&v=|shorts\/)([^#\&\?]*).*/;
+  const match = url?.match(regExp);
+  return match && match[2].length === 11 ? match[2] : "";
+};
+
+const getThumbnailUrl = (url: string): string => {
+  const ytId = getYoutubeId(url);
+  if (ytId) {
+    return `https://img.youtube.com/vi/${ytId}/hqdefault.jpg`;
+  }
+  return "/images/placeholder.png";
+};
+
+const getEmbedUrl = (url: string): string => {
+  const ytId = getYoutubeId(url);
+  if (ytId) {
+    return `https://www.youtube.com/embed/${ytId}?autoplay=1&mute=1&controls=1`;
+  }
+  return url;
+};
+
 const QuickViewModal = () => {
   const { quickViewOpen, closeQuickView, quickViewProduct, openPreviewSlider } = useUI();
   const [quantity, setQuantity] = useState(1);
@@ -29,11 +51,6 @@ const QuickViewModal = () => {
 
   const handleItemToWishList = () => {
     if (!product) return;
-    const token = typeof window !== "undefined" ? localStorage.getItem("zoberry_token") : null;
-    if (!token) {
-      router.push("/signin");
-      return;
-    }
     if (isInWishlist) {
       dispatch(removeItemFromWishlist(product._id));
     } else {
@@ -45,6 +62,15 @@ const QuickViewModal = () => {
   const [showMagnifier, setShowMagnifier] = useState(false);
   const [magnifierPos, setMagnifierPos] = useState({ x: 0, y: 0 });
   const imageContainerRef = useRef<HTMLDivElement>(null);
+
+  const media = product
+    ? [
+        ...(product.images?.map((img, idx) => ({ type: "image" as const, url: getImageUrl(img), key: `img-${idx}` })) || []),
+        ...(product.videos?.map((vid, idx) => ({ type: "video" as const, url: vid.url, title: vid.title, key: `vid-${idx}` })) || [])
+      ]
+    : [];
+
+  const currentMedia = media[activePreview] || media[0];
 
   const handleMagnifierMove = (e: React.MouseEvent) => {
     if (!imageContainerRef.current) return;
@@ -107,12 +133,12 @@ const QuickViewModal = () => {
           </button>
 
           <div className="grid grid-cols-1 md:grid-cols-2 gap-8 lg:gap-12.5">
-            {/* Left Column: Images */}
+            {/* Left Column: Images/Videos */}
             <div className="w-full">
               <div className="flex gap-4 sm:gap-5">
                 {/* Thumbnails list */}
                 <div className="flex flex-col gap-3 sm:gap-4 flex-shrink-0">
-                  {product?.images?.map((img, key) => (
+                  {media.map((item, key) => (
                     <button
                       onClick={() => setActivePreview(key)}
                       key={key}
@@ -121,19 +147,46 @@ const QuickViewModal = () => {
                       }`}
                     >
                       <div className="w-full h-full relative">
-                        <Image
-                          src={typeof img === "string" ? img : img.url || "/images/placeholder.png"}
-                          alt="thumbnail"
-                          fill
-                          className="object-contain"
-                          sizes="80px"
-                        />
+                        {item.type === "image" ? (
+                          <Image
+                            src={item.url || "/images/placeholder.png"}
+                            alt="thumbnail"
+                            fill
+                            className="object-contain"
+                            sizes="80px"
+                          />
+                        ) : (
+                          <div className="w-full h-full flex flex-col items-center justify-center bg-dark/10 relative">
+                            {getYoutubeId(item.url) ? (
+                              <>
+                                <Image
+                                  src={getThumbnailUrl(item.url)}
+                                  alt="video thumbnail"
+                                  fill
+                                  className="opacity-70 object-cover"
+                                  sizes="80px"
+                                />
+                                <div className="absolute inset-0 flex items-center justify-center text-white bg-black/40">
+                                  <svg className="w-5 h-5 fill-current" viewBox="0 0 24 24">
+                                    <path d="M8 5v14l11-7z" />
+                                  </svg>
+                                </div>
+                              </>
+                            ) : (
+                              <div className="w-full h-full flex items-center justify-center bg-gray-200 absolute inset-0">
+                                <svg className="w-8 h-8 text-gray-500 fill-current" viewBox="0 0 24 24">
+                                  <path d="M8 5v14l11-7z" />
+                                </svg>
+                              </div>
+                            )}
+                          </div>
+                        )}
                       </div>
                     </button>
                   ))}
                 </div>
 
-                {/* Main image view with magnifier */}
+                {/* Main image/video view with magnifier */}
                 <div
                   ref={imageContainerRef}
                   className="relative flex items-center justify-center w-full aspect-square bg-gray-1 rounded-lg border border-gray-3 p-4 cursor-crosshair select-none"
@@ -141,20 +194,22 @@ const QuickViewModal = () => {
                   onMouseLeave={() => setShowMagnifier(false)}
                   onMouseMove={handleMagnifierMove}
                 >
-                  {/* Zoom Button */}
-                  <button
-                    onClick={handlePreviewSlider}
-                    aria-label="Zoom image"
-                    className="w-10 h-10 rounded-[5px] bg-white shadow-1 flex items-center justify-center ease-out duration-200 text-dark hover:text-blue absolute top-4 right-4 z-20"
-                  >
-                    <MagnifyingGlassPlus size={20} weight="bold" />
-                  </button>
+                  {/* Zoom Button (Only for images) */}
+                  {currentMedia?.type === "image" && (
+                    <button
+                      onClick={handlePreviewSlider}
+                      aria-label="Zoom image"
+                      className="w-10 h-10 rounded-[5px] bg-white shadow-1 flex items-center justify-center ease-out duration-200 text-dark hover:text-blue absolute top-4 right-4 z-20"
+                    >
+                      <MagnifyingGlassPlus size={20} weight="bold" />
+                    </button>
+                  )}
 
-                  {/* Main Display Image */}
-                  {product?.images?.[activePreview] && (
+                  {/* Main Display Image or Video */}
+                  {currentMedia?.type === "image" ? (
                     <div className="w-full h-full relative overflow-hidden rounded-lg">
                       <Image
-                        src={getImageUrl(product.images[activePreview])}
+                        src={currentMedia.url}
                         alt="product-details"
                         fill
                         className="object-contain"
@@ -162,10 +217,29 @@ const QuickViewModal = () => {
                         priority
                       />
                     </div>
-                  )}
+                  ) : currentMedia?.type === "video" ? (
+                    <div className="w-full h-full absolute inset-0 rounded-lg overflow-hidden flex items-center justify-center bg-black">
+                      {getYoutubeId(currentMedia.url) ? (
+                        <iframe
+                          src={getEmbedUrl(currentMedia.url)}
+                          className="w-full h-full absolute inset-0 object-cover scale-[1.02]"
+                          allow="autoplay; encrypted-media; picture-in-picture"
+                          allowFullScreen
+                          title={currentMedia.title || "Product video"}
+                        />
+                      ) : (
+                        <video
+                          src={currentMedia.url}
+                          controls
+                          autoPlay
+                          className="w-full h-full object-contain"
+                        />
+                      )}
+                    </div>
+                  ) : null}
 
-                  {/* Magnifier overlay */}
-                  {showMagnifier && (
+                  {/* Magnifier overlay (Only for images) */}
+                  {showMagnifier && currentMedia?.type === "image" && (
                     <div
                       className="absolute pointer-events-none z-10 border border-blue bg-blue/10 hidden sm:block rounded-md"
                       style={{
@@ -179,11 +253,11 @@ const QuickViewModal = () => {
                   )}
 
                   {/* Zoom box */}
-                  {showMagnifier && product?.images?.[activePreview] && (
+                  {showMagnifier && currentMedia?.type === "image" && (
                     <div
                       className="absolute left-[103%] top-0 w-full h-full rounded-lg border border-gray-3 overflow-hidden bg-white shadow-3 hidden lg:block z-50 pointer-events-none"
                       style={{
-                        backgroundImage: `url(${getImageUrl(product.images[activePreview])})`,
+                        backgroundImage: `url(${currentMedia.url})`,
                         backgroundSize: "280%",
                         backgroundPosition: `${magnifierPos.x}% ${magnifierPos.y}%`,
                         backgroundRepeat: "no-repeat",

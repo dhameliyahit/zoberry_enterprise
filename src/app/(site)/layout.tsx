@@ -1,8 +1,9 @@
 "use client";
 import { useState, useEffect } from "react";
+import { usePathname } from "next/navigation";
 import Header from "../../components/Header";
 import Footer from "../../components/Footer";
-import { UIProvider } from "../context/UIContext";
+import { UIProvider, useUI } from "../context/UIContext";
 import { ReduxProvider } from "@/redux/provider";
 import ReduxInitializer from "@/components/Common/ReduxInitializer";
 import QuickViewModal from "@/components/Common/QuickViewModal";
@@ -17,7 +18,21 @@ export default function SiteLayout({
 }: {
   children: React.ReactNode;
 }) {
-  const [loading, setLoading] = useState<boolean>(true);
+  return (
+    <ReduxProvider>
+      <ReduxInitializer>
+        <UIProvider>
+          <SiteContent>{children}</SiteContent>
+        </UIProvider>
+      </ReduxInitializer>
+    </ReduxProvider>
+  );
+}
+
+function SiteContent({ children }: { children: React.ReactNode }) {
+  const [layoutLoading, setLayoutLoading] = useState<boolean>(true);
+  const { homeLoading } = useUI();
+  const pathname = usePathname();
 
   useEffect(() => {
     if (typeof window !== "undefined") {
@@ -33,29 +48,22 @@ export default function SiteLayout({
         localStorage.setItem("zoberry_mac_address", generatedMac);
       }
     }
-    setTimeout(() => setLoading(false), 1000);
+    setLayoutLoading(false);
   }, []);
+
+  const showLoader = layoutLoading || (pathname === "/" && homeLoading);
 
   return (
     <>
-      {loading ? (
-        <PreLoader />
-      ) : (
-        <ReduxProvider>
-          <ReduxInitializer>
-            <UIProvider>
-              <Header />
-              {children}
-              <QuickViewModal />
-              <CartSidebarModal />
-              <PreviewSliderModal />
-              <AuthModal />
-              <ScrollToTop />
-              <Footer />
-            </UIProvider>
-          </ReduxInitializer>
-        </ReduxProvider>
-      )}
+      {showLoader && <PreLoader />}
+      <Header />
+      {children}
+      <QuickViewModal />
+      <CartSidebarModal />
+      <PreviewSliderModal />
+      <AuthModal />
+      <ScrollToTop />
+      <Footer />
     </>
   );
 }

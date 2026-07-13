@@ -39,6 +39,11 @@ export type Review = {
   createdAt?: string;
 };
 
+export type ProductVideo = {
+  url: string;
+  title?: string;
+};
+
 export type Product = {
   _id: string;
   title: string;
@@ -51,6 +56,7 @@ export type Product = {
   compareAtPrice?: number;
   costPrice?: number;
   images: ProductImage[] | string[];
+  videos?: ProductVideo[];
   category: any;
   tags: string[];
   sku: string;

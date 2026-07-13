@@ -22,6 +22,9 @@ type UIContextType = {
   openAuthModal: (tab?: "signin" | "signup") => void;
   closeAuthModal: () => void;
   setAuthModalTab: (tab: "signin" | "signup") => void;
+
+  homeLoading: boolean;
+  setHomeLoading: (loading: boolean) => void;
 };
 
 const UIContext = createContext<UIContextType | null>(null);
@@ -33,6 +36,7 @@ export function UIProvider({ children }: { children: ReactNode }) {
   const [previewSliderOpen, setPreviewSliderOpen] = useState(false);
   const [authModalOpen, setAuthModalOpen] = useState(false);
   const [authModalTab, setAuthModalTab] = useState<"signin" | "signup">("signin");
+  const [homeLoading, setHomeLoading] = useState(true);
 
   const openCartSidebar = useCallback(() => setCartSidebarOpen(true), []);
   const closeCartSidebar = useCallback(() => setCartSidebarOpen(false), []);
@@ -73,6 +77,8 @@ export function UIProvider({ children }: { children: ReactNode }) {
     openAuthModal,
     closeAuthModal,
     setAuthModalTab,
+    homeLoading,
+    setHomeLoading,
   };
 
   return <UIContext.Provider value={value}>{children}</UIContext.Provider>;

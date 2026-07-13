@@ -1,13 +1,10 @@
 "use client";
 import React, { useState, useEffect } from "react";
-import { useDispatch } from "react-redux";
 import { useRouter } from "next/navigation";
 import toast from "react-hot-toast";
-import Image from "next/image";
 import Link from "next/link";
 import Breadcrumb from "../Common/Breadcrumb";
 import { usePopulatedCart } from "@/hooks/usePopulatedCart";
-import { removeAllItemsFromCart } from "@/redux/features/cart-slice";
 import { authService } from "@/services/auth.service";
 import { orderService } from "@/services/order.service";
 import { useUI } from "@/app/context/UIContext";
@@ -25,7 +22,6 @@ interface SavedAddress {
 }
 
 export default function Checkout() {
-  const dispatch = useDispatch();
   const router = useRouter();
   const { items: cartItems, totalPrice } = usePopulatedCart();
   const { openAuthModal } = useUI();
@@ -66,9 +62,19 @@ export default function Checkout() {
 
   // Shipping cost & payment states
   const [shippingMethod, setShippingMethod] = useState("free"); // free, fedex, dhl
-  const [paymentMethod, setPaymentMethod] = useState("cod"); // cod, netbanking, wallet
+  const [paymentMethod, setPaymentMethod] = useState("directupi"); // directupi (UPI only)
   const [notes, setNotes] = useState("");
   const [loading, setLoading] = useState(false);
+
+  // Admin-controlled payment configuration
+  const [paymentConfig, setPaymentConfig] = useState<any>(null);
+
+  const PAYMENT_METHOD_LABELS: Record<string, string> = {
+    directupi: "UPI (Online)",
+    upi: "UPI (Online)",
+    card: "Card Payment",
+    netbanking: "Direct Bank Transfer",
+  };
 
   // Success states
   const [placedOrder, setPlacedOrder] = useState<any>(null);
@@ -85,6 +91,18 @@ export default function Checkout() {
       setIsAuthenticated(true);
       fetchUserData();
     }
+  }, []);
+
+  useEffect(() => {
+    orderService
+      .getPaymentConfig()
+      .then((res) => {
+        if (res.success && res.data) {
+          setPaymentConfig(res.data);
+          if (res.data.defaultMethod) setPaymentMethod(res.data.defaultMethod);
+        }
+      })
+      .catch(() => {});
   }, []);
 
   const handleFillTestData = (e: React.MouseEvent) => {
@@ -336,9 +354,7 @@ export default function Checkout() {
       const res = await orderService.create(payload);
       if (res.success && res.data) {
         setPlacedOrder(res.data);
-        toast.success("Order Placed Successfully!");
-        // Clear Redux Cart & LocalStorage
-        dispatch(removeAllItemsFromCart());
+        router.push(`/pay/${res.data._id}`);
       } else {
         toast.error(res.error || "Failed to place order.");
       }
@@ -350,11 +366,17 @@ export default function Checkout() {
     }
   };
 
-  // If order was successfully placed, render a receipt screen
+  // If order was successfully placed, render a receipt / payment screen
   if (placedOrder) {
+    const orderNo =
+      placedOrder.orderNumber || `ZOB-${placedOrder._id.slice(-5).toUpperCase()}`;
+
     return (
       <>
-        <Breadcrumb title={"Order Success"} pages={["Checkout", "Success"]} />
+        <Breadcrumb
+          title="Order Success"
+          pages={["Checkout", "Success"]}
+        />
         <section className="py-20 bg-gray-2 flex items-center justify-center min-h-[70vh]">
           <div className="max-w-[700px] w-full bg-white shadow-xl rounded-2xl p-6 sm:p-10 border border-gray-3 text-center">
             <div className="mx-auto w-16 h-16 bg-green-light-6 text-green flex items-center justify-center rounded-full mb-6">
@@ -380,9 +402,7 @@ export default function Checkout() {
             </h2>
             <p className="text-dark-4 text-base mb-8">
               Your order has been placed successfully. Order Number:{" "}
-              <span className="font-bold text-blue">
-                {placedOrder.orderNumber || `ZOB-${placedOrder._id.slice(-5).toUpperCase()}`}
-              </span>
+              <span className="font-bold text-blue">{orderNo}</span>
             </p>
 
             <div className="border border-gray-3 rounded-xl p-6 text-left mb-8 space-y-4">
@@ -941,57 +961,32 @@ export default function Checkout() {
                 {/* Payment Selector */}
                 <div className="bg-white shadow-1 rounded-[10px] mt-7.5">
                   <div className="border-b border-gray-3 py-5 px-4 sm:px-8.5">
-                    <h3 className="font-medium text-xl text-dark">Payment Method</h3>
+                  <h3 className="font-medium text-xl text-dark">Payment Method</h3>
+                </div>
+
+                <div className="p-4 sm:p-8.5">
+                  <div className="flex flex-col gap-4">
+                     {(paymentConfig?.enabledMethods || ["directupi"]).map((m: string) => (
+                      <label
+                        key={m}
+                        htmlFor={`pay-${m}`}
+                        className="flex cursor-pointer select-none items-center gap-3.5"
+                      >
+                        <input
+                          type="radio"
+                          name="payment"
+                          id={`pay-${m}`}
+                          checked={paymentMethod === m}
+                          onChange={() => setPaymentMethod(m)}
+                          className="h-4 w-4 text-blue border-gray-3"
+                        />
+                        <span>
+                          {PAYMENT_METHOD_LABELS[m] || m}
+                        </span>
+                      </label>
+                    ))}
                   </div>
-
-                  <div className="p-4 sm:p-8.5">
-                    <div className="flex flex-col gap-4">
-                      <label
-                        htmlFor="payCod"
-                        className="flex cursor-pointer select-none items-center gap-3.5"
-                      >
-                        <input
-                          type="radio"
-                          name="payment"
-                          id="payCod"
-                          checked={paymentMethod === "cod"}
-                          onChange={() => setPaymentMethod("cod")}
-                          className="h-4 w-4 text-blue border-gray-3"
-                        />
-                        <span>Cash on Delivery</span>
-                      </label>
-
-                      <label
-                        htmlFor="payNet"
-                        className="flex cursor-pointer select-none items-center gap-3.5"
-                      >
-                        <input
-                          type="radio"
-                          name="payment"
-                          id="payNet"
-                          checked={paymentMethod === "netbanking"}
-                          onChange={() => setPaymentMethod("netbanking")}
-                          className="h-4 w-4 text-blue border-gray-3"
-                        />
-                        <span>Direct Bank Transfer (Netbanking)</span>
-                      </label>
-
-                      <label
-                        htmlFor="payWallet"
-                        className="flex cursor-pointer select-none items-center gap-3.5"
-                      >
-                        <input
-                          type="radio"
-                          name="payment"
-                          id="payWallet"
-                          checked={paymentMethod === "wallet"}
-                          onChange={() => setPaymentMethod("wallet")}
-                          className="h-4 w-4 text-blue border-gray-3"
-                        />
-                        <span>PayPal (Digital Wallet)</span>
-                      </label>
-                    </div>
-                  </div>
+                </div>
                 </div>
 
                 {/* checkout button */}

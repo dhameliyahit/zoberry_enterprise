@@ -8,8 +8,12 @@ export async function GET(request: NextRequest) {
   try {
     await connectToDatabase();
 
-    const response = await getCategories(request.nextUrl.searchParams.get("isActive"));
-    return NextResponse.json(response);
+    const response = await getCategories(request.nextUrl.searchParams.get("isActive") === "true");
+    return NextResponse.json(response, {
+      headers: {
+        "Cache-Control": "s-maxage=300, stale-while-revalidate=300",
+      },
+    });
   } catch (error) {
     return NextResponse.json(
       {

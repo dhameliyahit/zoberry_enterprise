@@ -1,7 +1,6 @@
-import { type NextRequest } from "next/server";
-import { apiError, apiSuccess, getErrorMessage } from "@/lib/api-response";
+import { type NextRequest, NextResponse } from "next/server";
 import { connectToDatabase } from "@/lib/db";
-import { StorefrontHeroSlide } from "@/lib/storefront-models/HeroSlide";
+import { getHeroSlides } from "@/lib/catalog-storefront";
 
 export const runtime = "nodejs";
 
@@ -10,17 +9,22 @@ export async function GET(request: NextRequest) {
     await connectToDatabase();
 
     const isActiveParam = request.nextUrl.searchParams.get("isActive");
-    const filter =
-      isActiveParam === null
-        ? { isActive: true }
-        : {
-            isActive: isActiveParam === "true",
-          };
+    const response = await getHeroSlides(
+      isActiveParam === null ? true : isActiveParam === "true"
+    );
 
-    const heroSlides = await StorefrontHeroSlide.find(filter).sort({ order: 1 }).lean();
-
-    return apiSuccess(heroSlides);
+    return NextResponse.json(response, {
+      headers: {
+        "Cache-Control": "s-maxage=300, stale-while-revalidate=300",
+      },
+    });
   } catch (error) {
-    return apiError(getErrorMessage(error, "Failed to load hero slides"), 500);
+    return NextResponse.json(
+      {
+        success: false,
+        error: error instanceof Error ? error.message : "Failed to load hero slides",
+      },
+      { status: 500 }
+    );
   }
 }

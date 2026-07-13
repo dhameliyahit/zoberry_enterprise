@@ -1,7 +1,6 @@
-import { type NextRequest } from "next/server";
-import { apiError, apiSuccess, getErrorMessage } from "@/lib/api-response";
+import { type NextRequest, NextResponse } from "next/server";
 import { connectToDatabase } from "@/lib/db";
-import { StorefrontHeroSlide } from "@/lib/storefront-models/HeroSlide";
+import { getHeroSlideById } from "@/lib/catalog-storefront";
 
 export const runtime = "nodejs";
 
@@ -13,14 +12,23 @@ export async function GET(
     await connectToDatabase();
     const { id } = await context.params;
 
-    const heroSlide = await StorefrontHeroSlide.findById(id).lean();
+    const heroSlide = await getHeroSlideById(id);
 
     if (!heroSlide) {
-      return apiError("Hero slide not found", 404);
+      return NextResponse.json(
+        { success: false, error: "Hero slide not found" },
+        { status: 404 }
+      );
     }
 
-    return apiSuccess(heroSlide);
+    return NextResponse.json({ success: true, data: heroSlide });
   } catch (error) {
-    return apiError(getErrorMessage(error, "Failed to load hero slide"), 500);
+    return NextResponse.json(
+      {
+        success: false,
+        error: error instanceof Error ? error.message : "Failed to load hero slide",
+      },
+      { status: 500 }
+    );
   }
 }

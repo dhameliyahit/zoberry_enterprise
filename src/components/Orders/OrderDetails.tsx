@@ -1,11 +1,13 @@
 "use client";
 import React from "react";
+import { useRouter } from "next/navigation";
 
 interface OrderDetailsProps {
   orderItem: any;
 }
 
 const OrderDetails = ({ orderItem }: OrderDetailsProps) => {
+  const router = useRouter();
   const steps = [
     { label: "Placed", key: "pending" },
     { label: "Confirmed", key: "confirmed" },
@@ -34,6 +36,20 @@ const OrderDetails = ({ orderItem }: OrderDetailsProps) => {
 
   return (
     <div className="space-y-8 print:p-0">
+      {(orderItem.paymentMethod === "directupi" || orderItem.paymentMethod === "upi") && orderItem.paymentStatus !== "paid" && (
+        <div className="mb-6 p-4 rounded-xl border border-blue/10 bg-blue-light-6 text-center">
+          <p className="text-sm text-dark mb-3">
+            Your UPI payment is pending. Complete it now to confirm your order.
+          </p>
+          <button
+            onClick={() => router.push(`/pay/${orderItem._id}`)}
+            className="rounded-lg bg-blue py-2.5 px-6 font-medium text-white hover:bg-blue-dark transition-colors"
+          >
+            Complete UPI Payment
+          </button>
+        </div>
+      )}
+
       {/* Header section */}
       <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center border-b border-gray-3 pb-6 print:border-b-2">
         <div>
@@ -191,13 +207,9 @@ const OrderDetails = ({ orderItem }: OrderDetailsProps) => {
             <div className="flex justify-between">
               <span>Payment method</span>
               <span className="font-semibold text-dark uppercase">
-                {orderItem.paymentMethod === "cod"
-                  ? "Cash on delivery"
-                  : orderItem.paymentMethod === "netbanking"
-                  ? "Bank Transfer"
-                  : orderItem.paymentMethod === "wallet"
-                  ? "PayPal"
-                  : orderItem.paymentMethod}
+                 {orderItem.paymentMethod === "netbanking"
+                   ? "Bank Transfer"
+                   : orderItem.paymentMethod}
               </span>
             </div>
             <div className="flex justify-between">

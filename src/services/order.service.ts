@@ -19,4 +19,13 @@ export const orderService = {
 
   cancel: (id: string) =>
     putToSiteApi<ApiResponse<Order>>(`/orders/${id}/cancel`),
+
+  // Static Direct UPI (QR scanned to merchant VPA) — manual UTR verification
+  submitDirectUpiUtr: (orderId: string, referenceNumber: string) =>
+    postToSiteApi<ApiResponse<any>>("/payments/directupi/utr", {
+      orderId,
+      referenceNumber,
+    }),
+
+  getPaymentConfig: () => getFromSiteApi<ApiResponse<any>>("/config/payment"),
 };

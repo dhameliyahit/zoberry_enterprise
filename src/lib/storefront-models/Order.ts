@@ -64,10 +64,19 @@ const storefrontOrderSchema = new Schema(
     },
     paymentMethod: {
       type: String,
-      enum: ["cod", "card", "upi", "netbanking", "wallet"],
-      default: "cod",
+      enum: ["card", "upi", "netbanking", "directupi"],
+      default: "directupi",
     },
     notes: { type: String, default: "", trim: true },
+
+    // Static Direct UPI linkage (QR scanned to your VPA)
+    upiVpa: { type: String, default: "" },
+    utr: { type: String, default: "" },
+    utrStatus: {
+      type: String,
+      enum: ["", "submitted", "verified", "rejected"],
+      default: "",
+    },
   },
   { timestamps: true }
 );
