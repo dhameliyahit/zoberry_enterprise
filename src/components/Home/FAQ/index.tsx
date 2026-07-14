@@ -54,34 +54,42 @@ const FAQ = () => {
           </h2>
         </div>
 
-        <div className="max-w-[800px] w-full mx-auto flex flex-col gap-4">
+        <div className="max-w-[800px] w-full mx-auto flex flex-col gap-4.5">
           {faqData.map((item, index) => {
             const isOpen = activeIndex === index;
             return (
               <div
                 key={index}
-                className="bg-white rounded-lg border border-gray-3 overflow-hidden transition-all duration-300 shadow-sm hover:shadow-md"
+                className={`bg-white rounded-xl border transition-all duration-300 ${
+                  isOpen 
+                    ? "border-blue shadow-md border-l-4 border-l-blue" 
+                    : "border-gray-3 hover:border-blue/50 hover:shadow-sm"
+                }`}
               >
                 <button
                   onClick={() => toggleAccordion(index)}
-                  className="w-full flex items-center justify-between p-5 text-left font-medium text-dark hover:text-blue transition-colors focus:outline-none"
+                  className="w-full flex items-center justify-between p-5 text-left font-bold text-dark hover:text-blue hover:bg-gray-1/30 transition-all duration-200 focus:outline-none rounded-t-xl"
                 >
-                  <span className="text-base sm:text-lg">{item.question}</span>
+                  <span className="text-base sm:text-[17px] pr-4">{item.question}</span>
                   <CaretDown
-                    size={20}
+                    size={16}
                     weight="bold"
-                    className={`text-gray-4 transform transition-transform duration-300 ${
+                    className={`text-gray-4 transition-transform duration-300 shrink-0 ${
                       isOpen ? "rotate-180 text-blue" : ""
                     }`}
                   />
                 </button>
                 <div
-                  className={`transition-all duration-300 ease-in-out ${
-                    isOpen ? "max-h-[500px] opacity-100 border-t border-gray-1" : "max-h-0 opacity-0"
-                  } overflow-hidden`}
+                  className={`grid transition-all duration-300 ease-in-out ${
+                    isOpen ? "grid-rows-[1fr] opacity-100" : "grid-rows-[0fr] opacity-0"
+                  }`}
                 >
-                  <div className="p-5 text-dark-4 text-sm sm:text-base leading-relaxed whitespace-pre-line">
-                    {item.answer}
+                  <div className="overflow-hidden">
+                    <div className="p-5 pt-0 text-dark-3 text-sm sm:text-base leading-relaxed whitespace-pre-line border-t border-gray-2/60 mt-0">
+                      <div className="pt-4">
+                        {item.answer}
+                      </div>
+                    </div>
                   </div>
                 </div>
               </div>

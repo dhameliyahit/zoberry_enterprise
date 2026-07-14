@@ -60,88 +60,111 @@ const SingleItem = ({ item }: { item: Product }) => {
 
   const badge = getBadge(item);
 
+  const handleProductDetails = () => {
+    dispatch(updateproductDetails({ ...item }));
+  };
+
+  const handleCardClick = () => {
+    handleProductDetails();
+    router.push(`/shop-details?id=${item._id}`);
+  };
+
   return (
-    <div className="group">
-      <div className="relative overflow-hidden rounded-lg bg-[#F6F7FB] aspect-square">
+    <div 
+      className="group cursor-pointer bg-white rounded-xl border border-gray-2 p-4.5 shadow-sm hover:shadow-md hover:-translate-y-1 transition-all duration-300 flex flex-col h-full"
+      onClick={handleCardClick}
+    >
+      {/* Image container on top */}
+      <div className="relative overflow-hidden flex items-center justify-center rounded-lg bg-gray-1 aspect-square mb-4.5">
         {/* Badge overlay */}
         {badge && (
-          <span className={`absolute top-2.5 left-2.5 z-10 text-xs font-bold px-2.5 py-1 rounded-md shadow-sm ${badge.color}`}>
+          <span className={`absolute top-2.5 left-2.5 z-10 text-[10px] font-bold px-2.5 py-1 rounded-md shadow-sm ${badge.color}`}>
             {badge.label}
           </span>
         )}
 
-        <div className="text-center px-4 pt-7.5 pb-2">
-          <div className="flex items-center justify-center gap-2.5 mb-2">
-            <div className="flex items-center gap-1">
-              {[...Array(5)].map((_, i) => (
-                <Star key={i} size={14} weight="fill" className="text-yellow" />
-              ))}
-            </div>
+        <Image
+          src={getImageUrl(item.images?.[0])}
+          alt=""
+          fill
+          sizes="(max-width: 640px) 100vw, 220px"
+          className="object-contain p-4 transition-transform duration-300 ease-out group-hover:scale-105"
+        />
 
-            <p className="text-custom-sm text-gray-400">({item.ratings?.count || 0})</p>
-          </div>
-
-          <h3 className="font-medium text-dark text-sm leading-snug ease-out duration-200 hover:text-blue mb-1.5 line-clamp-2">
-            <Link
-              href={`/shop-details?id=${item._id}`}
-              onClick={() => dispatch(updateproductDetails({ ...item }))}
-            >
-              {item.title}
-            </Link>
-          </h3>
-
-          <span className="flex items-center justify-center gap-2 font-medium text-lg">
-            <span className="text-dark">₹{item.price}</span>
-            {item.compareAtPrice && item.compareAtPrice > item.price && (
-              <span className="text-dark-4 line-through text-sm">₹{item.compareAtPrice}</span>
-            )}
-          </span>
-        </div>
-
-        <div className="flex justify-center items-center px-4 pb-4">
-          <div className="relative w-full aspect-square max-w-[220px]">
-            <Image
-              src={getImageUrl(item.images?.[0])}
-              alt=""
-              fill
-              sizes="220px"
-              className="object-contain transition-transform duration-300 ease-out group-hover:scale-105"
-            />
-          </div>
-        </div>
-
-        <div className="absolute right-0 bottom-0 translate-x-full u-w-full flex flex-col gap-2 p-5.5 ease-linear duration-300 group-hover:translate-x-0">
+        {/* Hover Quick Actions */}
+        <div className="absolute left-0 bottom-0 translate-y-full w-full flex items-center justify-center gap-2 pb-4 ease-linear duration-200 group-hover:translate-y-0 z-10">
           <button
-            onClick={() => {
+            onClick={(e) => {
+              e.stopPropagation();
               handleQuickViewUpdate();
               openQuickView(item);
             }}
             aria-label="button for quick view"
-            id="bestOne"
-            className="flex items-center justify-center w-9 h-9 rounded-[5px] shadow-1 ease-out duration-200 text-dark bg-white hover:text-white hover:bg-blue"
+            className="flex items-center justify-center w-9 h-9 rounded-[5px] shadow-1 ease-out duration-200 text-dark bg-white hover:text-blue hover:bg-gray-50"
           >
             <Eye size={16} weight="bold" />
           </button>
 
           <button
-            onClick={() => handleAddToCart()}
+            onClick={(e) => {
+              e.stopPropagation();
+              handleAddToCart();
+            }}
             aria-label="button for add to cart"
-            id="addCartOne"
-            className="flex items-center justify-center w-9 h-9 rounded-[5px] shadow-1 ease-out duration-200 text-dark bg-white hover:text-white hover:bg-blue"
+            className="inline-flex items-center gap-1 font-bold text-xs py-2 px-4 rounded-[5px] bg-blue text-white ease-out duration-200 hover:bg-blue-dark"
           >
-            <ShoppingCart size={16} weight="bold" />
+            <ShoppingCart size={14} weight="bold" />
+            Add
           </button>
 
           <button
-            onClick={() => {
+            onClick={(e) => {
+              e.stopPropagation();
               handleItemToWishList();
             }}
             aria-label="button for add to fav"
-            id="addFavOne"
-            className="flex items-center justify-center w-9 h-9 rounded-[5px] shadow-1 ease-out duration-200 bg-white hover:text-white hover:bg-blue"
+            className="flex items-center justify-center w-9 h-9 rounded-[5px] shadow-1 ease-out duration-200 bg-white hover:text-blue hover:bg-gray-50"
           >
             <Heart size={16} weight={isInWishlist ? "fill" : "bold"} className={isInWishlist ? "text-red" : "text-dark"} />
           </button>
+        </div>
+      </div>
+
+      {/* Metadata below the image */}
+      <div className="flex flex-col flex-1 justify-between">
+        <div>
+          {/* Ratings & reviews */}
+          <div className="flex items-center gap-2 mb-2">
+            <div className="flex items-center gap-0.5">
+              {[...Array(5)].map((_, i) => (
+                <Star key={i} size={12} weight="fill" className="text-yellow" />
+              ))}
+            </div>
+            <p className="text-[11px] text-gray-400 font-medium">({item.ratings?.count || 0})</p>
+          </div>
+
+          {/* Product Title */}
+          <h3 className="font-semibold text-dark text-sm leading-snug ease-out duration-200 hover:text-blue mb-2 line-clamp-2">
+            <Link
+              href={`/shop-details?id=${item._id}`}
+              onClick={(e) => {
+                e.stopPropagation();
+                handleProductDetails();
+              }}
+            >
+              {item.title}
+            </Link>
+          </h3>
+        </div>
+
+        {/* Product Price */}
+        <div className="flex items-baseline gap-2 font-bold text-base mt-1">
+          <span className="text-dark">₹{item.price.toLocaleString("en-IN")}</span>
+          {item.compareAtPrice && item.compareAtPrice > item.price && (
+            <span className="text-dark-4 line-through text-xs font-normal">
+              ₹{item.compareAtPrice.toLocaleString("en-IN")}
+            </span>
+          )}
         </div>
       </div>
     </div>

@@ -54,9 +54,11 @@ const NewArrival = () => {
           </Link>
         </div>
 
-        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-x-7.5 gap-y-9">
+        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-x-7.5 gap-y-9 w-full">
           {products.length > 0 ? products.map((item, key) => (
-            <ProductItem item={item} key={key} />
+            <div key={key} className="w-full">
+              <ProductItem item={item} />
+            </div>
           )) : (
             <p className="text-gray-500 col-span-full text-center py-8">No products yet</p>
           )}

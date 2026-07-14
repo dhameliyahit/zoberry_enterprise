@@ -29,28 +29,7 @@ function getBadge(item: Product): { label: string; color: string } | null {
   return null;
 }
 
-const getYoutubeId = (url: string): string => {
-  const regExp = /^.*(youtu.be\/|v\/|u\/\w\/|embed\/|watch\?v=|\&v=|shorts\/)([^#\&\?]*).*/;
-  const match = url?.match(regExp);
-  return match && match[2].length === 11 ? match[2] : "";
-};
 
-const getInstagramId = (url: string): string => {
-  const match = url?.match(/(?:instagram\.com\/reel\/)([^/?#]+)/);
-  return match && match[1] ? match[1] : "";
-};
-
-const getEmbedUrl = (url: string): string => {
-  const ytId = getYoutubeId(url);
-  if (ytId) {
-    return `https://www.youtube.com/embed/${ytId}?autoplay=1&mute=1&loop=1&playlist=${ytId}&controls=0&modestbranding=1&rel=0&showinfo=0&iv_load_policy=3&enablejsapi=1`;
-  }
-  const igId = getInstagramId(url);
-  if (igId) {
-    return `https://www.instagram.com/reel/${igId}/embed`;
-  }
-  return url;
-};
 
 const ProductItem = ({ item }: { item: Product }) => {
   const { openQuickView } = useUI();
@@ -60,8 +39,6 @@ const ProductItem = ({ item }: { item: Product }) => {
   const wishlistItems = useAppSelector((state) => state.wishlistReducer.items);
   const isInWishlist = wishlistItems.includes(item._id);
 
-  const [isHovered, setIsHovered] = React.useState(false);
-  const video = item.videos && item.videos.length > 0 ? item.videos[0] : null;
 
   const handleQuickViewUpdate = () => {
     dispatch(updateQuickView({ ...item }));
@@ -97,10 +74,8 @@ const ProductItem = ({ item }: { item: Product }) => {
 
   return (
     <div className="group cursor-pointer" onClick={handleCardClick}>
-      <div 
+      <div
         className="relative overflow-hidden flex items-center justify-center rounded-lg bg-[#F6F7FB] aspect-square mb-4"
-        onMouseEnter={() => setIsHovered(true)}
-        onMouseLeave={() => setIsHovered(false)}
       >
         {/* Badge overlay */}
         {badge && (
@@ -114,32 +89,8 @@ const ProductItem = ({ item }: { item: Product }) => {
           alt=""
           fill
           sizes="(max-width: 640px) 100vw, (max-width: 1024px) 50vw, 25vw"
-          className={`object-contain p-4 transition-transform duration-300 ease-out group-hover:scale-105 ${
-            video && isHovered ? "opacity-0" : "opacity-100"
-          }`}
+          className="object-contain p-4 transition-transform duration-300 ease-out group-hover:scale-105"
         />
-
-        {video && isHovered && (
-          <div className="absolute inset-0 w-full h-full overflow-hidden z-0 bg-[#F6F7FB]">
-            {getYoutubeId(video.url) || getInstagramId(video.url) ? (
-              <iframe
-                src={getEmbedUrl(video.url)}
-                className="w-full h-full absolute inset-0 object-cover scale-[1.22] pointer-events-none select-none z-0"
-                allow="autoplay; encrypted-media"
-                title={video.title || "Product video"}
-              />
-            ) : (
-              <video
-                src={video.url}
-                autoPlay
-                muted
-                loop
-                playsInline
-                className="w-full h-full object-cover absolute inset-0 z-0"
-              />
-            )}
-          </div>
-        )}
 
         <div className="absolute left-0 bottom-0 translate-y-full w-full flex items-center justify-center gap-2.5 pb-5 ease-linear duration-200 group-hover:translate-y-0 z-10">
           <button

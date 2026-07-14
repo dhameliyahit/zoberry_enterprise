@@ -31,9 +31,11 @@ const Watchlist = () => {
           </div>
         </div>
 
-        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-7.5">
+        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-7.5 w-full">
           {wishlistItems.map((item, key) => (
-            <SingleItem item={item} key={key} />
+            <div key={key} className="w-full">
+              <SingleItem item={item} />
+            </div>
           ))}
         </div>
       </div>

@@ -371,12 +371,12 @@ function Logo() {
 
 export function TopBarSupportInfo() {
   return (
-    <div className="flex items-center gap-2 text-white/70">
-      <Phone size={14} weight="regular" className="text-white/50" />
-      <span className="text-[11px] font-bold tracking-wider uppercase text-white/40">Support:</span>
+    <div className="flex items-center gap-1.5 text-white/60">
+      <Phone size={12} weight="regular" className="text-white/40" />
+      <span className="text-[10px] font-semibold tracking-wider uppercase text-white/40">Support:</span>
       <a
         href={`mailto:${SUPPORT_EMAIL}`}
-        className="text-[11px] font-semibold text-white/85 hover:text-white transition-colors tracking-wide"
+        className="text-[10px] font-medium text-white/80 hover:text-white transition-colors tracking-wide"
       >
         {SUPPORT_EMAIL}
       </a>
@@ -387,21 +387,21 @@ export function TopBarSupportInfo() {
 // 3. Updated Quick Links & Social Media Area
 export function TopBarQuickLinks() {
   return (
-    <div className="flex items-center gap-5">
+    <div className="flex items-center gap-4">
       
       {/* Existing Contact Link */}
       <Link
         href="/contact"
-        className="text-[11px] font-bold tracking-wider uppercase text-white/65 hover:text-white transition-colors duration-150"
+        className="text-[10px] font-medium tracking-wider uppercase text-white/60 hover:text-white transition-colors duration-150"
       >
         Contact
       </Link>
 
       {/* Elegant Vertical Divider between Contact and Socials */}
-      <div className="h-3.5 w-px bg-white/20" />
+      <div className="h-3 w-px bg-white/10" />
 
       {/* Social Media Platform Icons Group */}
-      <div className="flex items-center gap-3">
+      <div className="flex items-center gap-2.5">
         {SOCIAL_LINKS.map((social) => {
           const IconComponent = social.icon;
           return (
@@ -411,9 +411,9 @@ export function TopBarQuickLinks() {
               target="_blank"
               rel="noopener noreferrer"
               aria-label={`Follow us on ${social.name}`}
-              className="text-white/60 hover:text-white transition-colors duration-150 p-0.5 flex items-center justify-center"
+              className="text-white/50 hover:text-white transition-all duration-150 p-0.5 flex items-center justify-center hover:scale-110"
             >
-              <IconComponent size={15} weight="regular" />
+              <IconComponent size={13} weight="regular" />
             </a>
           );
         })}
@@ -425,10 +425,10 @@ export function TopBarQuickLinks() {
 
 // TopBar is defined with specific CSS classes.
 function TopBar({ stickyMenu }: TopBarProps) {
-  const heightClass = stickyMenu ? "h-0 opacity-0 overflow-hidden" : "h-9 opacity-100";
+  const heightClass = stickyMenu ? "h-0 opacity-0 overflow-hidden" : "h-8 opacity-100";
 
   return (
-    <div className={`hidden lg:block border-b border-white/10 transition-all duration-300 ease-in-out ${heightClass}`}>
+    <div className={`hidden lg:block border-b border-white/5 transition-all duration-300 ease-in-out ${heightClass}`}>
       <div className="mx-auto max-w-[1170px] h-full px-4 sm:px-7.5 xl:px-0 flex items-center justify-between">
         <TopBarSupportInfo />
         <TopBarQuickLinks />
@@ -469,7 +469,7 @@ export function NavigationItem({ title, path, isActive, onClick }: NavigationIte
 function DesktopNavigation({ isActivePath }: DesktopNavigationProps) {
   return (
     <nav className="hidden xl:block" aria-label="Primary navigation">
-      <ul className="flex items-center gap-6 xl:gap-8">
+      <ul className="flex items-center gap-5 xl:gap-7">
         {menuData.map((menuItem) => (
           <li key={menuItem.id}>
             <NavigationItem
@@ -1028,9 +1028,9 @@ function MobileDrawer({
 }
 
 function HeaderContent({ stickyMenu, children }: HeaderContentProps) {
-  const pyClasses = stickyMenu ? "py-2 lg:py-2.5" : "py-3 lg:py-2";
+  const pyClasses = stickyMenu ? "py-2 lg:py-2" : "py-3 lg:py-2.5";
   return (
-    <div className="border-b border-white/10">
+    <div className="border-b border-white/5">
       <div className="mx-auto max-w-[1170px] px-4 sm:px-7.5 xl:px-0">
         <div className={`transition-all duration-300 ${pyClasses}`}>
           {children}

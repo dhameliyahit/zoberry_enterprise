@@ -399,84 +399,104 @@ const ShopDetails = () => {
                 </div>
 
                 {/* Product Content */}
-                <div className="max-w-[539px] w-full">
-                  <div className="flex items-center justify-between mb-3">
-                    <h2 className="font-semibold text-xl sm:text-2xl xl:text-custom-3 text-dark">
-                      {product.title}
-                    </h2>
-
-                    {product.compareAtPrice && product.compareAtPrice > product.price && (
-                      <div className="inline-flex font-medium text-custom-sm text-white bg-blue rounded py-0.5 px-2.5">
-                        {Math.round(((product.compareAtPrice - product.price) / product.compareAtPrice) * 100)}% OFF
-                      </div>
-                    )}
+                <div className="max-w-[539px] w-full flex flex-col">
+                  {/* Category / Showcase Badge */}
+                  <div className="mb-2">
+                    <span className="inline-flex items-center gap-1.5 text-[10px] font-bold uppercase tracking-wider text-blue bg-blue/10 px-2.5 py-1 rounded">
+                      ★ Trending Showcase
+                    </span>
                   </div>
 
-                  <div className="flex flex-wrap items-center gap-5.5 mb-4.5">
-                    <div className="flex items-center gap-2.5">
-                      <div className="flex items-center gap-1">
+                  <h1 className="font-bold text-2xl sm:text-3xl lg:text-4xl text-dark mb-3 leading-tight">
+                    {product.title}
+                  </h1>
+
+                  <div className="flex flex-wrap items-center gap-4 mb-4">
+                    <div className="flex items-center gap-2">
+                      <div className="flex items-center gap-0.5">
                         {Array.from({ length: 5 }).map((_, index) => {
                           const starValue = index + 1;
                           const isFilled = starValue <= (product.ratings?.average || 0);
                           return (
                             <Star
                               key={index}
-                              size={18}
+                              size={15}
                               weight="fill"
-                              className={isFilled ? "text-yellow" : "text-gray-4"}
+                              className={isFilled ? "text-yellow" : "text-gray-3"}
                             />
                           );
                         })}
                       </div>
 
-                      <span> ({product.ratings?.count || 0} customer reviews) </span>
+                      <span className="text-xs text-dark-3 font-medium">
+                        ({product.ratings?.count || 0} customer reviews)
+                      </span>
                     </div>
+
+                    <div className="h-3 w-px bg-gray-3 hidden sm:block" />
 
                     <div className="flex items-center gap-1.5">
                       <CheckCircle
-                        size={20}
+                        size={16}
                         weight="fill"
-                        className={displayStock > 0 ? "text-green" : "text-[#E11D48]"}
+                        className={displayStock > 0 ? "text-green" : "text-red"}
                       />
 
-                      <span className={displayStock > 0 ? "text-green" : "text-[#E11D48]"}>
+                      <span className={`text-xs font-semibold ${displayStock > 0 ? "text-green" : "text-red"}`}>
                         {displayStock > 0 ? "In Stock" : "Out of Stock"}
                       </span>
                     </div>
                   </div>
 
-                  <h3 className="font-medium text-custom-1 mb-4.5 flex items-center gap-2">
-                    <span className="text-sm sm:text-base text-dark">
-                      Price: ₹{displayPrice}
+                  {/* Product Short Description Excerpt */}
+                  {product.description && (
+                    <p className="text-dark-3 text-sm leading-relaxed mb-6 mt-1 max-w-lg">
+                      {product.description.length > 220 
+                        ? `${product.description.slice(0, 220).trim()}...` 
+                        : product.description}
+                    </p>
+                  )}
+
+                  {/* Price Area */}
+                  <div className="flex items-baseline gap-3 mb-6 bg-gray-1 p-4 rounded-lg border border-gray-2">
+                    <span className="text-3xl font-extrabold text-blue leading-none">
+                      ₹{displayPrice.toLocaleString("en-IN")}
                     </span>
                     {displayCompareAt && displayCompareAt > displayPrice && (
-                      <span className="line-through text-dark-4">
-                        ₹{displayCompareAt}
-                      </span>
+                      <>
+                        <span className="text-sm text-dark-4 line-through">
+                          MRP: ₹{displayCompareAt.toLocaleString("en-IN")}
+                        </span>
+                        <span className="inline-flex items-center text-[10px] font-bold text-red bg-red-light-6 border border-red-light-3 rounded px-2 py-0.5">
+                          {Math.round(((displayCompareAt - displayPrice) / displayCompareAt) * 100)}% OFF
+                        </span>
+                      </>
                     )}
-                  </h3>
+                  </div>
 
-                  <ul className="flex flex-col gap-2">
-                    <li className="flex items-center gap-2.5">
-                      <CheckCircle size={20} weight="fill" className="text-blue" />
-                      Free delivery available
+                  <ul className="flex flex-col gap-2.5 border-t border-gray-2 py-4 mb-6">
+                    <li className="flex items-center gap-2.5 text-xs sm:text-sm text-dark-3">
+                      <CheckCircle size={18} weight="fill" className="text-blue" />
+                      <span>Free delivery available on this item</span>
                     </li>
 
-                    <li className="flex items-center gap-2.5">
-                      <CheckCircle size={20} weight="fill" className="text-blue" />
-                      Sales {product.compareAtPrice && product.compareAtPrice > product.price ? Math.round(((product.compareAtPrice - product.price) / product.compareAtPrice) * 100) : 30}% Off Use Code: PROMO{product.compareAtPrice && product.compareAtPrice > product.price ? Math.round(((product.compareAtPrice - product.price) / product.compareAtPrice) * 100) : 30}
+                    <li className="flex items-center gap-2.5 text-xs sm:text-sm text-dark-3">
+                      <CheckCircle size={18} weight="fill" className="text-blue" />
+                      <span>
+                        Promo active: Get extra {product.compareAtPrice && product.compareAtPrice > product.price ? Math.round(((product.compareAtPrice - product.price) / product.compareAtPrice) * 100) : 30}% off using code <strong className="text-blue">PROMO{product.compareAtPrice && product.compareAtPrice > product.price ? Math.round(((product.compareAtPrice - product.price) / product.compareAtPrice) * 100) : 30}</strong>
+                      </span>
                     </li>
                   </ul>
 
                   {product.hasVariants && product.variantOptions && product.variantOptions.length > 0 ? (
                     <form onSubmit={(e) => e.preventDefault()}>
-                      <div className="flex flex-col gap-4.5 border-y border-gray-3 mt-7.5 mb-9 py-9">
+                      <div className="flex flex-col gap-4 border-y border-gray-2 py-5 my-5">
                         {product.variantOptions.map((opt: any, optKey: number) => (
-                          <div key={optKey} className="flex flex-col sm:flex-row sm:items-center gap-4">
-                            <div className="min-w-[100px]">
-                              <h4 className="font-medium text-dark capitalize">{opt.name}:</h4>
+                          <div key={optKey} className="flex flex-col sm:flex-row sm:items-center gap-3">
+                            <div className="min-w-[90px]">
+                              <h4 className="font-semibold text-xs uppercase tracking-wider text-dark-3 capitalize">{opt.name}:</h4>
                             </div>
-                            <div className="flex flex-wrap items-center gap-2.5">
+                            <div className="flex flex-wrap items-center gap-2">
                               {opt.values?.map((val: string, valKey: number) => {
                                 const isSelected = selectedVariants[opt.name] === val;
                                 const matchingVariant = product.variants?.find((v: any) => {
@@ -499,9 +519,9 @@ const ShopDetails = () => {
                                         [opt.name]: val,
                                       }))
                                     }
-                                    className={`px-4 py-2 border rounded-md text-sm font-medium transition-all ${
+                                    className={`px-3 py-1.5 border rounded-lg text-xs font-semibold transition-all duration-200 ${
                                       isSelected
-                                        ? "border-blue bg-blue text-white shadow-sm"
+                                        ? "border-blue bg-blue text-white shadow-sm scale-[1.02]"
                                         : "border-gray-3 bg-white text-dark hover:border-blue hover:text-blue"
                                     }`}
                                   >
@@ -516,51 +536,52 @@ const ShopDetails = () => {
                       </div>
                     </form>
                   ) : (
-                    <div className="border-b border-gray-3 my-8"></div>
+                    <div className="border-b border-gray-2 my-5"></div>
                   )}
 
-                  <div className="flex flex-wrap items-center gap-4.5">
-                    <div className="flex items-center rounded-md border border-gray-3">
+                  <div className="flex flex-wrap items-center gap-3 mt-4">
+                    <div className="flex items-center rounded-lg border border-gray-3 overflow-hidden bg-white">
                       <button
                         aria-label="button for remove product"
-                        className="flex items-center justify-center w-12 h-12 ease-out duration-200 hover:text-blue"
+                        className="flex items-center justify-center w-10 h-10 text-dark-3 hover:text-blue hover:bg-gray-1 transition-all duration-200"
                         onClick={() => quantity > 1 && setQuantity(quantity - 1)}
                       >
-                        <Minus size={20} weight="bold" />
+                        <Minus size={14} weight="bold" />
                       </button>
 
-                      <span className="flex items-center justify-center w-16 h-12 border-x border-gray-4">
+                      <span className="flex items-center justify-center w-12 h-10 border-x border-gray-3 text-sm font-bold text-dark select-none">
                         {quantity}
                       </span>
 
                       <button
                         onClick={() => setQuantity(quantity + 1)}
                         aria-label="button for add product"
-                        className="flex items-center justify-center w-12 h-12 ease-out duration-200 hover:text-blue"
+                        className="flex items-center justify-center w-10 h-10 text-dark-3 hover:text-blue hover:bg-gray-1 transition-all duration-200"
                       >
-                        <Plus size={20} weight="bold" />
+                        <Plus size={14} weight="bold" />
                       </button>
                     </div>
 
                     <button
                       onClick={handlePurchaseNow}
-                      className="inline-flex font-medium text-white bg-blue py-3 px-7 rounded-md ease-out duration-200 hover:bg-blue-dark"
+                      className="inline-flex items-center justify-center font-bold text-sm text-white bg-blue py-3 px-6 rounded-lg shadow-sm hover:bg-blue-dark active:scale-[0.98] transition-all duration-200"
                     >
                       Purchase Now
                     </button>
 
                     <button
                       onClick={handleAddToCart}
-                      className="inline-flex font-medium text-white bg-dark py-3 px-7 rounded-md ease-out duration-200 hover:bg-blue"
+                      className="inline-flex items-center justify-center font-bold text-sm text-white bg-dark py-3 px-6 rounded-lg shadow-sm hover:bg-blue active:scale-[0.98] transition-all duration-200"
                     >
                       Add to Cart
                     </button>
 
                     <button
                       onClick={handleItemToWishList}
-                      className="flex items-center justify-center w-12 h-12 rounded-md border border-gray-3 ease-out duration-200 hover:text-white hover:bg-dark hover:border-transparent"
+                      className="flex items-center justify-center w-10 h-10 rounded-lg border border-gray-3 text-dark-3 hover:bg-gray-50 active:scale-95 transition-all duration-200"
+                      aria-label="Toggle wishlist"
                     >
-                      <Heart size={24} weight={isInWishlist ? "fill" : "bold"} className={isInWishlist ? "text-red" : "text-dark"} />
+                      <Heart size={20} weight={isInWishlist ? "fill" : "bold"} className={isInWishlist ? "text-red" : "text-dark-3"} />
                     </button>
                   </div>
                 </div>

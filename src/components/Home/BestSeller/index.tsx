@@ -16,7 +16,7 @@ const BestSeller = () => {
   }, []);
 
   return (
-    <section className="overflow-hidden my-3">
+    <section className="overflow-hidden py-16 bg-gray-1 border-y border-gray-2 my-12">
       <div className="max-w-[1170px] w-full mx-auto px-4 sm:px-8 xl:px-0">
         <div className="mb-10 flex items-center justify-between">
           <div>
@@ -35,9 +35,11 @@ const BestSeller = () => {
           </div>
         </div>
 
-        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-7.5">
+        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-7.5 w-full">
           {products.length > 0 ? products.map((item, key) => (
-            <SingleItem item={item} key={key} />
+            <div key={key} className="w-full">
+              <SingleItem item={item} />
+            </div>
           )) : (
             <p className="text-gray-500 col-span-full text-center py-8">No products yet</p>
           )}
@@ -46,9 +48,9 @@ const BestSeller = () => {
         <div className="text-center mt-12.5">
           <Link
             href="/shop-without-sidebar"
-            className="inline-flex font-medium text-custom-sm py-3 px-7 sm:px-12.5 rounded-md border-gray-3 border bg-gray-1 text-dark ease-out duration-200 hover:bg-dark hover:text-white hover:border-transparent"
+            className="inline-flex font-medium text-custom-sm py-3 px-7 sm:px-12.5 rounded-lg border-gray-3 border bg-white text-dark ease-out duration-200 hover:bg-dark hover:text-white hover:border-transparent"
           >
-            View All
+            View All Products
           </Link>
         </div>
       </div>

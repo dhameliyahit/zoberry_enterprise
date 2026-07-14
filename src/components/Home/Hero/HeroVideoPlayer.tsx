@@ -4,17 +4,18 @@ import { addItemToCart } from "@/redux/features/cart-slice";
 import { AppDispatch } from "@/redux/store";
 import {
   ArrowRight,
-  CaretLeft,
-  CaretRight,
   Pause,
   Play,
   ShoppingCart,
-  Sparkle,
   SpeakerSimpleHigh,
   SpeakerSimpleX,
-  Star
+  Star,
+  FireSimple,
+  Lightning,
+  ShieldCheck,
 } from "@phosphor-icons/react";
 import Link from "next/link";
+import Image from "next/image";
 import React, { useCallback, useEffect, useRef, useState } from "react";
 import { useDispatch } from "react-redux";
 
@@ -53,7 +54,7 @@ const FALLBACK_SHORTS = [
 // Helper Parsing Utilities
 //-----------------------------------------
 const getYoutubeId = (url: string): string => {
-  const regExp = /^.*(youtu.be\/|v\/|u\/\w\/|embed\/|watch\?v=|\&v=|shorts\/)([^#\&\?]*).*/;
+  const regExp = /^.*(youtu.be\/|v\/|u\/\w\/|embed\/|watch\?v=|&v=|shorts\/)([^#&?]*).*/;
   const match = url.match(regExp);
   return match && match[2].length === 11 ? match[2] : "";
 };
@@ -77,14 +78,12 @@ const getEmbedUrl = (video: HeroVideo): string => {
 
 const getThumbnailUrl = (video: HeroVideo): string => {
   const ytId = getYoutubeId(video.url);
-  if (ytId) {
-    return `https://img.youtube.com/vi/${ytId}/hqdefault.jpg`;
-  }
+  if (ytId) return `https://img.youtube.com/vi/${ytId}/hqdefault.jpg`;
   return "/images/placeholder.png";
 };
 
 const getProductImage = (product?: Product): string => {
-  if (!product || !product.images || product.images.length === 0) return "/images/placeholder.png";
+  if (!product?.images?.length) return "/images/placeholder.png";
   const featured = product.images.find((img) => img.isFeatured);
   return featured?.url || product.images[0].url || "/images/placeholder.png";
 };
@@ -98,6 +97,7 @@ export default function HeroVideoPlayer() {
   const [loading, setLoading] = useState(true);
   const [isPlaying, setIsPlaying] = useState(true);
   const [isMuted, setIsMuted] = useState(true);
+  const [isChanging, setIsChanging] = useState(false);
 
   const videoRef = useRef<HTMLVideoElement | null>(null);
 
@@ -106,7 +106,7 @@ export default function HeroVideoPlayer() {
       const iframe = document.getElementById("hero-main-yt-iframe") as HTMLIFrameElement | null;
       if (iframe?.contentWindow) {
         iframe.contentWindow.postMessage(
-          JSON.stringify({ event: "command", func: func, args: "" }),
+          JSON.stringify({ event: "command", func, args: "" }),
           "*"
         );
       }
@@ -115,7 +115,6 @@ export default function HeroVideoPlayer() {
     }
   }, []);
 
-  // Sync Video Controls
   useEffect(() => {
     if (videoRef.current) {
       if (isPlaying) videoRef.current.play().catch(() => {});
@@ -129,7 +128,6 @@ export default function HeroVideoPlayer() {
     sendYoutubeCommand(isMuted ? "mute" : "unMute");
   }, [isMuted, activeIndex, sendYoutubeCommand]);
 
-  // Load Video Content Array
   useEffect(() => {
     const loadData = async () => {
       try {
@@ -176,20 +174,51 @@ export default function HeroVideoPlayer() {
     loadData();
   }, [setHomeLoading]);
 
-  if (loading || videos.length === 0) {
+  const switchVideo = (idx: number) => {
+    if (idx === activeIndex) return;
+    setIsChanging(true);
+    setTimeout(() => {
+      setActiveIndex(idx);
+      setIsChanging(false);
+    }, 250);
+  };
+
+  // Skeleton Loader
+  if (loading) {
     return (
-      <div className="w-full h-[540px] lg:h-full rounded-lg bg-[#ffffff] flex items-center justify-center border border-[#e0e0e0] shadow-sm">
-        <div className="flex flex-col items-center gap-3">
-          <div className="h-10 w-10 animate-spin rounded-full border-4 border-solid border-blue border-t-transparent" />
-          <p className="text-xs font-semibold text-dark-3 uppercase tracking-wider">Loading Showcase...</p>
+      <div className="w-full flex flex-col lg:flex-row gap-6 lg:gap-8 animate-pulse">
+        {/* Video skeleton */}
+        <div className="w-full lg:w-[320px] xl:w-[360px] shrink-0">
+          <div className="w-full aspect-[9/16] lg:aspect-auto lg:h-[540px] bg-gray-2 rounded-2xl" />
+        </div>
+        {/* Info skeleton */}
+        <div className="flex-1 flex flex-col gap-4 py-4">
+          <div className="h-5 w-28 bg-gray-2 rounded-full" />
+          <div className="h-10 w-3/4 bg-gray-2 rounded-lg" />
+          <div className="h-4 w-48 bg-gray-2 rounded-full" />
+          <div className="h-4 w-full bg-gray-2 rounded" />
+          <div className="h-4 w-5/6 bg-gray-2 rounded" />
+          <div className="h-4 w-4/6 bg-gray-2 rounded" />
+          <div className="mt-auto pt-6 border-t border-gray-2">
+            <div className="h-10 w-32 bg-gray-2 rounded-lg mb-4" />
+            <div className="flex gap-3">
+              <div className="h-12 flex-1 bg-gray-2 rounded-xl" />
+              <div className="h-12 flex-1 bg-gray-2 rounded-xl" />
+            </div>
+          </div>
         </div>
       </div>
     );
   }
 
+  if (videos.length === 0) return null;
+
   const currentVideo = videos[activeIndex];
   const product = currentVideo.product;
   const productUrl = product ? `/shop-details?id=${product._id}` : "/shop";
+  const discount = product?.compareAtPrice && product.compareAtPrice > product.price
+    ? Math.round(((product.compareAtPrice - product.price) / product.compareAtPrice) * 100)
+    : 0;
 
   const handleAddToCart = (e: React.MouseEvent) => {
     e.preventDefault();
@@ -198,31 +227,33 @@ export default function HeroVideoPlayer() {
     openCartSidebar();
   };
 
-  const handlePrev = (e: React.MouseEvent) => {
-    e.preventDefault();
-    setActiveIndex((prev) => (prev === 0 ? videos.length - 1 : prev - 1));
-  };
-
-  const handleNext = (e: React.MouseEvent) => {
-    e.preventDefault();
-    setActiveIndex((prev) => (prev === videos.length - 1 ? 0 : prev + 1));
-  };
-
   return (
-    <div className="w-full max-w-7xl mx-auto px-4 font-sans lg:h-full relative">
-      <div className="grid grid-cols-1 lg:grid-cols-12 gap-8 bg-[#ffffff] border border-[#e0e0e0] rounded-lg p-2 items-stretch shadow-sm lg:h-full">
-        
-        {/* 1. LEFT CONTAINER: Main Active Video Player & Controller (Grid Span 4) */}
-        <div className="lg:col-span-4 lg:h-full lg:min-h-0 lg:flex lg:items-center lg:justify-center">
-          <div className="w-full aspect-[9/16] lg:h-full lg:w-[calc((100vh-178px)*9/16)] bg-black rounded-lg border border-[#e0e0e0] overflow-hidden relative shadow-inner">
-            
-            {/* Interactive Player Frame Canvas */}
-            <div className="w-full h-full relative overflow-hidden" onClick={() => setIsPlaying(!isPlaying)}>
+    <div className="w-full flex flex-col lg:flex-row gap-6 lg:gap-10 xl:gap-14 items-start">
+
+      {/* =============================================
+          LEFT: Phone-Frame Styled Video Player
+      ============================================= */}
+      <div className="w-full lg:w-[300px] xl:w-[340px] shrink-0 flex flex-col gap-4">
+
+        {/* Video Frame */}
+        <div className="relative group">
+
+          {/* Outer Glow Ring */}
+          <div className="absolute -inset-[3px] rounded-[28px] bg-gradient-to-b from-blue/30 via-blue-dark/20 to-transparent opacity-70 blur-sm" />
+
+          {/* Phone Frame */}
+          <div className="relative w-full aspect-[9/16] bg-black rounded-[24px] overflow-hidden shadow-2xl border border-white/10">
+
+            {/* Video content */}
+            <div
+              className={`absolute inset-0 transition-opacity duration-300 ${isChanging ? "opacity-0" : "opacity-100"}`}
+              onClick={() => setIsPlaying(!isPlaying)}
+            >
               {getYoutubeId(currentVideo.url) || getInstagramId(currentVideo.url) ? (
                 <iframe
                   id="hero-main-yt-iframe"
                   src={getEmbedUrl(currentVideo)}
-                  className="w-full h-full object-cover scale-[1.22] pointer-events-none select-none"
+                  className="w-full h-full scale-[1.22] pointer-events-none select-none"
                   allow="autoplay; encrypted-media"
                   title={currentVideo.title}
                 />
@@ -239,123 +270,241 @@ export default function HeroVideoPlayer() {
               )}
             </div>
 
-            {/* Media Overlay State Controllers */}
-            <div className="absolute bottom-3 right-3 z-20 flex items-center gap-2">
-              <button 
-                onClick={(e) => { e.stopPropagation(); setIsMuted(!isMuted); }}
-                className="w-8 h-8 rounded bg-black/70 border border-white/10 text-white flex items-center justify-center hover:bg-black/90 transition-colors"
-                aria-label="Mute Toggle"
-              >
-                {isMuted ? <SpeakerSimpleX size={14} weight="bold" /> : <SpeakerSimpleHigh size={14} weight="bold" />}
-              </button>
-              <button 
-                onClick={(e) => { e.stopPropagation(); setIsPlaying(!isPlaying); }}
-                className="w-8 h-8 rounded bg-black/70 border border-white/10 text-white flex items-center justify-center hover:bg-black/90 transition-colors"
-                aria-label="Play Toggle"
-              >
-                {isPlaying ? <Pause size={14} weight="bold" /> : <Play size={14} weight="fill" />}
-              </button>
+            {/* Top gradient overlay */}
+            <div className="absolute top-0 left-0 right-0 h-24 bg-gradient-to-b from-black/60 to-transparent pointer-events-none z-10" />
+
+            {/* Bottom gradient overlay */}
+            <div className="absolute bottom-0 left-0 right-0 h-36 bg-gradient-to-t from-black/80 via-black/30 to-transparent pointer-events-none z-10" />
+
+            {/* Top: Brand tag */}
+            <div className="absolute top-4 left-4 z-20">
+              <span className="inline-flex items-center gap-1.5 bg-white/15 backdrop-blur-md border border-white/20 text-white text-[10px] font-bold uppercase tracking-widest px-2.5 py-1 rounded-full">
+                <span className="w-1.5 h-1.5 rounded-full bg-green animate-pulse" />
+                Live Trending
+              </span>
+            </div>
+
+            {/* Bottom: Controls */}
+            <div className="absolute bottom-4 left-4 right-4 z-20 flex items-end justify-between">
+              {/* Slide indicator dots */}
+              <div className="flex gap-1.5">
+                {videos.map((_, idx) => (
+                  <button
+                    key={idx}
+                    onClick={(e) => { e.stopPropagation(); switchVideo(idx); }}
+                    className={`rounded-full transition-all duration-300 ${
+                      idx === activeIndex
+                        ? "w-5 h-1.5 bg-white"
+                        : "w-1.5 h-1.5 bg-white/40 hover:bg-white/70"
+                    }`}
+                    aria-label={`Go to video ${idx + 1}`}
+                  />
+                ))}
+              </div>
+
+              {/* Play / Mute buttons */}
+              <div className="flex items-center gap-2">
+                <button
+                  onClick={(e) => { e.stopPropagation(); setIsMuted(!isMuted); }}
+                  className="w-8 h-8 rounded-full bg-white/15 backdrop-blur-md border border-white/20 text-white flex items-center justify-center hover:bg-white/25 transition-all active:scale-95"
+                  aria-label="Mute Toggle"
+                >
+                  {isMuted ? <SpeakerSimpleX size={13} weight="bold" /> : <SpeakerSimpleHigh size={13} weight="bold" />}
+                </button>
+                <button
+                  onClick={(e) => { e.stopPropagation(); setIsPlaying(!isPlaying); }}
+                  className="w-8 h-8 rounded-full bg-white/15 backdrop-blur-md border border-white/20 text-white flex items-center justify-center hover:bg-white/25 transition-all active:scale-95"
+                  aria-label="Play Toggle"
+                >
+                  {isPlaying ? <Pause size={13} weight="bold" /> : <Play size={13} weight="fill" />}
+                </button>
+              </div>
             </div>
           </div>
         </div>
 
-        {/* 2. MIDDLE CONTAINER: Clean Product Information & Dynamic Pricing (Grid Span 8) */}
-        <div className="lg:col-span-8 flex flex-col justify-between py-1 lg:h-full lg:min-h-0">
-          <div className="lg:overflow-y-auto lg:pr-1 lg:flex-1 lg:min-h-0">
-            <div className="flex flex-wrap items-center gap-2 mb-3">
-              <span className="inline-flex items-center gap-1 bg-[#f5f5f5] border border-[#cccccc] text-[#000000] font-semibold text-[10px] uppercase tracking-wider rounded px-2 py-0.5">
-                <Sparkle size={10} weight="fill" />
-                Trending Showcase
+        {/* Thumbnail Strip */}
+        {videos.length > 1 && (
+          <div className="flex gap-2.5 overflow-x-auto pb-1 scrollbar-none">
+            {videos.map((vid, idx) => (
+              <button
+                key={vid._id}
+                onClick={() => switchVideo(idx)}
+                className={`relative shrink-0 w-16 h-24 rounded-xl overflow-hidden border-2 transition-all duration-300 ${
+                  idx === activeIndex
+                    ? "border-blue shadow-md scale-[1.04]"
+                    : "border-transparent opacity-60 hover:opacity-90 hover:scale-[1.02]"
+                }`}
+              >
+                <Image
+                  src={getThumbnailUrl(vid)}
+                  alt={vid.title}
+                  fill
+                  className="object-cover"
+                  unoptimized
+                />
+                {idx === activeIndex && (
+                  <div className="absolute inset-0 bg-blue/20" />
+                )}
+                {/* Play icon overlay on inactive */}
+                {idx !== activeIndex && (
+                  <div className="absolute inset-0 flex items-center justify-center">
+                    <div className="w-6 h-6 rounded-full bg-black/50 backdrop-blur-sm flex items-center justify-center">
+                      <Play size={10} weight="fill" className="text-white ml-0.5" />
+                    </div>
+                  </div>
+                )}
+              </button>
+            ))}
+          </div>
+        )}
+      </div>
+
+      {/* =============================================
+          RIGHT: Product Info Panel
+      ============================================= */}
+      <div className={`flex-1 flex flex-col min-h-0 transition-all duration-300 ${isChanging ? "opacity-0 translate-y-2" : "opacity-100 translate-y-0"}`}>
+
+        {/* Badge Row */}
+        <div className="flex flex-wrap items-center gap-2 mb-5">
+          <span className="inline-flex items-center gap-1.5 bg-blue/8 border border-blue/20 text-blue font-bold text-[10px] uppercase tracking-widest px-3 py-1.5 rounded-full">
+            <FireSimple size={11} weight="fill" />
+            Trending Now
+          </span>
+          {product?.stock && product.stock <= 8 && (
+            <span className="inline-flex items-center gap-1 bg-red-light-6 border border-red-light-3 text-red font-bold text-[10px] uppercase tracking-widest px-3 py-1.5 rounded-full">
+              <Lightning size={11} weight="fill" />
+              Only {product.stock} left
+            </span>
+          )}
+          {discount > 0 && (
+            <span className="inline-flex items-center gap-1 bg-green-light-3/30 border border-green-light-2 text-green-dark font-bold text-[10px] uppercase tracking-widest px-3 py-1.5 rounded-full">
+              {discount}% OFF Today
+            </span>
+          )}
+        </div>
+
+        {/* Title */}
+        <h1 className="text-dark text-2xl sm:text-3xl xl:text-[2.1rem] font-bold leading-tight tracking-tight mb-4 max-w-[520px]">
+          {product?.title || currentVideo.title}
+        </h1>
+
+        {/* Star Rating */}
+        {product?.ratings && (
+          <div className="flex items-center gap-2 mb-5">
+            <div className="flex items-center gap-0.5">
+              {[...Array(5)].map((_, i) => (
+                <Star
+                  key={i}
+                  size={14}
+                  weight={i < Math.round(product.ratings?.average || 5) ? "fill" : "regular"}
+                  className="text-amber-400"
+                />
+              ))}
+            </div>
+            <span className="text-sm font-bold text-dark">{product.ratings.average}</span>
+            <span className="text-xs text-dark-4">({product.ratings.count} verified reviews)</span>
+          </div>
+        )}
+
+        {/* Description */}
+        <p className="text-dark-3 text-sm leading-relaxed mb-7 max-w-[480px]">
+          {product?.description
+            ? product.description.slice(0, 200) + (product.description.length > 200 ? "..." : "")
+            : "Discover this trending product featured in our curated showcase. Shop directly with guaranteed quality and fast delivery across India."}
+        </p>
+
+        {/* Trust Badges */}
+        <div className="flex flex-wrap gap-3 mb-7">
+          {[
+            { icon: <ShieldCheck size={13} weight="fill" className="text-green" />, label: "100% Secure Checkout" },
+            { icon: <Lightning size={13} weight="fill" className="text-blue" />, label: "Fast Dispatch" },
+          ].map((badge, i) => (
+            <span key={i} className="inline-flex items-center gap-1.5 text-xs text-dark-3 bg-gray-1 border border-gray-3 px-3 py-1.5 rounded-full">
+              {badge.icon}
+              {badge.label}
+            </span>
+          ))}
+        </div>
+
+        {/* Divider */}
+        <div className="h-px bg-gradient-to-r from-gray-3 via-gray-2 to-transparent mb-6" />
+
+        {/* Price Block */}
+        {product && (
+          <>
+            <div className="flex items-baseline gap-3 mb-6">
+              <span className="text-4xl font-bold text-blue-dark tracking-tight">
+                ₹{product.price.toLocaleString("en-IN")}
               </span>
-              {product?.stock && product.stock <= 8 && (
-                <span className="bg-[#fef2f2] border border-[#fecaca] text-[#dc2626] text-[10px] font-bold px-2 py-0.5 rounded uppercase tracking-wider">
-                  Low Stock
-                </span>
+              {product.compareAtPrice && product.compareAtPrice > product.price && (
+                <>
+                  <span className="text-base text-dark-4 line-through font-medium">
+                    ₹{product.compareAtPrice.toLocaleString("en-IN")}
+                  </span>
+                  <span className="inline-flex items-center bg-red-light-5 border border-red-light-3 text-red text-xs font-bold px-2.5 py-1 rounded-lg">
+                    -{discount}%
+                  </span>
+                </>
               )}
             </div>
 
-            <h1 className="text-[#000000] text-2xl md:text-3xl font-bold tracking-tight mb-3 leading-tight">
-              {product?.title || currentVideo.title}
-            </h1>
-
-            {product?.ratings && (
-              <div className="flex items-center gap-1.5 mb-5">
-                <div className="flex text-amber-500">
-                  {[...Array(5)].map((_, i) => (
-                    <Star key={i} size={12} weight={i < Math.round(product.ratings?.average || 5) ? "fill" : "regular"} />
-                  ))}
-                </div>
-                <span className="text-xs font-bold text-[#000000]">{product.ratings.average}</span>
-                <span className="text-xs text-[#999999]">({product.ratings.count} reviews)</span>
-              </div>
-            )}
-
-            <p className="text-[#666666] text-xs md:text-sm leading-relaxed font-normal mb-6">
-              {product?.description || "Watch the live presentation video. Purchase directly from our seasonal trending catalog below with full verified tracking updates."}
-            </p>
-          </div>
-
-          {/* Action Interaction Pricing Row */}
-          {product && (
-            <div className="border-t border-[#e0e0e0] pt-5 mt-4">
-              <div className="flex items-baseline gap-2 mb-5">
-                <span className="text-3xl font-bold text-[#000000] tracking-tight">
-                  ₹{product.price.toLocaleString("en-IN")}
-                </span>
-                {product.compareAtPrice && product.compareAtPrice > product.price && (
-                  <>
-                    <span className="text-sm text-[#999999] line-through font-medium">
-                      ₹{product.compareAtPrice.toLocaleString("en-IN")}
-                    </span>
-                    <span className="bg-[#f0fdf4] border border-[#bbf7d0] text-[#16a34a] font-bold text-[10px] px-2 py-0.5 rounded">
-                      {Math.round(((product.compareAtPrice - product.price) / product.compareAtPrice) * 100)}% OFF
-                    </span>
-                  </>
-                )}
-              </div>
-
-              <div className="flex flex-col sm:flex-row items-stretch gap-3">
-                <button
-                  onClick={handleAddToCart}
-                  className="flex-1 bg-[#293681] text-white border border-blue font-semibold text-xs uppercase tracking-wider rounded py-3 px-4 flex items-center justify-center gap-2 hover:bg-[#293681] hover:border-blue-dark transition-colors active:scale-[0.99]"
-                >
-                  <ShoppingCart size={14} weight="bold" />
-                  Add to Cart
-                </button>
-                <Link
-                  href={productUrl}
-                  className="flex-1 bg-transparent text-[#293681] border border-[#293681] font-semibold text-xs uppercase tracking-wider rounded py-3 px-4 flex items-center justify-center gap-1 hover:bg-blue hover:text-white transition-colors active:scale-[0.99]"
-                >
-                  View Details
-                  <ArrowRight size={14} weight="bold" />
-                </Link>
-              </div>
+            {/* CTA Buttons */}
+            <div className="flex flex-col sm:flex-row gap-3">
+              <button
+                onClick={handleAddToCart}
+                className="group flex-1 bg-blue-dark text-white font-bold text-sm rounded-xl py-3.5 px-6 flex items-center justify-center gap-2.5 hover:bg-brand-navy transition-all duration-200 active:scale-[0.98] shadow-md shadow-blue-dark/20 hover:shadow-lg hover:shadow-blue-dark/30"
+              >
+                <ShoppingCart size={16} weight="bold" className="transition-transform duration-200 group-hover:-rotate-6" />
+                Add to Cart
+              </button>
+              <Link
+                href={productUrl}
+                className="group flex-1 bg-white text-blue-dark border-2 border-blue-dark font-bold text-sm rounded-xl py-3.5 px-6 flex items-center justify-center gap-2 hover:bg-blue-dark hover:text-white transition-all duration-200 active:scale-[0.98]"
+              >
+                View Details
+                <ArrowRight size={15} weight="bold" className="transition-transform duration-200 group-hover:translate-x-0.5" />
+              </Link>
             </div>
-          )}
-        </div>
+          </>
+        )}
+
+        {/* No Product – CTA fallback */}
+        {!product && (
+          <Link
+            href="/shop"
+            className="inline-flex items-center gap-2 bg-blue-dark text-white font-bold text-sm rounded-xl py-3.5 px-7 hover:bg-brand-navy transition-all duration-200 active:scale-[0.98] shadow-md shadow-blue-dark/20 mt-2"
+          >
+            Browse Collection
+            <ArrowRight size={15} weight="bold" />
+          </Link>
+        )}
+
+        {/* Video navigation counter */}
+        {videos.length > 1 && (
+          <div className="flex items-center gap-3 mt-8 pt-6 border-t border-gray-2">
+            <span className="text-xs text-dark-4 font-medium">
+              Video {activeIndex + 1} of {videos.length}
+            </span>
+            <div className="flex gap-1.5 ml-auto">
+              <button
+                onClick={() => switchVideo(activeIndex === 0 ? videos.length - 1 : activeIndex - 1)}
+                className="w-8 h-8 rounded-lg border border-gray-3 bg-white text-dark-3 flex items-center justify-center hover:border-blue hover:text-blue hover:bg-blue/5 transition-all"
+                aria-label="Previous video"
+              >
+                <svg width="14" height="14" viewBox="0 0 24 24" fill="none"><path d="M15 6l-6 6 6 6" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round"/></svg>
+              </button>
+              <button
+                onClick={() => switchVideo(activeIndex === videos.length - 1 ? 0 : activeIndex + 1)}
+                className="w-8 h-8 rounded-lg border border-gray-3 bg-white text-dark-3 flex items-center justify-center hover:border-blue hover:text-blue hover:bg-blue/5 transition-all"
+                aria-label="Next video"
+              >
+                <svg width="14" height="14" viewBox="0 0 24 24" fill="none"><path d="M9 6l6 6-6 6" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round"/></svg>
+              </button>
+            </div>
+          </div>
+        )}
       </div>
-
-      {/* Left Arrow Navigation */}
-      {videos.length > 1 && (
-        <button
-          onClick={handlePrev}
-          className="absolute left-[-8px] lg:left-[-24px] top-1/2 -translate-y-1/2 z-30 w-10 h-10 rounded-full bg-white border border-[#e0e0e0] shadow-md flex items-center justify-center text-black hover:bg-[#f5f5f5] hover:border-[#cccccc] active:scale-95 transition-all"
-          aria-label="Previous Video"
-        >
-          <CaretLeft size={20} weight="bold" />
-        </button>
-      )}
-
-      {/* Right Arrow Navigation */}
-      {videos.length > 1 && (
-        <button
-          onClick={handleNext}
-          className="absolute right-[-8px] lg:right-[-24px] top-1/2 -translate-y-1/2 z-30 w-10 h-10 rounded-full bg-white border border-[#e0e0e0] shadow-md flex items-center justify-center text-black hover:bg-[#f5f5f5] hover:border-[#cccccc] active:scale-95 transition-all"
-          aria-label="Next Video"
-        >
-          <CaretRight size={20} weight="bold" />
-        </button>
-      )}
     </div>
   );
 }
