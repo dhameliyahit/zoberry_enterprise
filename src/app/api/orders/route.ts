@@ -6,6 +6,10 @@ import { connectToDatabase } from "@/lib/db";
 import { StorefrontOrder } from "@/lib/storefront-models/Order";
 import { StorefrontProduct } from "@/lib/storefront-models/Product";
 import { getPaymentConfig } from "@/lib/payment-config";
+import {
+  generateBilledAmount,
+  computeCaptureDeadline,
+} from "@/lib/payment-capture";
 
 const indianPhonePattern = /^(?:\+91|0)?[6-9]\d{9}$/;
 const indianPincodePattern = /^\d{6}$/;
@@ -49,7 +53,18 @@ export async function POST(request: NextRequest) {
     // HARD authentication — no guest fallback. Order placement requires a real user.
     const user = await requireAuthenticatedUser(request);
 
-    const body = (await request.json()) as CreateOrderPayload;
+    const rawText = await request.text();
+    if (!rawText || !rawText.trim()) {
+      return apiError("Request body is empty. Please fill the checkout form and try again.");
+    }
+
+    let body: CreateOrderPayload;
+    try {
+      body = JSON.parse(rawText) as CreateOrderPayload;
+    } catch {
+      return apiError("Invalid request. Could not parse order data. Please try again.");
+    }
+
     const items = body.items || [];
     const shippingAddress = body.shippingAddress;
 
@@ -143,6 +158,11 @@ export async function POST(request: NextRequest) {
       throw new Error("Order total mismatch. Please refresh and try again.");
     }
 
+    // Generate a padded billed amount so this order has a unique exact amount.
+    const orderCount = await StorefrontOrder.estimatedDocumentCount();
+    const billedAmount = generateBilledAmount(total, orderCount);
+    const captureDeadline = computeCaptureDeadline(new Date());
+
     const order = await StorefrontOrder.create(
       [
         {
@@ -167,6 +187,8 @@ export async function POST(request: NextRequest) {
           shippingCost,
           tax,
           total,
+          billedAmount,
+          captureDeadline,
           paymentMethod: requestedMethod,
           upiVpa:
             requestedMethod === "directupi"

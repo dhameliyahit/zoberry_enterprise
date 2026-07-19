@@ -110,19 +110,7 @@ export default function Checkout() {
       .catch(() => {});
   }, []);
 
-  const handleFillTestData = (e: React.MouseEvent) => {
-    e.preventDefault();
-    setBillingAddress({
-      fullName: "Rahul Sharma",
-      phone: "9876543210",
-      street: "123 MG Road, Apt 4B",
-      city: "Mumbai",
-      state: "Maharashtra",
-      zip: "400001",
-      country: "India",
-    });
-    setShipToDifferent(false);
-  };
+
 
   // Auto-fetch city & state based on Pincode (India)
   useEffect(() => {
@@ -534,12 +522,6 @@ export default function Checkout() {
                     <h2 className="font-medium text-dark text-xl sm:text-2xl m-0">
                       Billing details
                     </h2>
-                    <button
-                      onClick={handleFillTestData}
-                      className="text-xs bg-blue/10 hover:bg-blue/20 text-blue font-semibold px-3 py-1.5 rounded-md transition-all active:scale-95 cursor-pointer"
-                    >
-                      ⚡ Quick Fill Test Data
-                    </button>
                   </div>
 
                   <div className="bg-white shadow-1 rounded-[10px] p-4 sm:p-8.5">

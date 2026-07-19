@@ -1151,7 +1151,7 @@ export default function Header() {
   return (
     <>
       <header
-        className={`fixed left-0 top-0 z-9999 w-full bg-blue-dark text-white transition-all duration-300 ${shadowClass}`}
+        className={`fixed left-0 top-0 z-[99999] w-full bg-blue-dark text-white transition-all duration-300 ${shadowClass}`}
       >
         <TopBar stickyMenu={stickyMenu} />
         <HeaderContent stickyMenu={stickyMenu}>
