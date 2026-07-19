@@ -12,9 +12,10 @@ export async function PUT(
   request: NextRequest,
   context: { params: Promise<{ id: string }> }
 ) {
-  const session = await mongoose.startSession();
+  let session: mongoose.ClientSession | null = null;
 
   try {
+    session = await mongoose.startSession();
     await connectToDatabase();
     const user = await requireAuthenticatedUser(request);
     const { id } = await context.params;
@@ -48,12 +49,16 @@ export async function PUT(
 
     return apiSuccess(order);
   } catch (error) {
-    await session.abortTransaction();
+    if (session) {
+      await session.abortTransaction();
+    }
     const message = getErrorMessage(error, "Failed to cancel order");
     const status =
       message === "Authentication required" || message === "User not found" ? 401 : message === "Order not found" ? 404 : 500;
     return apiError(message, status);
   } finally {
-    await session.endSession();
+    if (session) {
+      await session.endSession();
+    }
   }
 }

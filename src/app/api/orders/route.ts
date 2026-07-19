@@ -45,9 +45,10 @@ type CreateOrderPayload = {
 export const runtime = "nodejs";
 
 export async function POST(request: NextRequest) {
-  const session = await mongoose.startSession();
+  let session: mongoose.ClientSession | null = null;
 
   try {
+    session = await mongoose.startSession();
     await connectToDatabase();
 
     // HARD authentication — no guest fallback. Order placement requires a real user.
@@ -204,9 +205,13 @@ export async function POST(request: NextRequest) {
 
     return apiSuccess(order[0], 201);
   } catch (error) {
-    await session.abortTransaction();
+    if (session) {
+      await session.abortTransaction();
+    }
     return apiError(getErrorMessage(error, "Failed to create order"), 500);
   } finally {
-    await session.endSession();
+    if (session) {
+      await session.endSession();
+    }
   }
 }
