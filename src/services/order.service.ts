@@ -27,5 +27,14 @@ export const orderService = {
       referenceNumber,
     }),
 
+  // Auto-verify against the myMoney gateway and capture if all rules pass.
+  // `utr` is optional — when omitted the gateway matches the order by its
+  // unique padded billed amount for fully automatic capture.
+  verifyMymoneyUtr: (orderId: string, utr = "") =>
+    postToSiteApi<ApiResponse<any>>("/payments/mymoney/verify-utr", {
+      orderId,
+      utr,
+    }),
+
   getPaymentConfig: () => getFromSiteApi<ApiResponse<any>>("/config/payment"),
 };

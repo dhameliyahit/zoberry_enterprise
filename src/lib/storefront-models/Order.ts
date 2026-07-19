@@ -71,12 +71,27 @@ const storefrontOrderSchema = new Schema(
 
     // Static Direct UPI linkage (QR scanned to your VPA)
     upiVpa: { type: String, default: "" },
+
+    // Padded billed amount: order total + small padding (₹0.02 / ₹0.20)
+    // so each order gets a unique exact amount to match against the gateway.
+    billedAmount: { type: Number, default: 0, min: 0 },
+
     utr: { type: String, default: "" },
     utrStatus: {
       type: String,
       enum: ["", "submitted", "verified", "rejected"],
       default: "",
     },
+    utrFailureReason: {
+      type: String,
+      enum: ["", "amount_mismatch", "outside_window"],
+      default: "",
+    },
+
+    // When the customer is expected to pay (within 10 min of order creation).
+    captureDeadline: { type: Date, default: null },
+    // When the gateway confirmed the credit.
+    paidAt: { type: Date, default: null },
   },
   { timestamps: true }
 );
@@ -95,6 +110,8 @@ storefrontOrderSchema.pre("save", async function assignOrderNumber(next) {
 storefrontOrderSchema.index({ customer: 1, createdAt: -1 });
 storefrontOrderSchema.index({ status: 1 });
 storefrontOrderSchema.index({ paymentStatus: 1 });
+storefrontOrderSchema.index({ utr: 1 });
+storefrontOrderSchema.index({ billedAmount: 1 });
 
 export type StorefrontOrderDocument = InferSchemaType<typeof storefrontOrderSchema>;
 
