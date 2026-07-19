@@ -249,16 +249,16 @@ export default function Checkout() {
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
 
-    // if (!isAuthenticated) {
-    //   Swal.fire({
-    //     icon: "warning",
-    //     title: "Login Required",
-    //     text: "Please sign in to place an order.",
-    //     confirmButtonColor: "#3085d6",
-    //   });
-    //   openAuthModal();
-    //   return;
-    // }
+    if (!isAuthenticated) {
+      // Swal.fire({
+      //   icon: "warning",
+      //   title: "Login Required",
+      //   text: "Please sign in to place an order.",
+      //   confirmButtonColor: "#3085d6",
+      // });
+      openAuthModal();
+      return;
+    }
 
     if (cartItems.length === 0) {
       Swal.fire({
