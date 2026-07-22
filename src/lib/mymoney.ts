@@ -62,11 +62,13 @@ export async function findCreditByAmount(billedAmount: number): Promise<MyMoneyT
     if (!res.ok) return null;
     const data = await res.json();
     const items = extractItems(data);
+    const cutoff = Date.now() - 20 * 60 * 1000; // look back 20 min
     return (
       items.find(
         (t) =>
           (t.type || "credit") === "credit" &&
-          Math.abs(Number(t.amount) - billedAmount) < 0.01
+          Math.abs(Number(t.amount) - billedAmount) < 0.01 &&
+          new Date(t.transactionDate || t.createdAt || Date.now()).getTime() > cutoff
       ) || null
     );
   } catch {

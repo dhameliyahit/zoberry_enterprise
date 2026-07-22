@@ -88,7 +88,7 @@ const storefrontOrderSchema = new Schema(
       default: "",
     },
 
-    // When the customer is expected to pay (within 10 min of order creation).
+    // When the customer is expected to pay (within 15 min of order creation).
     captureDeadline: { type: Date, default: null },
     // When the gateway confirmed the credit.
     paidAt: { type: Date, default: null },

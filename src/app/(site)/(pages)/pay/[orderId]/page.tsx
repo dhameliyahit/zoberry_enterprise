@@ -196,11 +196,9 @@ export default function PayPage() {
                 vpa={vpa}
                 onSuccess={() => router.push("/my-account/orders")}
                 onFailed={(reason) =>
-                  setError(
-                    reason === "amount_mismatch"
-                      ? "The amount you paid didn't match the exact billed amount. Please contact support."
-                      : "We couldn't confirm your payment within the 10-minute window. Please contact support."
-                  )
+                  reason === "amount_mismatch"
+                    ? setError("The amount you paid didn't match the exact billed amount. Please contact support.")
+                    : setError("")
                 }
               />
             </div>

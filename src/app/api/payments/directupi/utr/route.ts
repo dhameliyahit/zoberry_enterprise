@@ -3,10 +3,7 @@ import { apiError, apiSuccess, getErrorMessage } from "@/lib/api-response";
 import { requireAuthenticatedUser } from "@/lib/customer-auth";
 import { connectToDatabase } from "@/lib/db";
 import { StorefrontOrder } from "@/lib/storefront-models/Order";
-import {
-  amountMatches,
-  isWithinCaptureWindow,
-} from "@/lib/payment-capture";
+import { amountMatches } from "@/lib/payment-capture";
 
 export const runtime = "nodejs";
 
@@ -25,9 +22,10 @@ function parseMyMoneyResponse(data: any): any | null {
 }
 
 // Stores the customer-provided UTR for a static Direct UPI order and attempts an
-// automatic capture against the myMoney gateway (UTR + exact amount + 10-min
-// window). If the gateway has not yet recorded the credit, the order stays
-// `submitted` and a later webhook / re-check performs the capture.
+// automatic capture against the myMoney gateway (UTR + exact amount).
+// Manual UTR submissions bypass the 15-minute window so customers can verify
+// late payments directly. If the gateway has not yet recorded the credit, the
+// order stays `submitted` and a later webhook / re-check performs the capture.
 export async function POST(request: NextRequest) {
   try {
     await connectToDatabase();
@@ -43,6 +41,9 @@ export async function POST(request: NextRequest) {
     if (!order) return apiError("Order not found", 404);
     if (order.paymentMethod !== "directupi") {
       return apiError("This order does not use Direct UPI payment", 400);
+    }
+    if (order.paymentStatus === "paid") {
+      return apiSuccess({ utrStatus: order.utrStatus, paymentStatus: "paid", captured: false, message: "Order is already paid." });
     }
 
     order.utr = reference;
@@ -71,13 +72,11 @@ export async function POST(request: NextRequest) {
 
           if (txn) {
             const gatewayAmount = Number(txn.amount) || 0;
-            const windowOk = isWithinCaptureWindow(
-              order.createdAt,
-              txn.transactionDate
-            );
 
-            // Primary capture rule: exact amount + within window.
-            if (amountMatches(order.billedAmount, gatewayAmount) && windowOk) {
+            // Manual UTR submissions bypass the time window so customers can
+            // verify late payments directly. We still require an exact amount
+            // match to prevent replay/old-UTR abuse.
+            if (amountMatches(order.billedAmount, gatewayAmount)) {
               order.utrStatus = "verified";
               order.paymentStatus = "paid";
               order.status = "confirmed";
@@ -93,24 +92,13 @@ export async function POST(request: NextRequest) {
               });
             }
 
-            if (!amountMatches(order.billedAmount, gatewayAmount)) {
-              return apiSuccess({
-                utrStatus: "submitted",
-                captured: false,
-                reason: "amount_mismatch",
-                message:
-                  "The amount credited did not match the exact billed amount. Please check and contact support.",
-              });
-            }
-
-            if (!windowOk) {
-              return apiSuccess({
-                utrStatus: "submitted",
-                captured: false,
-                reason: "outside_window",
-                message: "Payment received outside the 10-minute capture window.",
-              });
-            }
+            return apiSuccess({
+              utrStatus: "submitted",
+              captured: false,
+              reason: "amount_mismatch",
+              message:
+                "The amount credited did not match the exact billed amount. Please check and contact support.",
+            });
           }
         }
       } catch {

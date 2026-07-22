@@ -18,7 +18,7 @@ export const runtime = "nodejs";
  *
  *   1. (optional) the UTR exists in the gateway (the credit actually arrived)
  *   2. the received amount matches the order's unique padded billed amount
- *   3. the credit arrived within 10 minutes of the order being placed
+ *   3. the credit arrived within 15 minutes of the order being placed
  *
  * Matching strategy (in priority order):
  *   - If a UTR is supplied, look that exact credit up.
@@ -105,7 +105,7 @@ export async function POST(request: NextRequest) {
       });
     }
 
-    // Rule 2: credit must arrive within 10 minutes of order creation.
+    // Rule 2: credit must arrive within 15 minutes of order creation.
     if (!isWithinCaptureWindow(order.createdAt, transactionDate ? new Date(transactionDate) : undefined)) {
       order.utrStatus = "rejected";
       order.utrFailureReason = "outside_window";

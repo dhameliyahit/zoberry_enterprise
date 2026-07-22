@@ -46,7 +46,7 @@ export async function POST(request: NextRequest) {
     }
 
     // Process transaction.verified AND transaction.pending events.
-    // Primary capture rule = exact amount + within 10-min window; the gateway's
+    // Primary capture rule = exact amount + within 15-min window; the gateway's
     // own `verified` flag is a bonus, not a prerequisite.
     if (eventType === "transaction.verified" || eventType === "transaction.pending") {
       const incoming = payload?.data?.transaction || payload?.data;

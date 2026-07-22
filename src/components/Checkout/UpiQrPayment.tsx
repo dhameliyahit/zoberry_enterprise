@@ -621,7 +621,7 @@ function UtrField({
         <p className="text-[11px] text-red mt-1.5">We received a different amount than ₹{fmt(amount)}.</p>
       )}
       {verifyStatus === "outside_window" && (
-        <p className="text-[11px] text-red mt-1.5">Payment arrived outside the 10-minute window.</p>
+        <p className="text-[11px] text-red mt-1.5">Payment arrived outside the 15-minute window.</p>
       )}
       {utr.length >= 12 && verifyStatus === "idle" && (
         <p className="text-[11px] text-green mt-1.5 flex items-center gap-1 font-medium">
@@ -631,7 +631,7 @@ function UtrField({
       {verifyStatus === "monitoring" && (
         <p className="text-[11px] text-blue mt-1.5 flex items-center gap-1 font-medium">
           <span className="w-3 h-3 border-2 border-blue/40 border-t-blue rounded-full animate-spin" />
-          Payment not yet received — auto-checking for the next 10 minutes.
+          Payment not yet received — auto-checking for the next 15 minutes.
         </p>
       )}
 
@@ -804,7 +804,7 @@ const UpiQrPayment = ({
     pollRef.current = null;
   };
 
-  // Auto-capture loop. Polls the gateway for up to the 10-minute capture
+  // Auto-capture loop. Polls the gateway for up to the 15-minute capture
   // window. The companion SMS app may deliver the credit a few seconds after
   // the customer pays, so we keep checking by ORDER (no UTR needed — the
   // gateway matches the unique padded billed amount). A manually typed UTR, if
@@ -832,7 +832,7 @@ const UpiQrPayment = ({
           } else if (d.reason === "outside_window") {
             stopPolling();
             setVerifyStatus("outside_window");
-            toast.error("Payment received outside the 10-minute window.");
+            toast.error("Payment received outside the 15-minute window.");
             onFailed?.("outside_window");
           } else {
             setVerifyStatus("idle");
@@ -862,7 +862,7 @@ const UpiQrPayment = ({
 
   const startAutoCapture = useCallback(() => {
     stopPolling();
-    pollDeadlineRef.current = Date.now() + 10 * 60 * 1000;
+    pollDeadlineRef.current = Date.now() + 15 * 60 * 1000;
     checkWithMyMoney("", { poll: true });
   }, [checkWithMyMoney]);
 
@@ -881,11 +881,11 @@ const UpiQrPayment = ({
     stopPolling();
     if (utrCheckRef.current) clearTimeout(utrCheckRef.current);
     if (cleaned.length >= 12) {
-      utrCheckRef.current = setTimeout(() => {
-        pollDeadlineRef.current = Date.now() + 10 * 60 * 1000;
-        checkWithMyMoney(cleaned, { poll: true });
-      }, 800);
-    }
+        utrCheckRef.current = setTimeout(() => {
+          pollDeadlineRef.current = Date.now() + 15 * 60 * 1000;
+          checkWithMyMoney(cleaned, { poll: true });
+        }, 800);
+      }
   };
 
   const submitUtr = async () => {
@@ -908,12 +908,12 @@ const UpiQrPayment = ({
           toast.error("Amount received didn't match the exact billed amount.");
         } else if (data.reason === "outside_window") {
           setVerifyStatus("outside_window");
-          toast.error("Payment received outside the 10-minute window.");
+          toast.error("Payment received outside the 15-minute window.");
         } else {
           setVerifyStatus("submitted");
           toast.success("Reference received — confirming payment automatically.");
           // Credit may not have arrived yet; keep monitoring the gateway.
-          pollDeadlineRef.current = Date.now() + 10 * 60 * 1000;
+          pollDeadlineRef.current = Date.now() + 15 * 60 * 1000;
           checkWithMyMoney(utr.trim(), { poll: true });
         }
       } else {
