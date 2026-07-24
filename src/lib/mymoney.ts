@@ -14,6 +14,8 @@ interface MyMoneyTxn {
   status?: string;
   amount?: number;
   transactionDate?: string;
+  createdAt?: string;
+  type?: string;
   [k: string]: unknown;
 }
 
@@ -68,7 +70,7 @@ export async function findCreditByAmount(billedAmount: number): Promise<MyMoneyT
         (t) =>
           (t.type || "credit") === "credit" &&
           Math.abs(Number(t.amount) - billedAmount) < 0.01 &&
-          new Date(t.transactionDate || t.createdAt || Date.now()).getTime() > cutoff
+          new Date((t.transactionDate as string | undefined) || (t.createdAt as string | undefined) || Date.now()).getTime() > cutoff
       ) || null
     );
   } catch {
