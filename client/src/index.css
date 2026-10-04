@@ -1,10 +1,67 @@
 @import "tailwindcss";
 
-body {
-  margin: 0;
-  font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", "Roboto", "Oxygen",
-    "Ubuntu", "Cantarell", "Fira Sans", "Droid Sans", "Helvetica Neue",
-    sans-serif;
-  -webkit-font-smoothing: antialiased;
-  -moz-osx-font-smoothing: grayscale;
+@theme {
+  /* Classic, professional Blue theme for Zoberry Enterprise */
+  --color-primary: #0f4c81; /* Classic Pantone Blue */
+  --color-primary-hover: #0a365c;
+  --color-secondary: #1f2937; /* Dark Gray for text */
+  --color-accent: #2563eb; /* Bright Blue for badges/highlights */
+  --color-surface: #ffffff;
+  --color-background: #f9fafb; /* Off-white for body to make white cards pop */
+  
+  /* Less rounded, more professional look */
+  --radius-default: 0.25rem; /* 4px - clean and sharp */
+}
+
+@layer base {
+  body {
+    background-color: var(--color-background);
+    color: var(--color-secondary);
+    font-family: 'Inter', system-ui, -apple-system, sans-serif;
+    -webkit-font-smoothing: antialiased;
+  }
+  
+  /* Ensure all interactive elements have pointer cursor globally */
+  button, a {
+    cursor: pointer;
+  }
+}
+
+@layer components {
+  /* Reusable strict component classes */
+  .btn-primary {
+    @apply bg-primary hover:bg-primary-hover text-white font-bold py-3 px-6 rounded-sm flex items-center justify-center gap-2 transition-colors uppercase text-xs tracking-wide;
+  }
+  .btn-outline {
+    @apply bg-white border-2 border-gray-200 hover:border-primary text-secondary font-bold py-3 px-6 rounded-sm flex items-center justify-center gap-2 transition-colors uppercase text-xs tracking-wide;
+  }
+  .slider-arrow {
+    @apply w-12 h-12 bg-white rounded-full shadow-md border border-gray-100 flex items-center justify-center text-primary hover:border-primary hover:shadow-lg transition-all z-10;
+  }
+  .btn-icon {
+    @apply p-2 text-gray-600 hover:text-primary hover:bg-blue-50 rounded transition-colors relative;
+  }
+  .nav-link {
+    @apply text-gray-600 hover:text-primary font-medium text-sm transition-colors;
+  }
+}
+
+/* Custom pure CSS animations for reusable transitions without libraries */
+@keyframes slideUpFade {
+  0% { opacity: 0; transform: translateY(10px); }
+  100% { opacity: 1; transform: translateY(0); }
+}
+
+@layer utilities {
+  .animate-slide-up {
+    animation: slideUpFade 0.4s ease-out forwards;
+  }
+  .animate-slide-left {
+    animation: slideLeft 0.3s cubic-bezier(0.16, 1, 0.3, 1) forwards;
+  }
+}
+
+@keyframes slideLeft {
+  0% { transform: translateX(100%); }
+  100% { transform: translateX(0); }
 }
