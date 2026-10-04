@@ -8,6 +8,8 @@ const path = require('path');
 const { processAndSaveImage } = require('./helpers/imageHelper');
 require('dotenv').config();
 
+// Load models and define relationships BEFORE syncing the database
+require('./models');
 const { connectDB } = require('./config/db');
 const typeDefs = require('./graphql/typeDefs');
 const resolvers = require('./graphql/resolvers');
