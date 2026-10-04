@@ -10,7 +10,7 @@ const Footer = () => {
             <img 
               src="/assets/zoberry_logo.png" 
               alt="Zoberry Enterprise" 
-              className="h-10 md:h-12 lg:h-14 object-contain brightness-0 invert origin-left" 
+              className="h-10 md:h-12 lg:h-14 object-contain origin-left" 
             />
           </Link>
           <p className="text-sm leading-relaxed pr-4">Your trusted destination for premium products. Experience quality and class with Zoberry Enterprise.</p>
