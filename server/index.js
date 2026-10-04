@@ -23,6 +23,21 @@ const initializeServer = async () => {
     // 1. Connect to MySQL Database and synchronize models
     await connectDB();
 
+    // 1.5 Seed Admin User
+    const bcrypt = require('bcryptjs');
+    const UserModel = require('./models/userModel');
+    const adminEmail = 'heet@admin.com';
+    const adminExists = await UserModel.findOne({ where: { email: adminEmail } });
+    if (!adminExists) {
+      const hashedPassword = await bcrypt.hash('123456', 10);
+      await UserModel.create({
+        email: adminEmail,
+        password: hashedPassword,
+        role: 'admin'
+      });
+      console.log('Admin user seeded: heet@admin.com / 123456');
+    }
+
     // 2. Initialize the Apollo GraphQL Server
     const graphqlServer = new ApolloServer({
       typeDefs: typeDefs,

@@ -4,6 +4,7 @@ import Topbar from './Topbar';
 import Header from './Header';
 import Footer from './Footer';
 import CartDrawer from '../cart/CartDrawer';
+import AuthModal from '../auth/AuthModal';
 
 const MainLayout = () => {
   return (
@@ -21,6 +22,7 @@ const MainLayout = () => {
       
       {/* Global UI Components */}
       <CartDrawer />
+      <AuthModal />
     </div>
   );
 };

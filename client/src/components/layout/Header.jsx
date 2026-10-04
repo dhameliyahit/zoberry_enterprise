@@ -5,7 +5,7 @@ import { useUIStore } from '../../store/uiStore';
 
 const Header = () => {
   const [searchText, setSearchText] = useState('');
-  const { openCart } = useUIStore();
+  const { openCart, openAuthModal, user } = useUIStore();
 
   return (
     <header className="sticky top-0 z-50 shadow-md flex flex-col bg-primary">
@@ -57,9 +57,16 @@ const Header = () => {
                 <span className="absolute top-1.5 right-1.5 h-2 w-2 bg-amber-400 rounded-full border-2 border-[#0f4c81]"></span>
               </Link>
 
-              <Link to="/profile" className="p-2 text-white/90 hover:text-white transition-colors" title="Profile">
-                <FiUser size={22} />
-              </Link>
+              {user ? (
+                <Link to="/profile" className="p-2 text-white/90 hover:text-white transition-colors flex items-center gap-2" title="Profile">
+                  <FiUser size={22} />
+                  <span className="hidden lg:block text-xs font-bold uppercase tracking-wide">{user.email.split('@')[0]}</span>
+                </Link>
+              ) : (
+                <button onClick={openAuthModal} className="p-2 text-white/90 hover:text-white transition-colors cursor-pointer" title="Login / Register">
+                  <FiUser size={22} />
+                </button>
+              )}
 
               <button onClick={openCart} className="relative flex items-center p-2 text-white/90 hover:text-white transition-colors cursor-pointer" title="Cart">
                 <FiShoppingCart size={22} />
