@@ -7,6 +7,7 @@ const productTypeDefs = `#graphql
     shortDescription: String
     description: String
     price: Float!
+    costPrice: Float
     compareAtPrice: Float
     images: [String]
     stockQuantity: Int
@@ -39,6 +40,7 @@ const productTypeDefs = `#graphql
       shortDescription: String
       description: String
       price: Float!
+      costPrice: Float
       compareAtPrice: Float
       images: [String]
       stockQuantity: Int
@@ -56,6 +58,7 @@ const productTypeDefs = `#graphql
       shortDescription: String
       description: String
       price: Float
+      costPrice: Float
       compareAtPrice: Float
       images: [String]
       stockQuantity: Int

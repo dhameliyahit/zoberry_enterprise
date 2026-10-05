@@ -1,47 +1,21 @@
 import React from 'react';
+import { gql, useQuery } from '@apollo/client';
 import ProductCard from '../products/ProductCard';
 
-// Dummy data mirroring the backend schema fields
-const dummyProducts = [
-  {
-    id: '1',
-    name: 'Premium Leather Minimalist Wallet',
-    slug: 'premium-leather-minimalist-wallet',
-    price: 1299,
-    compareAtPrice: 2499,
-    images: ['https://images.unsplash.com/photo-1627123424574-724758594e93?w=500&q=80'],
-    optionsLabel: '3 Colors Available',
-  },
-  {
-    id: '2',
-    name: 'Ergonomic Aluminum Laptop Stand',
-    slug: 'ergonomic-aluminum-laptop-stand',
-    price: 1899,
-    compareAtPrice: null,
-    images: ['https://images.unsplash.com/photo-1527864550417-7fd91fc51a46?w=500&q=80'],
-    optionsLabel: 'Silver / Space Gray',
-  },
-  {
-    id: '3',
-    name: 'Bottle Umbrella (Mix Color)',
-    slug: 'bottle-umbrella',
-    price: 399,
-    compareAtPrice: 799,
-    images: ['https://images.unsplash.com/photo-1556484399-565b90f42df3?w=500&q=80'],
-    optionsLabel: 'Mix Colors',
-  },
-  {
-    id: '4',
-    name: 'Smart Ceramic Coffee Mug with Warmer',
-    slug: 'smart-ceramic-coffee-mug',
-    price: 1499,
-    compareAtPrice: 2999,
-    images: ['https://images.unsplash.com/photo-1514228742587-6b1558fcca3d?w=500&q=80'],
-    optionsLabel: 'Matte Black',
+const GET_FEATURED_PRODUCTS = gql`
+  query GetAllProducts {
+    getAllProducts {
+      id name slug price compareAtPrice images optionsLabel
+    }
   }
-];
+`;
 
 const FeaturedProducts = () => {
+  const { data, loading } = useQuery(GET_FEATURED_PRODUCTS);
+  const products = data?.getAllProducts?.slice(0, 8) || [];
+
+  if (loading) return null; // or a spinner
+
   return (
     <section className="pt-8 pb-16 md:pt-10 md:pb-20 bg-[#f8fafc]">
       <div className="container mx-auto px-4 md:px-8">
@@ -63,10 +37,16 @@ const FeaturedProducts = () => {
 
         {/* Grid */}
         <div className="grid grid-cols-2 lg:grid-cols-4 gap-4 md:gap-6 lg:gap-8">
-          {dummyProducts.map(product => (
+          {products.map(product => (
             <ProductCard key={product.id} product={product} />
           ))}
         </div>
+        
+        {products.length === 0 && (
+          <div className="text-center text-gray-500 py-10">
+            No products available yet. Add some from the admin panel!
+          </div>
+        )}
         
       </div>
     </section>

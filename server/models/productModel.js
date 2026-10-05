@@ -34,6 +34,11 @@ const ProductModel = sequelize.define('Product', {
     type: DataTypes.FLOAT,
     allowNull: false,
   },
+  costPrice: {
+    type: DataTypes.FLOAT,
+    allowNull: true,
+    comment: 'Admin internal cost price for profit tracking',
+  },
   compareAtPrice: {
     type: DataTypes.FLOAT,
     allowNull: true,

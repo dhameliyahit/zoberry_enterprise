@@ -3,10 +3,16 @@ import { Link } from 'react-router-dom';
 import { FiShoppingCart, FiHeart, FiEye, FiCheck } from 'react-icons/fi';
 import Modal from '../common/Modal';
 
+const API_URL = import.meta.env.VITE_API_URL || 'http://localhost:9000';
+
 const ProductCard = ({ product }) => {
   const [isQuickViewOpen, setIsQuickViewOpen] = useState(false);
   const { name, slug, price, compareAtPrice, images, optionsLabel } = product;
-  const mainImage = images && images.length > 0 ? images[0] : 'https://placehold.co/400x500?text=No+Image';
+  
+  const rawImage = images && images.length > 0 ? images[0] : null;
+  const mainImage = rawImage 
+    ? (rawImage.startsWith('http') ? rawImage : `${API_URL}${rawImage}`) 
+    : 'https://placehold.co/400x500?text=No+Image';
   
   // Calculate discount percentage
   let discount = 0;

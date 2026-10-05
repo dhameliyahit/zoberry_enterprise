@@ -2,24 +2,25 @@ import React from 'react';
 import { Swiper, SwiperSlide } from 'swiper/react';
 import { Navigation, Autoplay } from 'swiper/modules';
 import { FiChevronLeft, FiChevronRight } from 'react-icons/fi';
+import { gql, useQuery } from '@apollo/client';
 
-// Import Swiper styles
 import 'swiper/css';
 import 'swiper/css/navigation';
 
-// Using high quality stock images for demo purposes
-const categories = [
-  { id: 1, name: 'Electronics', image: 'https://images.unsplash.com/photo-1498049794561-7780e7231661?w=500&q=80' },
-  { id: 2, name: 'Fashion', image: 'https://images.unsplash.com/photo-1445205170230-053b83016050?w=500&q=80' },
-  { id: 3, name: 'Home & Kitchen', image: 'https://images.unsplash.com/photo-1556910103-1c02745aae4d?w=500&q=80' },
-  { id: 4, name: 'Beauty', image: 'https://images.unsplash.com/photo-1596462502278-27bf85033e5a?w=500&q=80' },
-  { id: 5, name: 'Sports', image: 'https://images.unsplash.com/photo-1461896836934-ffe607ba8211?w=500&q=80' },
-  { id: 6, name: 'Toys', image: 'https://images.unsplash.com/photo-1596461404969-9ae70f2830c1?w=500&q=80' },
-  { id: 7, name: 'Books', image: 'https://images.unsplash.com/photo-1495446815901-a7297e633e8d?w=500&q=80' },
-  { id: 8, name: 'Automotive', image: 'https://images.unsplash.com/photo-1602498456745-e9503b30470b?w=500&q=80' },
-];
+const GET_CATEGORIES = gql`
+  query GetAllCategories {
+    getAllCategories { id name slug imageUrl }
+  }
+`;
+
+const API_URL = import.meta.env.VITE_API_URL || 'http://localhost:9000';
 
 const CategorySlider = () => {
+  const { data, loading } = useQuery(GET_CATEGORIES);
+  const categories = data?.getAllCategories || [];
+
+  if (loading || categories.length === 0) return null;
+
   return (
     <section className="pt-12 pb-4 bg-white border-t border-gray-100 relative">
       <div className="container mx-auto px-4 md:px-8">
@@ -51,27 +52,33 @@ const CategorySlider = () => {
             }}
             className="w-full px-4"
           >
-            {categories.map((category) => (
-              <SwiperSlide key={category.id} className="flex justify-center pb-8 pt-4">
-                <div className="group/item cursor-pointer flex flex-col items-center gap-4 w-full">
-                  
-                  {/* The Circular Image Container (Simple & Classic) */}
-                  <div className="w-28 h-28 sm:w-32 sm:h-32 md:w-[140px] md:h-[140px] rounded-full overflow-hidden shadow-sm border border-gray-100 bg-gray-50 transition-all duration-300 group-hover/item:shadow-md">
-                    <img 
-                      src={category.image} 
-                      alt={category.name}
-                      className="w-full h-full object-cover transition-transform duration-700 group-hover/item:scale-110"
-                    />
+            {categories.map((category) => {
+              const imgUrl = category.imageUrl 
+                ? (category.imageUrl.startsWith('http') ? category.imageUrl : `${API_URL}${category.imageUrl}`) 
+                : 'https://placehold.co/400x400?text=No+Image';
+
+              return (
+                <SwiperSlide key={category.id} className="flex justify-center pb-8 pt-4">
+                  <div className="group/item cursor-pointer flex flex-col items-center gap-4 w-full">
+                    
+                    {/* The Circular Image Container */}
+                    <div className="w-28 h-28 sm:w-32 sm:h-32 md:w-[140px] md:h-[140px] rounded-full overflow-hidden shadow-sm border border-gray-100 bg-gray-50 transition-all duration-300 group-hover/item:shadow-md">
+                      <img 
+                        src={imgUrl} 
+                        alt={category.name}
+                        className="w-full h-full object-cover transition-transform duration-700 group-hover/item:scale-110"
+                      />
+                    </div>
+
+                    {/* Name BELOW the circle */}
+                    <span className="text-secondary font-bold text-sm sm:text-base text-center transition-colors duration-300 group-hover/item:text-primary">
+                      {category.name}
+                    </span>
+
                   </div>
-
-                  {/* Name BELOW the circle */}
-                  <span className="text-secondary font-bold text-sm sm:text-base text-center transition-colors duration-300 group-hover/item:text-primary">
-                    {category.name}
-                  </span>
-
-                </div>
-              </SwiperSlide>
-            ))}
+                </SwiperSlide>
+              );
+            })}
           </Swiper>
 
           {/* Custom Navigation Buttons - Positioned slightly outside */}

@@ -3,11 +3,16 @@ import { createRoot } from 'react-dom/client'
 import { ApolloClient, InMemoryCache, ApolloProvider, createHttpLink } from '@apollo/client';
 import { setContext } from '@apollo/client/link/context';
 import { GoogleOAuthProvider } from '@react-oauth/google';
+import 'primereact/resources/themes/lara-light-indigo/theme.css';
+import 'primereact/resources/primereact.min.css';
+import 'primeicons/primeicons.css';
 import './index.css'
 import App from './App.jsx'
 
+const API_URL = import.meta.env.VITE_API_URL || 'http://localhost:9000';
+
 const httpLink = createHttpLink({
-  uri: 'http://localhost:9000/graphql',
+  uri: `${API_URL}/graphql`,
 });
 
 const authLink = setContext((_, { headers }) => {
