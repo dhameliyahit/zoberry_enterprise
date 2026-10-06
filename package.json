@@ -1,0 +1,12 @@
+{
+  "name": "zoberry-enterprise",
+  "private": true,
+  "version": "0.0.0",
+  "type": "module",
+  "scripts": {
+    "build": "cd client && npm run build",
+    "start": "node server/index.js",
+    "dev:client": "cd client && npm run dev",
+    "dev:server": "cd server && nodemon index.js"
+  }
+}

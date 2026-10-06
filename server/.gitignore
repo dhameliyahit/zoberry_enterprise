@@ -1,3 +1,4 @@
 node_modules
 .env
 uploads
+db_start_cmd.txt
