@@ -101,7 +101,7 @@ const initializeServer = async () => {
     app.use(express.static(clientBuildPath));
 
     // 8. Handle client-side routing - serve index.html for all non-API/GraphQL routes
-    app.get('*', (req, res) => {
+    app.get('/{*path}', (req, res) => {
       // Don't intercept API or GraphQL routes
       if (req.path.startsWith('/api') || req.path.startsWith('/graphql') || req.path.startsWith('/uploads')) {
         return;
