@@ -1,4 +1,4 @@
-﻿const express = require('express');
+const express = require('express');
 const { ApolloServer } = require('@apollo/server');
 const { expressMiddleware } = require('@as-integrations/express5');
 const cors = require('cors');
@@ -84,6 +84,27 @@ const initializeServer = async () => {
         return res.status(200).json({ imageUrl });
       } catch (error) {
         return res.status(500).json({ error: 'Image processing failed' });
+      }
+    });
+
+    app.post('/api/upload-multiple', upload.array('images', 20), async (req, res) => {
+      try {
+        if (!req.files || req.files.length === 0) {
+          return res.status(400).json({ error: 'No image files provided' });
+        }
+
+        const folder = req.body.folder || 'products';
+        const imageUrls = [];
+
+        for (const file of req.files) {
+          const imgUrl = await processAndSaveImage(file.buffer, folder);
+          imageUrls.push(imgUrl);
+        }
+
+        return res.status(200).json({ imageUrls });
+      } catch (error) {
+        console.error('Multiple image upload error:', error);
+        return res.status(500).json({ error: 'Multiple image processing failed' });
       }
     });
 

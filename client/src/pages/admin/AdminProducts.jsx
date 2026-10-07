@@ -1,6 +1,6 @@
-﻿import React, { useState } from 'react';
+import React, { useState } from 'react';
 import { gql, useQuery, useMutation } from '@apollo/client';
-import { FiPlus, FiTrash2, FiEdit2, FiCheck, FiImage, FiVideo, FiX, FiPackage, FiLayers, FiDollarSign } from 'react-icons/fi';
+import { FiPlus, FiTrash2, FiEdit2, FiCheck, FiImage, FiVideo, FiX, FiPackage, FiUploadCloud, FiStar } from 'react-icons/fi';
 import axios from 'axios';
 
 const GET_PRODUCTS = gql`
@@ -150,8 +150,7 @@ const AdminProducts = () => {
   };
 
   const [formData, setFormData] = useState(initialForm);
-  const [selectedFile, setSelectedFile] = useState(null);
-  const [previewImage, setPreviewImage] = useState(null);
+  const [previewImages, setPreviewImages] = useState([]);
 
   const { data: catData } = useQuery(GET_CATEGORIES);
   const { data: prodData, loading: fetching, refetch } = useQuery(GET_PRODUCTS);
@@ -162,13 +161,18 @@ const AdminProducts = () => {
 
   const openNew = () => {
     setFormData(initialForm);
-    setSelectedFile(null);
-    setPreviewImage(null);
+    setPreviewImages([]);
     setIsEditing(false);
     setDrawerVisible(true);
   };
 
   const editProduct = (product) => {
+    const existingImgs = (product.images || []).map(img => ({
+      url: img.startsWith('http') ? img : `${API_URL}${img}`,
+      isExisting: true,
+      rawPath: img
+    }));
+
     setFormData({
       id: product.id,
       name: product.name || '',
@@ -186,9 +190,8 @@ const AdminProducts = () => {
       isActive: product.isActive !== undefined ? product.isActive : true,
       images: product.images || []
     });
-    setSelectedFile(null);
-    const mainImg = product.images && product.images.length > 0 ? product.images[0] : null;
-    setPreviewImage(mainImg ? (mainImg.startsWith('http') ? mainImg : `${API_URL}${mainImg}`) : null);
+
+    setPreviewImages(existingImgs);
     setIsEditing(true);
     setDrawerVisible(true);
   };
@@ -205,12 +208,29 @@ const AdminProducts = () => {
     }
   };
 
-  const handleFileChange = (e) => {
-    const file = e.target.files[0];
-    if (file) {
-      setSelectedFile(file);
-      setPreviewImage(URL.createObjectURL(file));
-    }
+  const handleMultipleFilesChange = (e) => {
+    const files = Array.from(e.target.files || []);
+    if (files.length === 0) return;
+
+    const newPreviews = files.map(file => ({
+      url: URL.createObjectURL(file),
+      file,
+      isExisting: false
+    }));
+
+    setPreviewImages(prev => [...prev, ...newPreviews]);
+  };
+
+  const removeImage = (indexToRemove) => {
+    setPreviewImages(prev => prev.filter((_, idx) => idx !== indexToRemove));
+  };
+
+  const setAsPrimary = (indexToPromote) => {
+    setPreviewImages(prev => {
+      const item = prev[indexToPromote];
+      const rest = prev.filter((_, idx) => idx !== indexToPromote);
+      return [item, ...rest];
+    });
   };
 
   const handleNameChange = (e) => {
@@ -231,14 +251,18 @@ const AdminProducts = () => {
 
     setLoading(true);
     try {
-      let productImages = formData.images || [];
+      const finalImagePaths = [];
 
-      if (selectedFile) {
-        const formDataUpload = new FormData();
-        formDataUpload.append('image', selectedFile);
-        formDataUpload.append('folder', 'products');
-        const uploadRes = await axios.post(`${API_URL}/api/upload`, formDataUpload);
-        productImages = [uploadRes.data.imageUrl];
+      for (const item of previewImages) {
+        if (item.isExisting) {
+          finalImagePaths.push(item.rawPath);
+        } else if (item.file) {
+          const formDataUpload = new FormData();
+          formDataUpload.append('image', item.file);
+          formDataUpload.append('folder', 'products');
+          const uploadRes = await axios.post(`${API_URL}/api/upload`, formDataUpload);
+          finalImagePaths.push(uploadRes.data.imageUrl);
+        }
       }
 
       const featuresArray = formData.featuresText
@@ -258,7 +282,7 @@ const AdminProducts = () => {
         optionsLabel: formData.optionsLabel.trim() || null,
         productVideoUrl: formData.productVideoUrl.trim() || null,
         features: featuresArray,
-        images: productImages,
+        images: finalImagePaths,
         isActive: formData.isActive
       };
 
@@ -293,7 +317,7 @@ const AdminProducts = () => {
           <h2 className="text-2xl font-bold text-gray-800 flex items-center gap-2">
             <FiPackage className="text-blue-600" /> Products Catalog
           </h2>
-          <p className="text-sm text-gray-500">Manage Home & Kitchen utilities, decor, pricing & video showcases</p>
+          <p className="text-sm text-gray-500">Manage Home & Kitchen utilities, multiple images, videos & pricing</p>
         </div>
         <button
           className="bg-blue-600 hover:bg-blue-700 text-white px-4 py-2.5 rounded-lg flex items-center gap-2 text-sm font-medium transition-colors shadow-sm cursor-pointer"
@@ -303,12 +327,12 @@ const AdminProducts = () => {
         </button>
       </div>
 
-      {/* Table */}
+      {/* Products Table */}
       <div className="overflow-x-auto rounded-lg border border-gray-200">
         <table className="min-w-full divide-y divide-gray-200">
           <thead className="bg-gray-50">
             <tr>
-              <th className="p-3 text-left text-xs font-semibold text-gray-500 uppercase tracking-wider">Item</th>
+              <th className="p-3 text-left text-xs font-semibold text-gray-500 uppercase tracking-wider">Item & Photos</th>
               <th className="p-3 text-left text-xs font-semibold text-gray-500 uppercase tracking-wider">Category</th>
               <th className="p-3 text-left text-xs font-semibold text-gray-500 uppercase tracking-wider">Selling Price</th>
               <th className="p-3 text-left text-xs font-semibold text-gray-500 uppercase tracking-wider">MRP / Compare</th>
@@ -338,18 +362,26 @@ const AdminProducts = () => {
             {products.map((product) => {
               const rawImg = product.images && product.images.length > 0 ? product.images[0] : null;
               const imgUrl = rawImg ? (rawImg.startsWith('http') ? rawImg : `${API_URL}${rawImg}`) : null;
+              const imgCount = product.images ? product.images.length : 0;
 
               return (
                 <tr key={product.id} className="hover:bg-gray-50 transition-colors">
                   <td className="p-3">
                     <div className="flex items-center gap-3">
-                      {imgUrl ? (
-                        <img src={imgUrl} alt={product.name} className="h-12 w-12 object-cover rounded-md shadow-sm border border-gray-100 flex-shrink-0" />
-                      ) : (
-                        <div className="h-12 w-12 bg-gray-100 rounded-md flex items-center justify-center text-gray-400 border flex-shrink-0">
-                          <FiImage size={18} />
-                        </div>
-                      )}
+                      <div className="relative">
+                        {imgUrl ? (
+                          <img src={imgUrl} alt={product.name} className="h-12 w-12 object-cover rounded-md shadow-sm border border-gray-100 flex-shrink-0" />
+                        ) : (
+                          <div className="h-12 w-12 bg-gray-100 rounded-md flex items-center justify-center text-gray-400 border flex-shrink-0">
+                            <FiImage size={18} />
+                          </div>
+                        )}
+                        {imgCount > 1 && (
+                          <span className="absolute -bottom-1 -right-1 bg-gray-800 text-white text-[9px] font-bold px-1 rounded-sm">
+                            +{imgCount - 1}
+                          </span>
+                        )}
+                      </div>
                       <div>
                         <p className="font-semibold text-gray-800 text-sm leading-snug line-clamp-1">{product.name}</p>
                         <p className="text-xs font-mono text-gray-400 mt-0.5">{product.slug}</p>
@@ -381,7 +413,7 @@ const AdminProducts = () => {
                         className="inline-flex items-center gap-1 text-xs font-medium text-purple-600 bg-purple-50 hover:bg-purple-100 px-2 py-1 rounded"
                         title={product.productVideoUrl}
                       >
-                        <FiVideo size={13} /> Video Added
+                        <FiVideo size={13} /> Video
                       </a>
                     ) : (
                       <span className="text-xs text-gray-300">None</span>
@@ -421,7 +453,7 @@ const AdminProducts = () => {
       {drawerVisible && (
         <div className="fixed inset-0 bg-black/50 backdrop-blur-xs flex items-center justify-end z-50 transition-opacity" onClick={() => setDrawerVisible(false)}>
           <div
-            className="bg-white w-full sm:w-[560px] h-full shadow-2xl flex flex-col transform transition-transform duration-300"
+            className="bg-white w-full sm:w-[600px] h-full shadow-2xl flex flex-col transform transition-transform duration-300"
             onClick={(e) => e.stopPropagation()}
           >
             {/* Drawer Header */}
@@ -430,7 +462,7 @@ const AdminProducts = () => {
                 <h3 className="text-lg font-bold text-gray-800">
                   {isEditing ? 'Edit Product' : 'Add New Product'}
                 </h3>
-                <p className="text-xs text-gray-500">Fill in product details, utility features, video & pricing</p>
+                <p className="text-xs text-gray-500">Multiple image uploads, video showcase, utility features & pricing</p>
               </div>
               <button
                 className="text-gray-400 hover:text-gray-600 p-1.5 rounded-lg hover:bg-gray-200 transition-colors cursor-pointer"
@@ -543,19 +575,87 @@ const AdminProducts = () => {
                   />
                 </div>
 
-                {/* Product Video URL (New Key as Requested) */}
+                {/* Multiple Images Upload & Management Section */}
+                <div className="sm:col-span-2">
+                  <div className="flex items-center justify-between mb-1.5">
+                    <label className="block text-xs font-semibold text-gray-700 uppercase tracking-wider">
+                      Product Images Gallery ({previewImages.length})
+                    </label>
+                    <label className="cursor-pointer text-xs font-bold text-blue-600 hover:text-blue-700 flex items-center gap-1">
+                      <FiPlus size={14} /> Add Images
+                      <input type="file" multiple className="hidden" onChange={handleMultipleFilesChange} accept="image/*" />
+                    </label>
+                  </div>
+
+                  {/* Previews Grid */}
+                  {previewImages.length > 0 ? (
+                    <div className="grid grid-cols-3 sm:grid-cols-4 gap-3 p-3 bg-gray-50 rounded-lg border border-gray-200">
+                      {previewImages.map((img, idx) => (
+                        <div key={idx} className="relative group aspect-square rounded-lg overflow-hidden bg-white border border-gray-200 shadow-2xs">
+                          <img src={img.url} alt={`Preview ${idx}`} className="w-full h-full object-cover" />
+                          
+                          {/* Badge for First/Primary Image */}
+                          {idx === 0 ? (
+                            <span className="absolute top-1 left-1 bg-blue-600 text-white text-[9px] font-bold px-1.5 py-0.5 rounded shadow-xs flex items-center gap-0.5">
+                              <FiStar size={9} /> Primary
+                            </span>
+                          ) : (
+                            <button
+                              type="button"
+                              onClick={() => setAsPrimary(idx)}
+                              className="absolute top-1 left-1 bg-black/60 hover:bg-blue-600 text-white text-[9px] font-medium px-1.5 py-0.5 rounded opacity-0 group-hover:opacity-100 transition-opacity cursor-pointer"
+                              title="Set as Main Image"
+                            >
+                              Set Main
+                            </button>
+                          )}
+
+                          {/* Delete Button */}
+                          <button
+                            type="button"
+                            onClick={() => removeImage(idx)}
+                            className="absolute top-1 right-1 bg-red-600 hover:bg-red-700 text-white w-5 h-5 rounded-full flex items-center justify-center opacity-0 group-hover:opacity-100 transition-opacity cursor-pointer shadow-xs"
+                            title="Remove Image"
+                          >
+                            <FiX size={12} />
+                          </button>
+                        </div>
+                      ))}
+
+                      {/* Add more button in grid */}
+                      <label className="cursor-pointer aspect-square rounded-lg border-2 border-dashed border-gray-300 hover:border-blue-400 flex flex-col items-center justify-center text-gray-400 hover:text-blue-500 hover:bg-blue-50/30 transition-all">
+                        <FiUploadCloud size={20} className="mb-1" />
+                        <span className="text-[10px] font-semibold">+ More</span>
+                        <input type="file" multiple className="hidden" onChange={handleMultipleFilesChange} accept="image/*" />
+                      </label>
+                    </div>
+                  ) : (
+                    <label className="cursor-pointer block border-2 border-dashed border-gray-300 rounded-lg p-6 hover:border-blue-400 hover:bg-blue-50/20 transition-all text-center">
+                      <div className="flex flex-col items-center justify-center">
+                        <div className="w-12 h-12 bg-blue-50 text-blue-500 rounded-full flex items-center justify-center mb-2">
+                          <FiUploadCloud size={24} />
+                        </div>
+                        <p className="text-sm font-medium text-gray-700 mb-1">Click to Upload Multiple Product Images</p>
+                        <p className="text-xs text-gray-400">Select one or multiple photos (JPG, PNG, WebP)</p>
+                      </div>
+                      <input type="file" multiple className="hidden" onChange={handleMultipleFilesChange} accept="image/*" />
+                    </label>
+                  )}
+                </div>
+
+                {/* Product Video URL */}
                 <div className="sm:col-span-2">
                   <label className="block text-xs font-semibold text-gray-700 uppercase tracking-wider mb-1.5 flex items-center gap-1.5">
-                    <FiVideo className="text-purple-600" /> Product Video URL (Demo / Reels / MP4 / YouTube)
+                    <FiVideo className="text-purple-600" /> Product Video URL (YouTube / Shorts / MP4 Link)
                   </label>
                   <input
                     type="url"
                     value={formData.productVideoUrl}
                     onChange={(e) => setFormData({ ...formData, productVideoUrl: e.target.value })}
-                    placeholder="e.g. https://www.youtube.com/watch?v=... or https://cdn.example.com/demo.mp4"
+                    placeholder="e.g. https://www.youtube.com/watch?v=... or https://youtube.com/shorts/... or mp4 link"
                     className="w-full border border-gray-300 rounded-lg p-2.5 text-sm focus:ring-2 focus:ring-purple-500 focus:border-purple-500 outline-none"
                   />
-                  <p className="text-[11px] text-gray-400 mt-1">Add a live demo video link to increase customer conversion & trust on Google & product page</p>
+                  <p className="text-[11px] text-gray-400 mt-1">If video is added, it will automatically show first with muted autoplay on the product page!</p>
                 </div>
 
                 {/* Short Description */}
@@ -594,38 +694,6 @@ const AdminProducts = () => {
                   />
                 </div>
 
-                {/* Product Image */}
-                <div className="sm:col-span-2">
-                  <label className="block text-xs font-semibold text-gray-700 uppercase tracking-wider mb-1.5">Main Product Image *</label>
-                  <div className="border-2 border-dashed border-gray-300 rounded-lg p-4 hover:border-blue-400 hover:bg-blue-50/20 transition-all text-center">
-                    {previewImage ? (
-                      <div className="flex flex-col items-center">
-                        <img
-                          src={previewImage}
-                          alt="Preview"
-                          className="h-36 w-36 object-contain rounded-lg shadow-sm border border-gray-200 mb-3 bg-gray-50"
-                        />
-                        <label className="cursor-pointer bg-white px-3 py-1.5 border border-gray-300 rounded-md text-xs font-medium text-blue-600 hover:bg-gray-50 shadow-xs">
-                          Change Image
-                          <input type="file" className="hidden" onChange={handleFileChange} accept="image/*" />
-                        </label>
-                      </div>
-                    ) : (
-                      <div className="py-4 flex flex-col items-center justify-center">
-                        <div className="w-12 h-12 bg-blue-50 text-blue-500 rounded-full flex items-center justify-center mb-2">
-                          <FiImage size={24} />
-                        </div>
-                        <p className="text-sm font-medium text-gray-700 mb-1">Upload High-Quality Product Image</p>
-                        <p className="text-xs text-gray-400 mb-3">Square 1:1 or 4:5 ratio recommended (PNG, JPG, WebP)</p>
-                        <label className="cursor-pointer bg-blue-600 hover:bg-blue-700 text-white px-4 py-2 rounded-md text-xs font-medium shadow-xs transition-colors">
-                          Browse File
-                          <input type="file" className="hidden" onChange={handleFileChange} accept="image/*" />
-                        </label>
-                      </div>
-                    )}
-                  </div>
-                </div>
-
                 {/* Active Status */}
                 <div className="sm:col-span-2 flex items-center gap-2 pt-2">
                   <input
@@ -633,7 +701,7 @@ const AdminProducts = () => {
                     id="productIsActive"
                     checked={formData.isActive}
                     onChange={(e) => setFormData({ ...formData, isActive: e.target.checked })}
-                    className="w-4 h-4 text-blue-600 rounded border-gray-300 focus:ring-blue-500"
+                    className="w-4 h-4 text-blue-600 rounded border-gray-300 focus:ring-blue-500 cursor-pointer"
                   />
                   <label htmlFor="productIsActive" className="text-sm font-medium text-gray-700 select-none cursor-pointer">
                     Publish Product (Active on Storefront & Search)

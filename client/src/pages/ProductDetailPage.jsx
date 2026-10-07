@@ -1,9 +1,10 @@
-﻿import React, { useState } from 'react';
+import React, { useState, useEffect, useRef } from 'react';
 import { useParams, Link } from 'react-router-dom';
 import { gql, useQuery } from '@apollo/client';
 import { 
   FiShoppingCart, FiZap, FiTruck, FiShield, FiRefreshCw, 
-  FiCheckCircle, FiPlay, FiImage, FiShare2, FiStar, FiChevronRight, FiMessageCircle 
+  FiCheckCircle, FiPlay, FiImage, FiShare2, FiStar, FiChevronRight, 
+  FiMessageCircle, FiVolume2, FiVolumeX 
 } from 'react-icons/fi';
 import SEO from '../components/common/SEO';
 import { useUIStore } from '../store/uiStore';
@@ -54,6 +55,8 @@ const ProductDetailPage = () => {
   const [selectedMedia, setSelectedMedia] = useState('image-0');
   const [quantity, setQuantity] = useState(1);
   const [copied, setCopied] = useState(false);
+  const [isMuted, setIsMuted] = useState(true);
+  const videoRef = useRef(null);
   const { openCart } = useUIStore();
 
   const { data, loading, error } = useQuery(GET_PRODUCT_BY_SLUG, {
@@ -64,6 +67,15 @@ const ProductDetailPage = () => {
   const { data: relatedData } = useQuery(GET_RELATED_PRODUCTS);
 
   const product = data?.getProductBySlug;
+
+  // Set default media: If product has a video URL, show video FIRST by default!
+  useEffect(() => {
+    if (product?.productVideoUrl) {
+      setSelectedMedia('video');
+    } else {
+      setSelectedMedia('image-0');
+    }
+  }, [product?.productVideoUrl]);
 
   if (loading) {
     return (
@@ -129,25 +141,33 @@ const ProductDetailPage = () => {
     window.open(`https://wa.me/919638601192?text=${text}`, '_blank');
   };
 
-  // Helper for YouTube embed
+  // Helper for YouTube / Vimeo embed (Ensures MUTED + AUTOPLAY by default)
   const getEmbedUrl = (url) => {
     if (!url) return null;
-    if (url.includes('youtube.com/watch?v=')) {
-      const videoId = url.split('v=')[1]?.split('&')[0];
-      return `https://www.youtube.com/embed/${videoId}?autoplay=1&mute=1`;
-    }
-    if (url.includes('youtu.be/')) {
-      const videoId = url.split('youtu.be/')[1]?.split('?')[0];
-      return `https://www.youtube.com/embed/${videoId}?autoplay=1&mute=1`;
+    if (url.includes('youtube.com/watch?v=' || url.includes('youtu.be/'))) {
+      const videoId = url.includes('v=') ? url.split('v=')[1]?.split('&')[0] : url.split('youtu.be/')[1]?.split('?')[0];
+      return `https://www.youtube.com/embed/${videoId}?autoplay=1&mute=1&loop=1&playlist=${videoId}&playsinline=1&rel=0`;
     }
     if (url.includes('youtube.com/shorts/')) {
       const videoId = url.split('/shorts/')[1]?.split('?')[0];
-      return `https://www.youtube.com/embed/${videoId}?autoplay=1&mute=1`;
+      return `https://www.youtube.com/embed/${videoId}?autoplay=1&mute=1&loop=1&playlist=${videoId}&playsinline=1&rel=0`;
+    }
+    if (url.includes('vimeo.com/')) {
+      const videoId = url.split('vimeo.com/')[1]?.split('?')[0];
+      return `https://player.vimeo.com/video/${videoId}?autoplay=1&muted=1&loop=1`;
     }
     return url;
   };
 
   const isEmbedVideo = productVideoUrl && (productVideoUrl.includes('youtube') || productVideoUrl.includes('youtu.be') || productVideoUrl.includes('vimeo'));
+
+  // Toggle video mute for HTML5 videos
+  const toggleMute = () => {
+    if (videoRef.current) {
+      videoRef.current.muted = !videoRef.current.muted;
+      setIsMuted(videoRef.current.muted);
+    }
+  };
 
   // Rich Schema.org Product JSON-LD
   const productSchema = {
@@ -228,12 +248,27 @@ const ProductDetailPage = () => {
                       allowFullScreen
                     />
                   ) : (
-                    <video
-                      src={productVideoUrl}
-                      controls
-                      autoPlay
-                      className="w-full h-full object-contain"
-                    />
+                    <div className="relative w-full h-full flex items-center justify-center bg-black">
+                      <video
+                        ref={videoRef}
+                        src={productVideoUrl}
+                        controls
+                        autoPlay
+                        muted
+                        loop
+                        playsInline
+                        className="w-full h-full object-contain"
+                      />
+                      {/* Unmute / Mute quick button */}
+                      <button
+                        type="button"
+                        onClick={toggleMute}
+                        className="absolute bottom-4 right-4 bg-black/70 hover:bg-black text-white p-2 rounded-full shadow-md z-20 cursor-pointer"
+                        title={isMuted ? "Unmute Video" : "Mute Video"}
+                      >
+                        {isMuted ? <FiVolumeX size={16} /> : <FiVolume2 size={16} />}
+                      </button>
+                    </div>
                   )
                 ) : (
                   <img
@@ -245,41 +280,44 @@ const ProductDetailPage = () => {
 
                 {/* Discount Badge */}
                 {discountPercentage > 0 && (
-                  <span className="absolute top-4 left-4 bg-emerald-600 text-white font-extrabold text-xs px-2.5 py-1 rounded-md shadow-sm">
+                  <span className="absolute top-4 left-4 bg-emerald-600 text-white font-extrabold text-xs px-2.5 py-1 rounded-md shadow-sm z-10">
                     {discountPercentage}% OFF
                   </span>
                 )}
 
                 {/* Options Badge */}
                 {optionsLabel && (
-                  <span className="absolute top-4 right-4 bg-gray-900/80 backdrop-blur-xs text-white text-[11px] font-semibold px-2.5 py-1 rounded-md uppercase tracking-wider">
+                  <span className="absolute top-4 right-4 bg-gray-900/80 backdrop-blur-xs text-white text-[11px] font-semibold px-2.5 py-1 rounded-md uppercase tracking-wider z-10">
                     {optionsLabel}
                   </span>
                 )}
               </div>
 
-              {/* Thumbnails row (Images + Video button) */}
+              {/* Thumbnails row (Video first if available, then all images) */}
               <div className="flex items-center gap-3 overflow-x-auto pb-2">
+                
+                {/* Video Thumbnail Button (Shows First if Video exists) */}
+                {productVideoUrl && (
+                  <button
+                    onClick={() => setSelectedMedia('video')}
+                    className={`relative w-18 h-18 rounded-lg overflow-hidden border-2 flex-shrink-0 flex flex-col items-center justify-center bg-purple-50 text-purple-700 font-bold transition-all cursor-pointer ${selectedMedia === 'video' ? 'border-purple-600 ring-2 ring-purple-200 scale-105 shadow-xs' : 'border-purple-200 hover:border-purple-400 opacity-80 hover:opacity-100'}`}
+                  >
+                    <FiPlay size={22} className="text-purple-600 mb-0.5" />
+                    <span className="text-[10px] uppercase tracking-wider font-extrabold">Video</span>
+                  </button>
+                )}
+
+                {/* Multiple Images Thumbnails */}
                 {formattedImages.map((img, idx) => (
                   <button
                     key={idx}
                     onClick={() => setSelectedMedia(`image-${idx}`)}
-                    className={`relative w-18 h-18 rounded-lg overflow-hidden border-2 flex-shrink-0 bg-gray-50 transition-all ${selectedMedia === `image-${idx}` ? 'border-primary shadow-sm scale-105' : 'border-gray-200 hover:border-gray-300 opacity-70 hover:opacity-100'}`}
+                    className={`relative w-18 h-18 rounded-lg overflow-hidden border-2 flex-shrink-0 bg-gray-50 transition-all cursor-pointer ${selectedMedia === `image-${idx}` ? 'border-primary shadow-xs scale-105 ring-2 ring-blue-100' : 'border-gray-200 hover:border-gray-300 opacity-70 hover:opacity-100'}`}
                   >
                     <img src={img} alt={`${name} thumb ${idx}`} className="w-full h-full object-cover" />
                   </button>
                 ))}
 
-                {/* Video Thumbnail Button if Video is Available */}
-                {productVideoUrl && (
-                  <button
-                    onClick={() => setSelectedMedia('video')}
-                    className={`relative w-18 h-18 rounded-lg overflow-hidden border-2 flex-shrink-0 flex flex-col items-center justify-center bg-purple-50 text-purple-700 font-bold transition-all ${selectedMedia === 'video' ? 'border-purple-600 ring-2 ring-purple-200 scale-105' : 'border-purple-200 hover:border-purple-400'}`}
-                  >
-                    <FiPlay size={22} className="text-purple-600 mb-0.5" />
-                    <span className="text-[10px] uppercase tracking-wider">Video</span>
-                  </button>
-                )}
               </div>
             </div>
 
@@ -293,7 +331,7 @@ const ProductDetailPage = () => {
                 </span>
                 <button
                   onClick={handleShare}
-                  className="text-xs text-gray-500 hover:text-gray-800 flex items-center gap-1 bg-gray-100 hover:bg-gray-200 px-2.5 py-1 rounded-md transition-colors"
+                  className="text-xs text-gray-500 hover:text-gray-800 flex items-center gap-1 bg-gray-100 hover:bg-gray-200 px-2.5 py-1 rounded-md transition-colors cursor-pointer"
                   title="Copy Product Link"
                 >
                   <FiShare2 size={13} />
@@ -348,14 +386,14 @@ const ProductDetailPage = () => {
                   <div className="flex items-center border border-gray-300 rounded-lg bg-white overflow-hidden">
                     <button
                       onClick={() => setQuantity(Math.max(1, quantity - 1))}
-                      className="px-3 py-1.5 text-gray-600 hover:bg-gray-100 font-bold"
+                      className="px-3 py-1.5 text-gray-600 hover:bg-gray-100 font-bold cursor-pointer"
                     >
                       -
                     </button>
                     <span className="px-4 py-1.5 font-bold text-sm text-gray-800">{quantity}</span>
                     <button
                       onClick={() => setQuantity(quantity + 1)}
-                      className="px-3 py-1.5 text-gray-600 hover:bg-gray-100 font-bold"
+                      className="px-3 py-1.5 text-gray-600 hover:bg-gray-100 font-bold cursor-pointer"
                     >
                       +
                     </button>
