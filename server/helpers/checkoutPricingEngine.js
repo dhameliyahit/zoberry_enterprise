@@ -4,12 +4,13 @@
  * Centralized, deterministic, integer-paise financial calculation service for:
  * 1. Merchandise subtotal
  * 2. Promotions & coupon discounts (with caps and item targeting)
- * 3. Shipping method rates & free-shipping threshold
+ * 3. Shipping method rates & free-shipping threshold (with strict validation against invalid/inactive methods)
  * 4. Tax calculation (standard tax-inclusive consumer pricing or tax-exclusive)
  * 5. Final grand total
  * 6. Immutable snapshots for order history
  */
 
+const { GraphQLError } = require('graphql');
 const { toPaise, fromPaise } = require('./moneyHelper');
 const {
   PromotionModel,
@@ -44,6 +45,16 @@ const DEFAULT_SHIPPING_METHODS = [
     estimatedDays: '1 - 2 business days',
     isActive: true,
     priority: 20,
+  },
+  {
+    code: 'INACTIVE_TEST_CARRIER',
+    name: 'Inactive Courier',
+    description: 'Temporarily disabled courier route',
+    price: 299.00,
+    freeThreshold: null,
+    estimatedDays: '1 business day',
+    isActive: false,
+    priority: 99,
   },
 ];
 
@@ -117,6 +128,62 @@ async function getAvailableShippingMethods({ eligibleSubtotal = 0, postalCode = 
 }
 
 /**
+ * Resolves and validates a shipping method.
+ * If code is omitted (null/undefined/empty): selects default active method (STANDARD).
+ * If code is explicitly supplied:
+ *   - must exist
+ *   - must be active
+ *   - otherwise throws GraphQLError with BAD_USER_INPUT.
+ * 
+ * @param {string|null} [code] 
+ * @param {Object} [transaction]
+ * @returns {Promise<Object>}
+ */
+async function resolveShippingMethod(code = null, transaction = null) {
+  const isExplicit = code !== null && code !== undefined && typeof code === 'string' && code.trim() !== '';
+  const cleanCode = isExplicit ? code.trim().toUpperCase() : 'STANDARD';
+
+  // 1. Look in database first
+  let method = null;
+  try {
+    method = await ShippingMethodModel.findOne({
+      where: { code: cleanCode },
+      transaction,
+    });
+  } catch (err) {
+    // Fallback if table not ready
+  }
+
+  // 2. Look in DEFAULT_SHIPPING_METHODS if not found in DB
+  if (!method) {
+    const defaultMatch = DEFAULT_SHIPPING_METHODS.find((m) => m.code === cleanCode);
+    if (defaultMatch) {
+      method = defaultMatch;
+    }
+  }
+
+  if (isExplicit) {
+    if (!method) {
+      throw new GraphQLError(`Invalid shipping method code: "${code}".`, {
+        extensions: { code: 'BAD_USER_INPUT' },
+      });
+    }
+
+    if (!method.isActive) {
+      throw new GraphQLError(`Shipping method "${code}" is currently inactive.`, {
+        extensions: { code: 'BAD_USER_INPUT' },
+      });
+    }
+  } else {
+    if (!method || !method.isActive) {
+      method = DEFAULT_SHIPPING_METHODS.find((m) => m.isActive) || DEFAULT_SHIPPING_METHODS[0];
+    }
+  }
+
+  return typeof method.toJSON === 'function' ? method.toJSON() : method;
+}
+
+/**
  * Fetches the active tax rule for the checkout calculation.
  * @returns {Promise<Object>}
  */
@@ -141,7 +208,7 @@ async function getActiveTaxRule() {
  * 
  * @param {Object} params
  * @param {Array<Object>} params.items - Cart or Order items
- * @param {string} [params.shippingMethodCode='STANDARD'] - Selected shipping method code
+ * @param {string} [params.shippingMethodCode] - Selected shipping method code
  * @param {string} [params.couponCode] - User entered coupon code
  * @param {Object} [params.user] - Authenticated user context
  * @param {string} [params.guestEmail] - Guest email if checking out as guest
@@ -152,7 +219,7 @@ async function getActiveTaxRule() {
 async function calculateCheckoutTotals(params = {}) {
   const {
     items = [],
-    shippingMethodCode = 'STANDARD',
+    shippingMethodCode = undefined,
     couponCode = null,
     user = null,
     guestEmail = null,
@@ -223,36 +290,34 @@ async function calculateCheckoutTotals(params = {}) {
   // 3. Eligible Merchandise Subtotal for Free Shipping & Tax
   const eligibleMerchandiseSubtotalPaise = Math.max(0, subtotalPaise - discountPaise);
 
-  // 4. Calculate Shipping Method & Fee
-  const availableMethods = await getAvailableShippingMethods({
-    eligibleSubtotal: fromPaise(eligibleMerchandiseSubtotalPaise),
-    postalCode,
-  });
+  // 4. Resolve and Validate Shipping Method & Fee
+  const selectedMethod = await resolveShippingMethod(shippingMethodCode, transaction);
 
-  const selectedCode = (shippingMethodCode || 'STANDARD').trim().toUpperCase();
-  let selectedMethod = availableMethods.find((m) => m.code === selectedCode);
+  let shippingFeePaise = toPaise(selectedMethod.price);
+  let isFree = false;
 
-  if (!selectedMethod) {
-    selectedMethod = availableMethods[0] || {
-      code: 'STANDARD',
-      name: 'Standard Delivery',
-      actualPrice: 99.00,
-      isFree: false,
-      estimatedDays: '3 - 5 business days',
-    };
+  if (selectedMethod.freeThreshold !== null && selectedMethod.freeThreshold !== undefined && Number(selectedMethod.freeThreshold) > 0) {
+    const thresholdPaise = toPaise(selectedMethod.freeThreshold);
+    if (eligibleMerchandiseSubtotalPaise >= thresholdPaise) {
+      shippingFeePaise = 0;
+      isFree = true;
+    }
   }
-
-  const shippingPaise = toPaise(selectedMethod.actualPrice);
 
   const shippingSnapshot = {
     code: selectedMethod.code,
     name: selectedMethod.name,
-    basePrice: selectedMethod.basePrice || selectedMethod.actualPrice,
-    actualShippingFee: selectedMethod.actualPrice,
+    basePrice: selectedMethod.price,
+    actualShippingFee: fromPaise(shippingFeePaise),
     freeThreshold: selectedMethod.freeThreshold || null,
-    isFree: selectedMethod.isFree,
+    isFree,
     estimatedDays: selectedMethod.estimatedDays || null,
   };
+
+  const availableMethods = await getAvailableShippingMethods({
+    eligibleSubtotal: fromPaise(eligibleMerchandiseSubtotalPaise),
+    postalCode,
+  });
 
   // 5. Calculate Tax Breakdown (Standard Consumer Tax-Inclusive Model)
   const taxRule = await getActiveTaxRule();
@@ -281,16 +346,16 @@ async function calculateCheckoutTotals(params = {}) {
   let grandTotalPaise = 0;
   if (taxRule.isInclusive) {
     // Grand Total = (Subtotal - Discount) + Shipping
-    grandTotalPaise = Math.max(0, eligibleMerchandiseSubtotalPaise + shippingPaise);
+    grandTotalPaise = Math.max(0, eligibleMerchandiseSubtotalPaise + shippingFeePaise);
   } else {
     // Grand Total = (Subtotal - Discount) + Shipping + Tax
-    grandTotalPaise = Math.max(0, eligibleMerchandiseSubtotalPaise + shippingPaise + taxPaise);
+    grandTotalPaise = Math.max(0, eligibleMerchandiseSubtotalPaise + shippingFeePaise + taxPaise);
   }
 
   return {
     subtotal: fromPaise(subtotalPaise),
     discountAmount: fromPaise(discountPaise),
-    shippingAmount: fromPaise(shippingPaise),
+    shippingAmount: fromPaise(shippingFeePaise),
     taxAmount: fromPaise(taxPaise),
     grandTotal: fromPaise(grandTotalPaise),
     couponCode: appliedPromotion ? appliedCouponCode : null,
@@ -305,7 +370,7 @@ async function calculateCheckoutTotals(params = {}) {
       subtotalPaise,
       discountPaise,
       eligibleMerchandiseSubtotalPaise,
-      shippingPaise,
+      shippingPaise: shippingFeePaise,
       taxPaise,
       grandTotalPaise,
     },
@@ -318,5 +383,6 @@ module.exports = {
   getActiveShippingMethods,
   getAvailableShippingMethods,
   getActiveTaxRule,
+  resolveShippingMethod,
   calculateCheckoutTotals,
 };

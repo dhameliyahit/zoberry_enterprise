@@ -118,7 +118,7 @@ const orderResolvers = {
 
       const totals = await calculateCheckoutTotals({
         items: cart.items,
-        shippingMethodCode: shippingMethodCode || 'STANDARD',
+        shippingMethodCode,
         couponCode,
         user: context?.user,
         postalCode: resolvedPostalCode,
@@ -345,7 +345,7 @@ const orderResolvers = {
         // Run centralized authoritative checkout pricing calculation
         const calculation = await calculateCheckoutTotals({
           items: calculationItems,
-          shippingMethodCode: shippingMethodCode || 'STANDARD',
+          shippingMethodCode,
           couponCode,
           user: context?.user,
           guestEmail: guestEmail?.trim() || null,

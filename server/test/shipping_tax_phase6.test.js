@@ -12,8 +12,10 @@
  * 6. Order shipping snapshot & tax snapshot immutability
  * 7. PhonePe grand total alignment (Order.grandTotal in integer paise)
  * 8. Customer address ownership validation
- * 9. GraphQL Schema compilation with shipping and tax typeDefs & resolvers
- * 10. Admin authorization guards on shipping and tax management mutations
+ * 9. Explicit invalid shipping method code rejection (BAD_USER_INPUT)
+ * 10. Inactive shipping method rejection (BAD_USER_INPUT)
+ * 11. Omitted shipping method code default to active STANDARD
+ * 12. Admin authorization guards on shipping and tax management mutations
  */
 
 require('dotenv').config();
@@ -28,6 +30,7 @@ const {
   DEFAULT_SHIPPING_METHODS,
   DEFAULT_TAX_RULE,
 } = require('../helpers/checkoutPricingEngine');
+const { ShippingMethodModel } = require('../models');
 
 let passedTests = 0;
 let failedTests = 0;
@@ -192,13 +195,51 @@ async function runPhase6TestSuite() {
     assert.strictEqual(phonepeAmountPaise, 169900); // 1699 * 100
   });
 
-  // 9. Inactive / Unknown shipping method gracefully falls back to default active method
-  await asyncTest('9. Invalid shipping method code defaults to standard active shipping method', async () => {
+  // 9. Invalid shipping method code is rejected
+  await asyncTest('9. Invalid shipping method code is rejected', async () => {
+    const items = [{ unitPrice: 400.00, quantity: 1 }];
+
+    await assert.rejects(
+      async () => {
+        await calculateCheckoutTotals({
+          items,
+          shippingMethodCode: 'INVALID_NONEXISTENT_CARRIER',
+        });
+      },
+      (err) => {
+        assert.ok(err.message.includes('Invalid shipping method code'));
+        assert.strictEqual(err.extensions?.code, 'BAD_USER_INPUT');
+        return true;
+      }
+    );
+  });
+
+  // 10. Inactive shipping method is rejected
+  await asyncTest('10. Inactive shipping method is rejected', async () => {
+    const items = [{ unitPrice: 400.00, quantity: 1 }];
+
+    await assert.rejects(
+      async () => {
+        await calculateCheckoutTotals({
+          items,
+          shippingMethodCode: 'INACTIVE_TEST_CARRIER',
+        });
+      },
+      (err) => {
+        assert.ok(err.message.includes('inactive'));
+        assert.strictEqual(err.extensions?.code, 'BAD_USER_INPUT');
+        return true;
+      }
+    );
+  });
+
+  // 11. Omitted shipping method defaults to standard active method
+  await asyncTest('11. Omitted shipping method code cleanly defaults to standard active shipping method', async () => {
     const items = [{ unitPrice: 400.00, quantity: 1 }];
 
     const result = await calculateCheckoutTotals({
       items,
-      shippingMethodCode: 'INVALID_NONEXISTENT_CARRIER',
+      // shippingMethodCode omitted
     });
 
     assert.strictEqual(result.shippingMethod, 'STANDARD');
@@ -206,8 +247,8 @@ async function runPhase6TestSuite() {
     assert.strictEqual(result.grandTotal, 499.00);
   });
 
-  // 10. Admin mutation authorization protection
-  test('10. Admin shipping and tax resolvers enforce requireAdmin guard', () => {
+  // 12. Admin mutation authorization protection
+  test('12. Admin shipping and tax resolvers enforce requireAdmin guard', () => {
     const shippingResolvers = require('../graphql/resolvers/shipping');
     const { requireAdmin } = require('../helpers/authMiddleware');
 
