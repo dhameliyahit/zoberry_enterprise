@@ -2,10 +2,8 @@ import React from 'react';
 import { cn } from '../../utils/cn';
 
 /**
- * Reusable Production Badge Component
- * 
- * Variants: default, primary/blue, secondary/gray, success/green, warning/amber, danger/red, outline
- * Sizes: sm, md
+ * Shopify Warehouse Theme Badge Primitive
+ * Crisp rectangular tags with high contrast.
  */
 export function Badge({
   children,
@@ -16,46 +14,44 @@ export function Badge({
   ...props
 }) {
   const variants = {
-    default: 'bg-slate-100 text-slate-700 border-slate-200',
-    gray: 'bg-slate-100 text-slate-700 border-slate-200',
-    primary: 'bg-blue-50 text-blue-700 border-blue-200',
-    blue: 'bg-blue-50 text-blue-700 border-blue-200',
-    secondary: 'bg-slate-800 text-white border-transparent',
-    success: 'bg-emerald-50 text-emerald-700 border-emerald-200',
-    green: 'bg-emerald-50 text-emerald-700 border-emerald-200',
-    warning: 'bg-amber-50 text-amber-700 border-amber-200',
-    amber: 'bg-amber-50 text-amber-700 border-amber-200',
-    danger: 'bg-red-50 text-red-700 border-red-200',
-    red: 'bg-red-50 text-red-700 border-red-200',
-    purple: 'bg-purple-50 text-purple-700 border-purple-200',
-    outline: 'bg-transparent text-slate-700 border-slate-300',
+    default: 'bg-slate-100 text-slate-800 border-slate-300',
+    gray: 'bg-slate-100 text-slate-800 border-slate-300',
+    primary: 'bg-[#1863dc] text-white border-[#1863dc]',
+    blue: 'bg-[#1863dc] text-white border-[#1863dc]',
+    secondary: 'bg-[#111827] text-white border-[#111827]',
+    success: 'bg-[#059669] text-white border-[#059669]',
+    green: 'bg-[#059669] text-white border-[#059669]',
+    warning: 'bg-[#d97706] text-white border-[#d97706]',
+    amber: 'bg-[#d97706] text-white border-[#d97706]',
+    danger: 'bg-[#dc2626] text-white border-[#dc2626]',
+    red: 'bg-[#dc2626] text-white border-[#dc2626]',
+    outline: 'bg-transparent text-slate-800 border-slate-300',
   };
 
   const dotColors = {
     default: 'bg-slate-400',
     gray: 'bg-slate-400',
-    primary: 'bg-blue-600',
-    blue: 'bg-blue-600',
+    primary: 'bg-white',
+    blue: 'bg-white',
     secondary: 'bg-white',
-    success: 'bg-emerald-500',
-    green: 'bg-emerald-500',
-    warning: 'bg-amber-500',
-    amber: 'bg-amber-500',
-    danger: 'bg-red-500',
-    red: 'bg-red-500',
-    purple: 'bg-purple-500',
-    outline: 'bg-slate-400',
+    success: 'bg-white',
+    green: 'bg-white',
+    warning: 'bg-white',
+    amber: 'bg-white',
+    danger: 'bg-white',
+    red: 'bg-white',
+    outline: 'bg-slate-500',
   };
 
   const sizes = {
-    sm: 'text-[11px] font-medium px-2 py-0.5 gap-1',
-    md: 'text-xs font-semibold px-2.5 py-1 gap-1.5',
+    sm: 'text-[10px] font-bold px-1.5 py-0.5 gap-1 uppercase tracking-wider',
+    md: 'text-[11px] font-bold px-2 py-0.5 gap-1.5 uppercase tracking-wider',
   };
 
   return (
     <span
       className={cn(
-        'inline-flex items-center rounded-full border leading-none transition-colors select-none whitespace-nowrap',
+        'inline-flex items-center rounded-[2px] border leading-none transition-colors select-none whitespace-nowrap',
         variants[variant] || variants.default,
         sizes[size] || sizes.md,
         className

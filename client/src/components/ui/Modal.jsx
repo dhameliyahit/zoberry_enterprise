@@ -1,9 +1,18 @@
 import React, { useEffect } from 'react';
+import ReactModal from 'react-modal';
 import { X } from 'lucide-react';
 import { cn } from '../../utils/cn';
 
+// Set app element for accessibility
+if (typeof window !== 'undefined') {
+  const appRoot = document.getElementById('root') || document.body;
+  if (appRoot) {
+    ReactModal.setAppElement(appRoot);
+  }
+}
+
 /**
- * Reusable Production Modal Dialog
+ * Reusable Production Modal Dialog powered by react-modal
  */
 export function Modal({
   isOpen,
@@ -12,57 +21,43 @@ export function Modal({
   description,
   children,
   maxWidth = 'max-w-lg',
+  size,
   className,
   showClose = true,
+  shouldCloseOnOverlayClick = true,
 }) {
-  useEffect(() => {
-    const handleKeyDown = (e) => {
-      if (e.key === 'Escape' && isOpen && onClose) {
-        onClose();
-      }
-    };
+  const sizeMap = {
+    sm: 'max-w-sm',
+    md: 'max-w-md',
+    lg: 'max-w-2xl',
+    xl: 'max-w-4xl',
+    full: 'max-w-6xl',
+  };
 
-    if (isOpen) {
-      document.body.style.overflow = 'hidden';
-      window.addEventListener('keydown', handleKeyDown);
-    } else {
-      document.body.style.overflow = 'unset';
-    }
-
-    return () => {
-      document.body.style.overflow = 'unset';
-      window.removeEventListener('keydown', handleKeyDown);
-    };
-  }, [isOpen, onClose]);
-
-  if (!isOpen) return null;
+  const resolvedMaxWidth = size ? (sizeMap[size] || maxWidth) : maxWidth;
 
   return (
-    <div className="fixed inset-0 z-50 flex items-center justify-center p-4 sm:p-6 overflow-y-auto">
-      {/* Backdrop */}
+    <ReactModal
+      isOpen={Boolean(isOpen)}
+      onRequestClose={onClose}
+      shouldCloseOnOverlayClick={shouldCloseOnOverlayClick}
+      closeTimeoutMS={200}
+      overlayClassName="fixed inset-0 z-50 flex items-center justify-center p-3 sm:p-6 bg-slate-950/70 backdrop-blur-xs transition-opacity duration-200"
+      className="outline-none focus:outline-none w-full flex justify-center"
+    >
       <div
-        className="fixed inset-0 bg-slate-900/60 backdrop-blur-xs transition-opacity duration-200"
-        onClick={onClose}
-        aria-hidden="true"
-      />
-
-      {/* Modal Dialog */}
-      <div
-        role="dialog"
-        aria-modal="true"
-        aria-labelledby={title ? 'modal-title' : undefined}
         className={cn(
-          'relative w-full bg-white rounded-xl shadow-2xl border border-slate-200 z-10 my-auto overflow-hidden animate-fade-in flex flex-col',
-          maxWidth,
+          'relative w-full bg-white rounded-[2px] shadow-2xl border border-slate-200 z-10 my-auto overflow-hidden flex flex-col animate-fade-in text-slate-900',
+          resolvedMaxWidth,
           className
         )}
       >
         {/* Modal Header */}
         {(title || showClose) && (
-          <div className="px-6 py-4 border-b border-slate-100 flex items-center justify-between gap-4 bg-slate-50/50">
+          <div className="px-5 py-3.5 border-b border-slate-200 flex items-center justify-between gap-4 bg-[#f8fafc]">
             <div>
               {title && (
-                <h3 id="modal-title" className="text-base font-semibold text-slate-900">
+                <h3 className="text-sm sm:text-base font-bold text-slate-900 leading-snug">
                   {title}
                 </h3>
               )}
@@ -75,7 +70,7 @@ export function Modal({
                 type="button"
                 onClick={onClose}
                 aria-label="Close dialog"
-                className="p-1.5 text-slate-400 hover:text-slate-700 hover:bg-slate-100 rounded-md transition-colors"
+                className="p-1 text-slate-400 hover:text-slate-700 hover:bg-slate-200 rounded-[2px] transition-colors"
               >
                 <X className="w-4 h-4" />
               </button>
@@ -84,9 +79,11 @@ export function Modal({
         )}
 
         {/* Modal Body */}
-        <div className="p-6 overflow-y-auto max-h-[calc(90vh-120px)]">{children}</div>
+        <div className="p-5 sm:p-6 overflow-y-auto max-h-[calc(90vh-100px)]">
+          {children}
+        </div>
       </div>
-    </div>
+    </ReactModal>
   );
 }
 

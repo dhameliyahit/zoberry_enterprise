@@ -124,11 +124,12 @@ export const GET_ALL_CATEGORIES = gql`
       id
       name
       slug
-      description
       imageUrl
-      icon
-      isActive
-      productCount
+      createdAt
+      updatedAt
+      products {
+        id
+      }
     }
   }
 `;

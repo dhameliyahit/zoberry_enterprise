@@ -1,70 +1,67 @@
-import React, { forwardRef } from 'react';
-import { Loader2 } from 'lucide-react';
+import React from 'react';
 import { cn } from '../../utils/cn';
 
 /**
- * Reusable Production Button Component
- * 
- * Variants: primary, secondary, outline, ghost, danger, link
- * Sizes: sm, md, lg
+ * Shopify Warehouse Theme Button Primitive
+ * Crisp micro-radius, high-contrast, structured e-commerce styling.
  */
-export const Button = forwardRef(({
+export function Button({
   children,
   className,
   variant = 'primary',
   size = 'md',
-  isLoading = false,
+  loading = false,
   disabled = false,
   leftIcon,
   rightIcon,
   type = 'button',
   ...props
-}, ref) => {
-  const baseStyles = 'inline-flex items-center justify-center font-medium transition-all duration-150 rounded-md focus:outline-none focus-visible:ring-2 focus-visible:ring-primary focus-visible:ring-offset-1 select-none disabled:opacity-50 disabled:cursor-not-allowed disabled:pointer-events-none active:scale-[0.99]';
+}) {
+  const baseStyles = 'inline-flex items-center justify-center font-bold tracking-tight transition-all select-none disabled:opacity-50 disabled:pointer-events-none cursor-pointer rounded-[2px] uppercase';
 
   const variants = {
-    primary: 'bg-primary text-white hover:bg-primary-hover shadow-sm border border-transparent',
-    secondary: 'bg-slate-100 text-slate-800 hover:bg-slate-200 border border-slate-200',
-    outline: 'bg-white text-slate-700 hover:bg-slate-50 border border-slate-300 hover:border-slate-400 shadow-sm',
-    ghost: 'bg-transparent text-slate-700 hover:bg-slate-100 hover:text-slate-900 border border-transparent',
-    danger: 'bg-red-600 text-white hover:bg-red-700 shadow-sm border border-transparent',
-    dangerOutline: 'bg-white text-red-600 border border-red-300 hover:bg-red-50 hover:border-red-400',
-    link: 'bg-transparent text-primary hover:underline p-0 h-auto border-none shadow-none font-normal',
+    primary: 'bg-[#1863dc] hover:bg-[#104fba] text-white shadow-xs active:bg-[#0c3e94]',
+    secondary: 'bg-[#111827] hover:bg-black text-white active:bg-slate-900',
+    outline: 'bg-white border border-slate-300 text-slate-800 hover:bg-slate-50 hover:border-slate-400 active:bg-slate-100',
+    ghost: 'bg-transparent text-slate-700 hover:bg-slate-100 active:bg-slate-200',
+    danger: 'bg-red-600 hover:bg-red-700 text-white active:bg-red-800',
+    dangerOutline: 'bg-white border border-red-200 text-red-600 hover:bg-red-50 active:bg-red-100',
+    link: 'bg-transparent text-[#1863dc] hover:underline p-0 h-auto font-semibold normal-case',
   };
 
   const sizes = {
-    sm: 'text-xs px-2.5 py-1.5 gap-1.5 h-8',
-    md: 'text-sm px-4 py-2 gap-2 h-10',
-    lg: 'text-base px-6 py-2.5 gap-2.5 h-12',
-    icon: 'p-2 h-10 w-10 justify-center',
-    iconSm: 'p-1.5 h-8 w-8 justify-center',
+    sm: 'text-[11px] px-3 py-1.5 gap-1.5 min-h-[32px]',
+    md: 'text-xs px-4 py-2.5 gap-2 min-h-[38px]',
+    lg: 'text-xs sm:text-sm px-6 py-3 gap-2 min-h-[44px]',
+    icon: 'p-2 min-h-[36px] min-w-[36px]',
   };
-
-  const isLinkVariant = variant === 'link';
 
   return (
     <button
-      ref={ref}
       type={type}
-      disabled={disabled || isLoading}
+      disabled={disabled || loading}
       className={cn(
         baseStyles,
         variants[variant] || variants.primary,
-        !isLinkVariant && (sizes[size] || sizes.md),
+        sizes[size] || sizes.md,
         className
       )}
       {...props}
     >
-      {isLoading ? (
-        <Loader2 className="w-4 h-4 animate-spin text-current shrink-0" />
+      {loading ? (
+        <span className="inline-flex items-center gap-2">
+          <span className="w-3.5 h-3.5 border-2 border-current border-t-transparent rounded-full animate-spin" />
+          <span>{children}</span>
+        </span>
       ) : (
-        leftIcon && <span className="shrink-0">{leftIcon}</span>
+        <>
+          {leftIcon && <span className="shrink-0">{leftIcon}</span>}
+          <span>{children}</span>
+          {rightIcon && <span className="shrink-0">{rightIcon}</span>}
+        </>
       )}
-      {children}
-      {!isLoading && rightIcon && <span className="shrink-0">{rightIcon}</span>}
     </button>
   );
-});
+}
 
-Button.displayName = 'Button';
 export default Button;

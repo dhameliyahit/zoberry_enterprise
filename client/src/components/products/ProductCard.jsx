@@ -67,34 +67,34 @@ export function ProductCard({ product }) {
 
   return (
     <>
-      <div className="group relative flex flex-col bg-white border border-slate-200 rounded-xl overflow-hidden hover:border-slate-300 hover:shadow-md transition-all duration-200">
-        {/* Top Badges */}
-        <div className="absolute top-2.5 left-2.5 z-10 flex flex-col gap-1 pointer-events-none">
+      <div className="group relative flex flex-col bg-white border border-slate-200 rounded-[2px] overflow-hidden hover:border-slate-400 hover:shadow-sm transition-all duration-150">
+        {/* Top Badges (Warehouse Crisp Rectangular Badges) */}
+        <div className="absolute top-2 left-2 z-10 flex flex-col gap-1 pointer-events-none">
           {hasDiscount && (
-            <Badge variant="success" size="sm">
-              {discountPercent}% OFF
-            </Badge>
+            <span className="px-1.5 py-0.5 bg-[#dc2626] text-white text-[10px] font-extrabold uppercase tracking-wider rounded-[2px]">
+              -{discountPercent}%
+            </span>
           )}
           {isOutOfStock && (
-            <Badge variant="secondary" size="sm">
-              Out of Stock
-            </Badge>
+            <span className="px-1.5 py-0.5 bg-slate-800 text-white text-[10px] font-bold uppercase tracking-wider rounded-[2px]">
+              Sold Out
+            </span>
           )}
         </div>
 
         {/* Top-Right Quick Actions */}
-        <div className="absolute top-2.5 right-2.5 z-10 flex flex-col gap-1.5 opacity-90 sm:opacity-0 group-hover:opacity-100 transition-all duration-150">
+        <div className="absolute top-2 right-2 z-10 flex flex-col gap-1 opacity-90 sm:opacity-0 group-hover:opacity-100 transition-all duration-150">
           <button
             type="button"
             onClick={handleWishlistClick}
             aria-label={inWishlist ? 'Remove from wishlist' : 'Save to wishlist'}
-            className={`w-8 h-8 rounded-full flex items-center justify-center transition-colors shadow-xs border ${
+            className={`w-7 h-7 rounded-[2px] flex items-center justify-center transition-colors shadow-2xs border ${
               inWishlist
                 ? 'bg-red-50 text-red-600 border-red-200'
                 : 'bg-white text-slate-500 hover:text-red-600 border-slate-200 hover:bg-slate-50'
             }`}
           >
-            <Heart className={`w-4 h-4 ${inWishlist ? 'fill-red-600' : ''}`} />
+            <Heart className={`w-3.5 h-3.5 ${inWishlist ? 'fill-red-600' : ''}`} />
           </button>
 
           <button
@@ -105,62 +105,64 @@ export function ProductCard({ product }) {
               setIsQuickViewOpen(true);
             }}
             aria-label="Quick preview"
-            className="w-8 h-8 rounded-full bg-white text-slate-500 hover:text-primary border border-slate-200 hover:bg-slate-50 shadow-xs flex items-center justify-center transition-colors"
+            className="w-7 h-7 rounded-[2px] bg-white text-slate-500 hover:text-primary border border-slate-200 hover:bg-slate-50 shadow-2xs flex items-center justify-center transition-colors"
           >
-            <Eye className="w-4 h-4" />
+            <Eye className="w-3.5 h-3.5" />
           </button>
         </div>
 
         {/* Product Image Link */}
         <Link
           to={`/product/${slug}`}
-          className="relative block w-full aspect-square bg-slate-50 overflow-hidden"
+          className="relative block w-full aspect-square bg-[#f8fafc] overflow-hidden border-b border-slate-100"
         >
           <img
             src={mainImage}
             alt={name}
             loading="lazy"
-            className="w-full h-full object-cover object-center group-hover:scale-103 transition-transform duration-300"
+            className="w-full h-full object-cover object-center group-hover:scale-103 transition-transform duration-200"
           />
+        </Link>
 
-          {/* Quick Add Slide-up Overlay (Desktop) */}
-          <div className="absolute inset-x-0 bottom-0 p-3 translate-y-full group-hover:translate-y-0 transition-transform duration-200 hidden sm:block">
+        {/* Product Card Details */}
+        <div className="p-3 sm:p-3.5 flex flex-col flex-1 gap-1.5 justify-between">
+          <div>
+            <span className="text-[10px] font-bold text-slate-400 uppercase tracking-wider block mb-0.5">
+              {optionsLabel || (hasVariants ? 'Options Available' : 'Daily Utility')}
+            </span>
+
+            <Link
+              to={`/product/${slug}`}
+              className="text-xs sm:text-sm font-semibold text-slate-900 line-clamp-2 hover:text-primary transition-colors leading-snug"
+            >
+              {name}
+            </Link>
+          </div>
+
+          <div className="pt-2">
+            {/* Pricing Block */}
+            <div className="flex items-baseline gap-2 mb-2.5">
+              <span className="text-sm sm:text-base font-extrabold text-slate-900">
+                ₹{Number(price).toLocaleString('en-IN')}
+              </span>
+              {hasDiscount && (
+                <span className="text-xs text-slate-400 line-through">
+                  ₹{Number(compareAtPrice).toLocaleString('en-IN')}
+                </span>
+              )}
+            </div>
+
+            {/* Warehouse Theme Quick Add Button */}
             <Button
               onClick={handleQuickAdd}
               disabled={isOutOfStock || cartLoading}
               variant={isOutOfStock ? 'secondary' : 'primary'}
               size="sm"
-              className="w-full shadow-sm text-xs font-semibold"
+              className="w-full text-xs font-bold uppercase tracking-wider h-8"
               leftIcon={<ShoppingBag className="w-3.5 h-3.5" />}
             >
               {hasVariants ? 'Choose Options' : isOutOfStock ? 'Sold Out' : 'Quick Add'}
             </Button>
-          </div>
-        </Link>
-
-        {/* Product Card Details */}
-        <div className="p-3.5 sm:p-4 flex flex-col flex-1 gap-1">
-          <span className="text-[11px] font-semibold text-slate-400 uppercase tracking-wider">
-            {optionsLabel || (hasVariants ? 'Multiple Options' : 'Smart Utility')}
-          </span>
-
-          <Link
-            to={`/product/${slug}`}
-            className="text-xs sm:text-sm font-semibold text-slate-900 line-clamp-2 hover:text-primary transition-colors leading-snug"
-          >
-            {name}
-          </Link>
-
-          {/* Pricing Block */}
-          <div className="mt-auto pt-2 flex items-baseline gap-2">
-            <span className="text-sm sm:text-base font-bold text-slate-900">
-              ₹{Number(price).toLocaleString('en-IN')}
-            </span>
-            {hasDiscount && (
-              <span className="text-xs text-slate-400 line-through">
-                ₹{Number(compareAtPrice).toLocaleString('en-IN')}
-              </span>
-            )}
           </div>
         </div>
       </div>
@@ -172,15 +174,15 @@ export function ProductCard({ product }) {
         maxWidth="max-w-2xl"
       >
         <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-          <div className="aspect-square bg-slate-50 rounded-lg overflow-hidden border border-slate-100">
+          <div className="aspect-square bg-slate-50 rounded-[2px] overflow-hidden border border-slate-200">
             <img src={mainImage} alt={name} className="w-full h-full object-cover" />
           </div>
 
           <div className="flex flex-col justify-between">
             <div>
-              <Badge variant="primary" size="sm" className="mb-2">
+              <span className="px-2 py-0.5 bg-blue-50 text-primary border border-blue-200 text-[10px] font-bold uppercase rounded-[2px] inline-block mb-2">
                 {optionsLabel || 'Smart Utility'}
-              </Badge>
+              </span>
 
               <h2 className="text-lg font-bold text-slate-900 mb-2 leading-snug">{name}</h2>
 
@@ -194,9 +196,9 @@ export function ProductCard({ product }) {
                   </span>
                 )}
                 {hasDiscount && (
-                  <Badge variant="success" size="sm">
-                    {discountPercent}% OFF
-                  </Badge>
+                  <span className="px-1.5 py-0.5 bg-emerald-600 text-white text-[10px] font-bold rounded-[2px]">
+                    SAVE {discountPercent}%
+                  </span>
                 )}
               </div>
 
@@ -206,7 +208,7 @@ export function ProductCard({ product }) {
               </p>
             </div>
 
-            <div className="space-y-2.5 pt-4 border-t border-slate-100">
+            <div className="space-y-2.5 pt-4 border-t border-slate-200">
               <Button
                 onClick={(e) => {
                   handleQuickAdd(e);
@@ -224,9 +226,9 @@ export function ProductCard({ product }) {
               <Link
                 to={`/product/${slug}`}
                 onClick={() => setIsQuickViewOpen(false)}
-                className="block text-center text-xs font-semibold text-primary hover:underline"
+                className="block text-center text-xs font-bold text-primary hover:underline uppercase tracking-wide"
               >
-                View Full Product Specifications & Details &rarr;
+                Full Product Specifications & Details &rarr;
               </Link>
             </div>
           </div>
