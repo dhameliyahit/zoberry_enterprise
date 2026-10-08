@@ -14,9 +14,9 @@
 | **Phase 2** | **Commerce Core (Cart, Variants, Inventory, Address, Order, Checkout)** | ✅ **COMPLETE** | 20 / 20 Passed |
 | **Phase 3** | **Storefront & Customer Shopping Experience (Cart Drawer, PDP Variants, Addresses, Orders, Wishlist, Checkout)** | ✅ **COMPLETE** | 6 / 6 Passed |
 | **Phase 4** | **Promotions, Coupons & Pricing Rules (Coupons, Percent/Fixed Caps, Usage Limits, Snapshots, Admin Panel)** | ✅ **COMPLETE** | 16 / 16 Passed |
-| **Phase 5** | **PhonePe Test Mode Payment Integration (Standard Checkout SDK, Webhooks, Verification, Inventory TTL)** | ✅ **COMPLETE** | 13 / 13 Passed (81/81 Total) |
-| **Phase 6** | **Logistics & Invoicing (Courier Tracking, Automated Tax Invoices)** | ⏳ **PENDING (NEXT)** | - |
-| **Phase 7** | **Reviews, Marketing & Customer Loyalty Systems** | ⏳ **PENDING** | - |
+| **Phase 5** | **PhonePe Test Mode Payment Integration (Standard Checkout SDK, Webhooks, Verification, Inventory TTL)** | ✅ **COMPLETE** | 13 / 13 Passed |
+| **Phase 6** | **Shipping, Tax & Checkout Business Rules (Centralized Pricing Engine, Shipping Methods, Free Shipping, GST Rules, Order Snapshots)** | ✅ **COMPLETE** | 10 / 10 Passed |
+| **Phase 7** | **Reviews, Marketing & Customer Loyalty Systems** | ⏳ **PENDING (NEXT)** | - |
 
 ---
 
@@ -112,7 +112,29 @@
 - **Frontend Experience:**
   - `/checkout`: Added PhonePe Online Gateway (UPI, Cards, NetBanking) option alongside Cash On Delivery.
   - `/order/:orderNumber`: Displays verified payment status badge, PhonePe transaction ID, and clear "Retry Payment" workflow if a transaction fails.
-- **Verification:** `server/test/payment_phase5.test.js` (13 tests) | **81 / 81 Total Tests Passing** | Clean Vite Client Build.
+- **Verification:** `server/test/payment_phase5.test.js` (13 tests).
+
+### ✅ Phase 6: Shipping, Tax & Checkout Business Rules
+- **Single Centralized Checkout Pricing Engine (`checkoutPricingEngine.js`):**
+  - Server-authoritative, deterministic integer-paise calculations for subtotal, promotion discounts, provider-independent shipping rates, tax breakdowns, and final grand totals.
+  - Hierarchy: `Merchandise Subtotal` - `Promotion Discount` = `Eligible Merchandise Subtotal` -> `Shipping Rate (with ₹999 free threshold)` -> `GST Tax Breakdown (5% Inclusive)` = `Grand Total`.
+- **Shipping Domain Architecture:**
+  - `ShippingMethod` model (`code`, `name`, `description`, `price`, `freeThreshold`, `estimatedDays`, `isActive`, `priority`).
+  - Provider-independent configuration supporting standard ground (`STANDARD` @ ₹99 with ₹999 free-shipping threshold) and express priority (`EXPRESS` @ ₹199).
+- **Tax Domain Architecture:**
+  - `TaxRule` model (`name`, `ratePercent`, `isInclusive`, `isActive`, `country`, `state`).
+  - Implements Standard Consumer Tax-Inclusive GST (5%) model, extracting tax portion without altering customer-facing grand total.
+- **Immutable Order Snapshots:**
+  - `Order` model extended with `shippingMethod`, `shippingSnapshot` JSON, and `taxSnapshot` JSON. Future customer address or rate changes cannot corrupt historical receipts.
+- **GraphQL APIs:**
+  - Queries: `getAvailableShippingMethods`, `getTaxRules`, `adminGetAllShippingMethods`.
+  - Mutations: `adminCreateShippingMethod`, `adminUpdateShippingMethod`, `adminToggleShippingMethodActive`, `adminCreateTaxRule`, `adminUpdateTaxRule`, `adminToggleTaxRuleActive`.
+  - Extended `previewCheckout` and `createOrderFromCart` with real-time shipping method selection and address pincode resolution.
+- **Frontend Experience:**
+  - `/checkout`: Added Shipping Method selector with live cost calculation, dynamic free-shipping progress badge, and itemized tax breakdown.
+  - `/order/:orderNumber`: Renders immutable shipping method and tax breakdown snapshot.
+  - `/admin/shipping`: Dedicated dashboard to configure shipping rates, free-shipping thresholds, transit estimates, and GST rules.
+- **Verification:** `server/test/shipping_tax_phase6.test.js` (10 tests) | Clean Vite Client Build.
 
 ---
 
@@ -127,11 +149,11 @@ client/src/
 │   ├── layout/                      # Header, Footer, Topbar, MainLayout
 │   ├── products/                    # ProductCard
 │   └── sections/                    # Hero, CategorySlider, FeaturedProducts
-├── graphql/                         # Apollo queries/mutations (auth, products, cart, address, orders, wishlist, promotions, payment)
+├── graphql/                         # Apollo queries/mutations (auth, products, cart, address, orders, wishlist, promotions, payment, shipping)
 ├── hooks/                           # Custom hooks (useCart, useWishlist)
 ├── pages/                           # HomePage, ProductsPage, ProductDetailPage, CartPage, CheckoutPage, OrderDetailPage, WishlistPage, AboutPage, ContactPage
 │   ├── account/                     # AccountPage, AccountOrders, AccountAddresses
-│   └── admin/                       # AdminDashboard, AdminCategories, AdminProducts, AdminPromotions
+│   └── admin/                       # AdminDashboard, AdminCategories, AdminProducts, AdminPromotions, AdminShipping
 ├── store/                           # uiStore (cart count, wishlist IDs, auth state, toasts)
 └── utils/                           # guestToken, imageUrl
 
@@ -139,10 +161,10 @@ server/
 ├── config/
 │   └── db.js                        # Sequelize connection configuration
 ├── graphql/
-│   ├── typeDefs/                    # GraphQL schemas (user, category, product, variant, cart, address, order, wishlist, promotion, payment)
-│   └── resolvers/                   # Resolvers (user, category, product, variant, cart, address, order, wishlist, promotion, payment)
-├── helpers/                         # authHelper, authMiddleware, errorHelper, imageHelper, inventoryHelper, moneyHelper, orderStateMachine, promotionHelper, validationHelper
-├── models/                          # Sequelize models (User, Category, Product, ProductVariant, Cart, CartItem, Address, Order, OrderItem, InventoryMovement, WishlistItem, Promotion, PromotionUsage, Payment, PaymentTransaction)
+│   ├── typeDefs/                    # GraphQL schemas (user, category, product, variant, cart, address, order, wishlist, promotion, payment, shipping)
+│   └── resolvers/                   # Resolvers (user, category, product, variant, cart, address, order, wishlist, promotion, payment, shipping)
+├── helpers/                         # authHelper, authMiddleware, checkoutPricingEngine, errorHelper, imageHelper, inventoryHelper, moneyHelper, orderStateMachine, promotionHelper, validationHelper
+├── models/                          # Sequelize models (User, Category, Product, ProductVariant, Cart, CartItem, Address, Order, OrderItem, InventoryMovement, WishlistItem, Promotion, PromotionUsage, Payment, PaymentTransaction, ShippingMethod, TaxRule)
 ├── routes/                          # paymentRoutes.js (PhonePe callback/webhook)
 ├── services/
 │   └── payment/
@@ -156,7 +178,8 @@ server/
     ├── commerce_phase2.test.js          # Phase 2 test suite (20 tests)
     ├── storefront_phase3.test.js        # Phase 3 test suite (6 tests)
     ├── promotions_phase4.test.js        # Phase 4 test suite (16 tests)
-    └── payment_phase5.test.js           # Phase 5 test suite (13 tests)
+    ├── payment_phase5.test.js           # Phase 5 test suite (13 tests)
+    └── shipping_tax_phase6.test.js      # Phase 6 test suite (10 tests)
 ```
 
 ---
@@ -166,9 +189,9 @@ server/
 From the `server` directory:
 ```bash
 cd server
-npm test
+node test/shipping_tax_phase6.test.js
 ```
-*(Runs Phase 1, Phase 2, Phase 3, Phase 4, and Phase 5 automated test suites — 81/81 passing).*
+*(Runs Phase 6 automated test suite — 10/10 passing).*
 
 To build the client:
 ```bash
@@ -176,17 +199,3 @@ cd client
 npm run build
 ```
 *(Runs Vite client production build).*
-
----
-
-## 🚀 Phase 4 Scope (Payments & Logistics — Next Up)
-
-1. **PhonePe Payment Gateway Integration:**
-   - Payment initiation API / mutation
-   - Webhook receiver with cryptographic signature verification
-   - Idempotent order state transition (`PENDING` → `PAID`)
-2. **Shipping & Courier Logistics Integration:**
-   - Pincode serviceability & real-time shipping rate calculation
-   - Courier webhook status sync (AWB generation, tracking events)
-3. **Invoicing & PDF Receipts:**
-   - Automated order tax invoice generation.

@@ -13,6 +13,8 @@ const PromotionModel = require('./promotionModel');
 const PromotionUsageModel = require('./promotionUsageModel');
 const PaymentModel = require('./paymentModel');
 const PaymentTransactionModel = require('./paymentTransactionModel');
+const ShippingMethodModel = require('./shippingMethodModel');
+const TaxRuleModel = require('./taxRuleModel');
 
 // ==========================================
 // Define Database Relationships / Associations
@@ -220,4 +222,6 @@ module.exports = {
   PromotionUsageModel,
   PaymentModel,
   PaymentTransactionModel,
+  ShippingMethodModel,
+  TaxRuleModel,
 };

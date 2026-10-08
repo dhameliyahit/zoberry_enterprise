@@ -3,7 +3,7 @@ import { useParams, useSearchParams, Link } from 'react-router-dom';
 import { useQuery, useMutation } from '@apollo/client';
 import {
   FiCheckCircle, FiPackage, FiTruck, FiMapPin,
-  FiClock, FiArrowRight, FiShoppingBag, FiCreditCard, FiAlertTriangle, FiRefreshCw
+  FiClock, FiArrowRight, FiShoppingBag, FiCreditCard, FiAlertTriangle, FiRefreshCw, FiTag
 } from 'react-icons/fi';
 import { GET_ORDER_BY_NUMBER } from '../graphql/orders';
 import { GET_PAYMENT_STATUS, INITIATE_PAYMENT } from '../graphql/payment';
@@ -85,6 +85,8 @@ const OrderDetailPage = () => {
   }
 
   const shipping = order.shippingAddressSnapshot || {};
+  const shippingSnapshot = order.shippingSnapshot || {};
+  const taxSnapshot = order.taxSnapshot || {};
   const dateStr = order.createdAt
     ? new Date(order.createdAt).toLocaleDateString('en-IN', {
         day: 'numeric',
@@ -190,12 +192,16 @@ const OrderDetailPage = () => {
           </div>
 
           <div className="bg-white rounded-xl border border-gray-200 p-5 shadow-xs">
-            <span className="text-[10px] font-bold text-gray-400 uppercase block mb-1">Fulfillment Status</span>
+            <span className="text-[10px] font-bold text-gray-400 uppercase block mb-1">Shipping & Delivery</span>
             <div className="flex items-center gap-2">
               <FiTruck size={15} className="text-primary" />
-              <span className="font-bold text-sm text-gray-900 uppercase">{order.fulfillmentStatus}</span>
+              <span className="font-bold text-sm text-gray-900">
+                {shippingSnapshot.name || order.shippingMethod || 'Standard Delivery'}
+              </span>
             </div>
-            <span className="text-[11px] text-gray-500 mt-2 block">Preparing for dispatch</span>
+            <span className="text-[11px] text-gray-500 mt-2 block">
+              Est: {shippingSnapshot.estimatedDays || '3 - 5 business days'}
+            </span>
           </div>
         </div>
 
@@ -271,16 +277,24 @@ const OrderDetailPage = () => {
                   <span>Subtotal</span>
                   <span className="font-semibold text-gray-900">Rs. {order.subtotal.toLocaleString()}</span>
                 </div>
+                {order.discountAmount > 0 && (
+                  <div className="flex justify-between text-emerald-600 font-semibold">
+                    <span className="flex items-center gap-1">
+                      <FiTag size={12} /> Coupon Discount ({order.couponCode || 'APPLIED'})
+                    </span>
+                    <span>- Rs. {order.discountAmount.toLocaleString()}</span>
+                  </div>
+                )}
                 <div className="flex justify-between text-gray-600">
-                  <span>Shipping</span>
+                  <span>Shipping ({shippingSnapshot.name || order.shippingMethod || 'Standard'})</span>
                   <span className="font-semibold text-emerald-600">
                     {order.shippingAmount === 0 ? 'FREE' : `Rs. ${order.shippingAmount}`}
                   </span>
                 </div>
                 <div className="flex justify-between text-gray-600">
-                  <span>Taxes</span>
+                  <span>GST (Included)</span>
                   <span className="text-gray-500">
-                    {order.taxAmount === 0 ? 'Included' : `Rs. ${order.taxAmount}`}
+                    {taxSnapshot.ratePercent ? `${taxSnapshot.ratePercent}% (Rs. ${order.taxAmount})` : 'Included'}
                   </span>
                 </div>
                 <div className="flex justify-between items-baseline pt-2 border-t border-gray-100">

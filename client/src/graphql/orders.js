@@ -1,19 +1,67 @@
 import { gql } from '@apollo/client';
 
 export const PREVIEW_CHECKOUT = gql`
-  query PreviewCheckout($guestSessionToken: String, $couponCode: String) {
-    previewCheckout(guestSessionToken: $guestSessionToken, couponCode: $couponCode) {
+  query PreviewCheckout(
+    $guestSessionToken: String
+    $couponCode: String
+    $shippingMethodCode: String
+    $shippingAddressId: ID
+    $postalCode: String
+  ) {
+    previewCheckout(
+      guestSessionToken: $guestSessionToken
+      couponCode: $couponCode
+      shippingMethodCode: $shippingMethodCode
+      shippingAddressId: $shippingAddressId
+      postalCode: $postalCode
+    ) {
       itemCount
       subtotal
       discountAmount
       couponCode
-      couponDiscount
-      couponMessage
+      appliedCoupon {
+        promotionId
+        code
+        name
+        type
+        discountType
+        discountValue
+        maximumDiscount
+        actualDiscountAmount
+      }
       shippingAmount
+      shippingMethod
       taxAmount
       grandTotal
       isReadyForCheckout
       validationErrors
+      availableShippingMethods {
+        id
+        code
+        name
+        description
+        basePrice
+        actualPrice
+        freeThreshold
+        isFree
+        estimatedDays
+        isActive
+      }
+      shippingSnapshot {
+        code
+        name
+        basePrice
+        actualShippingFee
+        freeThreshold
+        isFree
+        estimatedDays
+      }
+      taxSnapshot {
+        name
+        ratePercent
+        isInclusive
+        taxAmount
+      }
       items {
         id
         productId
@@ -54,7 +102,10 @@ export const CREATE_ORDER_FROM_CART = gql`
       couponCode
       discountAmount
       shippingAmount
+      shippingMethod
+      shippingSnapshot
       taxAmount
+      taxSnapshot
       grandTotal
       shippingAddressSnapshot
       billingAddressSnapshot
@@ -87,6 +138,7 @@ export const GET_MY_ORDERS = gql`
       currency
       subtotal
       shippingAmount
+      shippingMethod
       taxAmount
       grandTotal
       createdAt
@@ -114,8 +166,13 @@ export const GET_MY_ORDER = gql`
       fulfillmentStatus
       currency
       subtotal
+      discountAmount
+      couponCode
       shippingAmount
+      shippingMethod
+      shippingSnapshot
       taxAmount
+      taxSnapshot
       grandTotal
       shippingAddressSnapshot
       notes
@@ -149,8 +206,13 @@ export const GET_ORDER_BY_NUMBER = gql`
       fulfillmentStatus
       currency
       subtotal
+      discountAmount
+      couponCode
       shippingAmount
+      shippingMethod
+      shippingSnapshot
       taxAmount
+      taxSnapshot
       grandTotal
       shippingAddressSnapshot
       notes

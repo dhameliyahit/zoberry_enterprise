@@ -3,7 +3,7 @@ import { useNavigate, Link } from 'react-router-dom';
 import { useQuery, useMutation, useLazyQuery } from '@apollo/client';
 import {
   FiCheckCircle, FiAlertCircle, FiLock, FiTruck, FiMapPin,
-  FiShoppingBag, FiArrowRight, FiUser, FiCreditCard, FiTag, FiX
+  FiShoppingBag, FiArrowRight, FiUser, FiCreditCard, FiTag, FiX, FiInfo
 } from 'react-icons/fi';
 import { PREVIEW_CHECKOUT, CREATE_ORDER_FROM_CART } from '../graphql/orders';
 import { VALIDATE_COUPON } from '../graphql/promotions';
@@ -22,6 +22,9 @@ const CheckoutPage = () => {
 
   // Payment Method Selection
   const [selectedPaymentMethod, setSelectedPaymentMethod] = useState('PHONEPE');
+
+  // Shipping Method Selection
+  const [selectedShippingMethod, setSelectedShippingMethod] = useState('STANDARD');
 
   // Guest Address State
   const [guestAddress, setGuestAddress] = useState({
@@ -48,7 +51,7 @@ const CheckoutPage = () => {
   const [appliedCouponCode, setAppliedCouponCode] = useState('');
   const [couponError, setCouponError] = useState('');
 
-  // 1. Fetch server-authoritative checkout preview with couponCode
+  // 1. Fetch server-authoritative checkout preview with couponCode & shippingMethodCode
   const {
     data: previewData,
     loading: previewLoading,
@@ -58,6 +61,9 @@ const CheckoutPage = () => {
     variables: {
       guestSessionToken,
       couponCode: appliedCouponCode || undefined,
+      shippingMethodCode: selectedShippingMethod,
+      shippingAddressId: user && selectedAddressId ? selectedAddressId : undefined,
+      postalCode: !user && guestAddress.postalCode ? guestAddress.postalCode : undefined,
     },
     fetchPolicy: 'network-only',
   });
@@ -84,6 +90,24 @@ const CheckoutPage = () => {
   const preview = previewData?.previewCheckout;
   const items = preview?.items || [];
   const validationErrors = preview?.validationErrors || [];
+  const availableShippingMethods = preview?.availableShippingMethods || [
+    {
+      code: 'STANDARD',
+      name: 'Standard Delivery',
+      description: 'Safe and reliable ground shipping to your doorstep',
+      actualPrice: 99.00,
+      isFree: false,
+      estimatedDays: '3 - 5 business days',
+    },
+    {
+      code: 'EXPRESS',
+      name: 'Express Priority Delivery',
+      description: 'Expedited courier priority dispatch',
+      actualPrice: 199.00,
+      isFree: false,
+      estimatedDays: '1 - 2 business days',
+    },
+  ];
   const isReady = preview?.isReadyForCheckout && validationErrors.length === 0;
 
   // 3. Order & Payment Mutations
@@ -169,6 +193,7 @@ const CheckoutPage = () => {
         notes: orderNotes.trim() || undefined,
         guestSessionToken: user ? undefined : guestSessionToken,
         couponCode: appliedCouponCode || undefined,
+        shippingMethodCode: selectedShippingMethod,
       };
 
       if (user) {
@@ -256,6 +281,11 @@ const CheckoutPage = () => {
     );
   }
 
+  const eligibleSubtotal = Math.max(0, (preview?.subtotal || 0) - (preview?.discountAmount || 0));
+  const freeThreshold = 999;
+  const isFreeEligible = eligibleSubtotal >= freeThreshold;
+  const neededForFree = freeThreshold - eligibleSubtotal;
+
   return (
     <div className="bg-[#f8fafc] min-h-screen py-8 md:py-12">
       <SEO
@@ -278,6 +308,24 @@ const CheckoutPage = () => {
           </div>
         </div>
 
+        {/* Free Shipping Alert Banner */}
+        {isFreeEligible ? (
+          <div className="mb-6 p-3.5 bg-emerald-50 border border-emerald-200 rounded-lg text-xs font-semibold text-emerald-800 flex items-center gap-2">
+            <FiCheckCircle className="text-emerald-600 shrink-0" size={16} />
+            <span>🎉 You qualify for <strong>FREE Standard Delivery</strong> (Orders over Rs. 999).</span>
+          </div>
+        ) : (
+          <div className="mb-6 p-3.5 bg-blue-50 border border-blue-200 rounded-lg text-xs text-blue-800 flex items-center justify-between gap-2">
+            <div className="flex items-center gap-2">
+              <FiTruck className="text-primary shrink-0" size={16} />
+              <span>Add <strong>Rs. {neededForFree.toLocaleString()}</strong> more to your order to unlock <strong>FREE Standard Shipping</strong>!</span>
+            </div>
+            <Link to="/products" className="text-primary font-bold hover:underline shrink-0 text-xs">
+              + Add Items
+            </Link>
+          </div>
+        )}
+
         {/* Validation Errors Notice */}
         {validationErrors.length > 0 && (
           <div className="mb-6 p-4 bg-red-50 border border-red-200 rounded text-xs text-red-700 space-y-1">
@@ -298,7 +346,7 @@ const CheckoutPage = () => {
         )}
 
         <form onSubmit={handlePlaceOrder} className="grid grid-cols-1 lg:grid-cols-12 gap-8">
-          {/* Left: Customer Information & Delivery Address (7 cols) */}
+          {/* Left: Customer Information & Delivery Address & Shipping Method (7 cols) */}
           <div className="lg:col-span-7 space-y-6">
             
             {/* Step 1: Customer Account Check */}
@@ -337,7 +385,7 @@ const CheckoutPage = () => {
             {/* Step 2: Shipping Address */}
             <div className="bg-white rounded-lg border border-gray-200 p-6 shadow-xs space-y-4">
               <h2 className="text-base font-bold text-gray-900 flex items-center gap-2 border-b border-gray-100 pb-3">
-                <FiMapPin className="text-primary" /> Delivery Shipping Address
+                <FiMapPin className="text-primary" /> 1. Delivery Shipping Address
               </h2>
 
               {user ? (
@@ -529,10 +577,67 @@ const CheckoutPage = () => {
               )}
             </div>
 
-            {/* Step 3: Payment Method Selection */}
+            {/* Step 3: Shipping Method Selection */}
             <div className="bg-white rounded-lg border border-gray-200 p-6 shadow-xs space-y-4">
               <h2 className="text-base font-bold text-gray-900 flex items-center gap-2 border-b border-gray-100 pb-3">
-                <FiCreditCard className="text-primary" /> Payment Method
+                <FiTruck className="text-primary" /> 2. Shipping Delivery Method
+              </h2>
+              
+              <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
+                {availableShippingMethods.map((method) => {
+                  const isSelected = selectedShippingMethod === method.code;
+                  return (
+                    <label
+                      key={method.code}
+                      onClick={() => setSelectedShippingMethod(method.code)}
+                      className={`p-4 rounded-lg border cursor-pointer flex flex-col justify-between transition-all ${
+                        isSelected
+                          ? 'border-primary bg-blue-50/30 ring-1 ring-primary'
+                          : 'border-gray-200 hover:border-gray-300'
+                      }`}
+                    >
+                      <div>
+                        <div className="flex items-center justify-between mb-1.5">
+                          <span className="text-xs font-bold text-gray-900 flex items-center gap-2">
+                            <input
+                              type="radio"
+                              name="shippingMethod"
+                              checked={isSelected}
+                              onChange={() => setSelectedShippingMethod(method.code)}
+                              className="accent-primary"
+                            />
+                            {method.name}
+                          </span>
+                          {method.isFree ? (
+                            <span className="text-[10px] font-extrabold text-emerald-700 bg-emerald-100 px-2 py-0.5 rounded uppercase">
+                              FREE
+                            </span>
+                          ) : (
+                            <span className="text-xs font-bold text-gray-900">
+                              Rs. {method.actualPrice}
+                            </span>
+                          )}
+                        </div>
+                        <p className="text-[11px] text-gray-500 leading-relaxed">
+                          {method.description}
+                        </p>
+                      </div>
+                      <div className="mt-3 pt-2 border-t border-gray-100 text-[11px] text-gray-400 flex items-center justify-between">
+                        <span>Est: {method.estimatedDays || 'Standard'}</span>
+                        {method.freeThreshold && !method.isFree && (
+                          <span className="text-[10px] text-primary">Free on Rs. {method.freeThreshold}+</span>
+                        )}
+                      </div>
+                    </label>
+                  );
+                })}
+              </div>
+            </div>
+
+            {/* Step 4: Payment Method Selection */}
+            <div className="bg-white rounded-lg border border-gray-200 p-6 shadow-xs space-y-4">
+              <h2 className="text-base font-bold text-gray-900 flex items-center gap-2 border-b border-gray-100 pb-3">
+                <FiCreditCard className="text-primary" /> 3. Payment Method
               </h2>
               
               {/* PhonePe Option */}
@@ -598,7 +703,7 @@ const CheckoutPage = () => {
               </label>
             </div>
 
-            {/* Step 4: Optional Order Notes */}
+            {/* Step 5: Optional Order Notes */}
             <div className="bg-white rounded-lg border border-gray-200 p-5 shadow-xs">
               <label className="block text-xs font-bold text-gray-700 uppercase mb-2">
                 Order Notes / Special Instructions (Optional)
@@ -725,15 +830,15 @@ const CheckoutPage = () => {
                   </div>
                 )}
                 <div className="flex justify-between text-gray-600">
-                  <span>Shipping</span>
+                  <span>Shipping ({preview?.shippingSnapshot?.name || preview?.shippingMethod || selectedShippingMethod})</span>
                   <span className="font-semibold text-emerald-600">
                     {preview?.shippingAmount === 0 ? 'FREE' : `Rs. ${preview?.shippingAmount}`}
                   </span>
                 </div>
                 <div className="flex justify-between text-gray-600">
-                  <span>Estimated Tax</span>
+                  <span>GST (Included)</span>
                   <span className="text-gray-500">
-                    {preview?.taxAmount === 0 ? 'Included' : `Rs. ${preview?.taxAmount}`}
+                    {preview?.taxSnapshot?.ratePercent ? `${preview.taxSnapshot.ratePercent}% (Rs. ${preview.taxAmount})` : 'Included'}
                   </span>
                 </div>
                 <div className="flex justify-between items-baseline pt-3 border-t border-gray-100">

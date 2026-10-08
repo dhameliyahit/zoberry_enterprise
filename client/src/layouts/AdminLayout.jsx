@@ -13,7 +13,8 @@ import {
   FiMenu,
   FiX,
   FiUser,
-  FiTag
+  FiTag,
+  FiTruck
 } from 'react-icons/fi';
 
 const AdminLayout = () => {
@@ -37,6 +38,7 @@ const AdminLayout = () => {
     { name: 'Products', path: '/admin/products', icon: <FiBox size={20} /> },
     { name: 'Categories', path: '/admin/categories', icon: <FiList size={20} /> },
     { name: 'Promotions', path: '/admin/promotions', icon: <FiTag size={20} /> },
+    { name: 'Shipping & Tax', path: '/admin/shipping', icon: <FiTruck size={20} /> },
   ];
 
   // Dynamically get the current page title based on the route

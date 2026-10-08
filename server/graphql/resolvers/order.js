@@ -12,6 +12,7 @@ const {
 } = require('../../models');
 const { requireAuth, requireAdmin, requireOwnerOrAdmin } = require('../../helpers/authMiddleware');
 const { calculateTotals, calculateLineTotal, toPaise, fromPaise } = require('../../helpers/moneyHelper');
+const { calculateCheckoutTotals } = require('../../helpers/checkoutPricingEngine');
 const {
   checkItemStockAndDetails,
   reserveStockForOrder,
@@ -88,7 +89,7 @@ const orderResolvers = {
       return order;
     },
 
-    previewCheckout: async (parent, { guestSessionToken, couponCode }, context) => {
+    previewCheckout: async (parent, { guestSessionToken, couponCode, shippingMethodCode, shippingAddressId, postalCode }, context) => {
       const cartInstance = await getOrCreateCartInstance(context, guestSessionToken);
       const cart = await formatCartResponse(cartInstance.id);
 
@@ -105,61 +106,51 @@ const orderResolvers = {
         }
       }
 
-      let discountAmount = 0;
-      let appliedCoupon = null;
-      let cleanCouponCode = null;
-
-      if (couponCode && typeof couponCode === 'string' && couponCode.trim()) {
-        cleanCouponCode = normalizeCouponCode(couponCode);
-        const promotion = await PromotionModel.findOne({
-          where: { code: cleanCouponCode },
+      let resolvedPostalCode = postalCode;
+      if (!resolvedPostalCode && shippingAddressId && context?.user?.id) {
+        const address = await AddressModel.findOne({
+          where: { id: shippingAddressId, userId: context.user.id },
         });
-
-        if (!promotion) {
-          validationErrors.push(`Coupon "${cleanCouponCode}" is invalid.`);
-        } else {
-          const subtotalPaise = toPaise(cart.subtotal);
-          const eligibility = await validatePromotionEligibility(promotion, {
-            cartItems: cart.items,
-            subtotalPaise,
-            user: context?.user,
-          });
-
-          if (!eligibility.isValid) {
-            validationErrors.push(eligibility.error || 'Coupon cannot be applied.');
-          } else {
-            const result = calculatePromotionDiscount(
-              promotion,
-              eligibility.eligibleSubtotalPaise,
-              subtotalPaise
-            );
-            discountAmount = result.discountAmount;
-            appliedCoupon = {
-              promotionId: promotion.id,
-              code: promotion.code,
-              name: promotion.name,
-              type: promotion.type,
-              discountType: promotion.discountType,
-              discountValue: promotion.discountValue,
-              maximumDiscount: promotion.maximumDiscount,
-              actualDiscountAmount: discountAmount,
-            };
-          }
+        if (address) {
+          resolvedPostalCode = address.postalCode;
         }
       }
 
-      const totals = calculateTotals(cart.items, { discountAmount });
+      const totals = await calculateCheckoutTotals({
+        items: cart.items,
+        shippingMethodCode: shippingMethodCode || 'STANDARD',
+        couponCode,
+        user: context?.user,
+        postalCode: resolvedPostalCode,
+      });
+
+      if (couponCode && totals.couponMessage && !totals.appliedPromotion) {
+        validationErrors.push(totals.couponMessage);
+      }
 
       return {
         items: cart.items,
         itemCount: cart.itemCount,
         subtotal: totals.subtotal,
         discountAmount: totals.discountAmount,
-        couponCode: cleanCouponCode,
-        appliedCoupon,
+        couponCode: totals.couponCode,
+        appliedCoupon: totals.appliedPromotion ? {
+          promotionId: totals.appliedPromotion.id,
+          code: totals.appliedPromotion.code,
+          name: totals.appliedPromotion.name,
+          type: totals.appliedPromotion.type,
+          discountType: totals.appliedPromotion.discountType,
+          discountValue: totals.appliedPromotion.discountValue,
+          maximumDiscount: totals.appliedPromotion.maximumDiscount,
+          actualDiscountAmount: totals.discountAmount,
+        } : null,
         shippingAmount: totals.shippingAmount,
+        shippingMethod: totals.shippingMethod,
         taxAmount: totals.taxAmount,
         grandTotal: totals.grandTotal,
+        availableShippingMethods: totals.availableShippingMethods,
+        shippingSnapshot: totals.shippingSnapshot,
+        taxSnapshot: totals.taxSnapshot,
         isReadyForCheckout: validationErrors.length === 0 && cart.items.length > 0,
         validationErrors,
       };
@@ -210,6 +201,7 @@ const orderResolvers = {
         guestPhone,
         guestSessionToken,
         couponCode,
+        shippingMethodCode,
         idempotencyKey,
         notes,
       } = input;
@@ -302,7 +294,7 @@ const orderResolvers = {
         };
       }
 
-      // 4. Atomic Transaction: Validate stock, validate promotion, reserve inventory, create immutable order
+      // 4. Atomic Transaction: Validate stock, validate promotion & shipping & tax, reserve inventory, create immutable order
       return await sequelize.transaction(async (t) => {
         // Double-check idempotency key inside the transaction lock
         const lockedExisting = await OrderModel.findOne({
@@ -350,55 +342,26 @@ const orderResolvers = {
           });
         }
 
-        let baseTotals = calculateTotals(calculationItems);
-        let appliedDiscountAmount = 0;
-        let appliedPromotion = null;
-        let appliedCouponCode = null;
-        let discountSnapshot = null;
+        // Run centralized authoritative checkout pricing calculation
+        const calculation = await calculateCheckoutTotals({
+          items: calculationItems,
+          shippingMethodCode: shippingMethodCode || 'STANDARD',
+          couponCode,
+          user: context?.user,
+          guestEmail: guestEmail?.trim() || null,
+          postalCode: addressSnapshot.postalCode,
+          transaction: t,
+        });
 
-        // Process Coupon / Promotion if provided
-        if (couponCode && typeof couponCode === 'string' && couponCode.trim()) {
-          appliedCouponCode = normalizeCouponCode(couponCode);
-          appliedPromotion = await PromotionModel.findOne({
-            where: { code: appliedCouponCode },
-            transaction: t,
-            lock: t.LOCK.UPDATE,
+        if (couponCode && !calculation.appliedPromotion) {
+          throw new GraphQLError(calculation.couponMessage || `Coupon "${couponCode}" is invalid.`, {
+            extensions: { code: 'BAD_USER_INPUT' },
           });
-
-          if (!appliedPromotion) {
-            throw new GraphQLError(`Coupon "${appliedCouponCode}" is invalid.`, {
-              extensions: { code: 'BAD_USER_INPUT' },
-            });
-          }
-
-          const eligibility = await validatePromotionEligibility(appliedPromotion, {
-            cartItems: cartWithItems.items,
-            subtotalPaise: baseTotals._raw.subtotalPaise,
-            user: context?.user,
-            guestEmail: guestEmail?.trim() || null,
-            transaction: t,
-          });
-
-          if (!eligibility.isValid) {
-            throw new GraphQLError(eligibility.error || 'Coupon cannot be applied.', {
-              extensions: { code: 'BAD_USER_INPUT' },
-            });
-          }
-
-          const result = calculatePromotionDiscount(
-            appliedPromotion,
-            eligibility.eligibleSubtotalPaise,
-            baseTotals._raw.subtotalPaise
-          );
-
-          appliedDiscountAmount = result.discountAmount;
-          discountSnapshot = createDiscountSnapshot(appliedPromotion, appliedDiscountAmount);
         }
 
-        const totals = calculateTotals(calculationItems, { discountAmount: appliedDiscountAmount });
         const orderNumber = generateOrderNumber();
 
-        // Create the Order record with authoritative financial snapshot
+        // Create the Order record with authoritative financial and shipping/tax snapshots
         const createdOrder = await OrderModel.create({
           orderNumber,
           userId: isAuthUser ? context.user.id : null,
@@ -407,25 +370,28 @@ const orderResolvers = {
           status: ORDER_STATUS.PENDING,
           paymentStatus: PAYMENT_STATUS.PENDING,
           currency: 'INR',
-          subtotal: totals.subtotal,
-          discountAmount: totals.discountAmount,
-          couponCode: appliedCouponCode,
-          discountSnapshot,
-          shippingAmount: totals.shippingAmount,
-          taxAmount: totals.taxAmount,
-          grandTotal: totals.grandTotal,
+          subtotal: calculation.subtotal,
+          discountAmount: calculation.discountAmount,
+          couponCode: calculation.couponCode,
+          discountSnapshot: calculation.discountSnapshot,
+          shippingAmount: calculation.shippingAmount,
+          shippingMethod: calculation.shippingMethod,
+          shippingSnapshot: calculation.shippingSnapshot,
+          taxAmount: calculation.taxAmount,
+          taxSnapshot: calculation.taxSnapshot,
+          grandTotal: calculation.grandTotal,
           shippingAddressSnapshot: addressSnapshot,
           idempotencyKey: cleanIdempotencyKey,
           notes: notes?.trim() || null,
         }, { transaction: t });
 
         // Record promotion usage atomically
-        if (appliedPromotion) {
-          await recordPromotionUsage(appliedPromotion, {
+        if (calculation.appliedPromotion) {
+          await recordPromotionUsage(calculation.appliedPromotion, {
             userId: isAuthUser ? context.user.id : null,
             guestEmail: guestEmail?.trim() || null,
             orderId: createdOrder.id,
-            discountAmount: totals.discountAmount,
+            discountAmount: calculation.discountAmount,
             transaction: t,
           });
         }

@@ -124,6 +124,21 @@ const OrderModel = sequelize.define('Order', {
     allowNull: true,
     comment: 'Immutable snapshot of applied promotion/discount rules and calculations',
   },
+  shippingMethod: {
+    type: DataTypes.STRING(32),
+    allowNull: true,
+    comment: 'Selected shipping method code e.g. STANDARD, EXPRESS',
+  },
+  shippingSnapshot: {
+    type: DataTypes.JSON,
+    allowNull: true,
+    comment: 'Immutable snapshot of shipping rate, delivery estimates, and method details',
+  },
+  taxSnapshot: {
+    type: DataTypes.JSON,
+    allowNull: true,
+    comment: 'Immutable snapshot of tax rates and itemized tax breakdowns',
+  },
   idempotencyKey: {
     type: DataTypes.STRING(128),
     allowNull: true,
