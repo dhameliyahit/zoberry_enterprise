@@ -2,18 +2,18 @@ import React, { useState } from 'react';
 import { useMutation, gql } from '@apollo/client';
 import { useUIStore } from '../../store/uiStore';
 import {
-  Lock,
-  Mail,
-  AlertCircle,
-  ShieldCheck,
-  Eye,
-  EyeOff,
-  Package,
-  Truck,
-  Layers,
-  ArrowRight,
-  CheckCircle2
-} from 'lucide-react';
+  FiLock,
+  FiMail,
+  FiAlertCircle,
+  FiShield,
+  FiEye,
+  FiEyeOff,
+  FiPackage,
+  FiTruck,
+  FiLayers,
+  FiArrowRight,
+  FiCheckCircle
+} from 'react-icons/fi';
 import { Button, Input, Card, Badge } from '../../components/ui';
 
 const LOGIN_ADMIN = gql`
@@ -124,21 +124,21 @@ const AdminLogin = () => {
             <div className="space-y-3.5 text-xs text-slate-300">
               <div className="flex items-center gap-3">
                 <div className="w-7 h-7 rounded-lg bg-slate-800 border border-slate-700/80 text-primary flex items-center justify-center shrink-0">
-                  <Package className="w-3.5 h-3.5" />
+                  <FiPackage className="w-3.5 h-3.5" />
                 </div>
                 <span>Catalog & SKU inventory synchronization</span>
               </div>
 
               <div className="flex items-center gap-3">
                 <div className="w-7 h-7 rounded-lg bg-slate-800 border border-slate-700/80 text-emerald-400 flex items-center justify-center shrink-0">
-                  <Truck className="w-3.5 h-3.5" />
+                  <FiTruck className="w-3.5 h-3.5" />
                 </div>
                 <span>Phase 7 fulfillment & AWB tracking engine</span>
               </div>
 
               <div className="flex items-center gap-3">
                 <div className="w-7 h-7 rounded-lg bg-slate-800 border border-slate-700/80 text-amber-400 flex items-center justify-center shrink-0">
-                  <Layers className="w-3.5 h-3.5" />
+                  <FiLayers className="w-3.5 h-3.5" />
                 </div>
                 <span>PhonePe verified payments & coupon discounts</span>
               </div>
@@ -148,7 +148,7 @@ const AdminLogin = () => {
           {/* Bottom Trust & Security Banner */}
           <div className="relative z-10 pt-6 border-t border-slate-800/80 flex items-center justify-between text-[11px] text-slate-400">
             <div className="flex items-center gap-1.5 text-emerald-400 font-medium">
-              <ShieldCheck className="w-4 h-4" />
+              <FiShield className="w-4 h-4" />
               <span>RBAC Encrypted Session</span>
             </div>
             <span className="text-slate-500">v2.4.0</span>
@@ -179,7 +179,7 @@ const AdminLogin = () => {
               role="alert"
               className="mb-6 p-3.5 bg-red-950/60 border border-red-800/80 rounded-xl text-red-200 flex items-start gap-3 text-xs"
             >
-              <AlertCircle className="w-4 h-4 text-red-400 shrink-0 mt-0.5" />
+              <FiAlertCircle className="w-4 h-4 text-red-400 shrink-0 mt-0.5" />
               <div className="flex-1 leading-relaxed">{errorMsg}</div>
             </div>
           )}
@@ -195,7 +195,7 @@ const AdminLogin = () => {
               </label>
               <div className="relative">
                 <div className="absolute inset-y-0 left-0 pl-3.5 flex items-center pointer-events-none text-slate-500">
-                  <Mail className="w-4 h-4" />
+                  <FiMail className="w-4 h-4" />
                 </div>
                 <input
                   id="admin-email"
@@ -226,7 +226,7 @@ const AdminLogin = () => {
               </div>
               <div className="relative">
                 <div className="absolute inset-y-0 left-0 pl-3.5 flex items-center pointer-events-none text-slate-500">
-                  <Lock className="w-4 h-4" />
+                  <FiLock className="w-4 h-4" />
                 </div>
                 <input
                   id="admin-password"
@@ -246,7 +246,7 @@ const AdminLogin = () => {
                   tabIndex={-1}
                   aria-label={showPassword ? 'Hide password' : 'Show password'}
                 >
-                  {showPassword ? <EyeOff className="w-4 h-4" /> : <Eye className="w-4 h-4" />}
+                  {showPassword ? <FiEyeOff className="w-4 h-4" /> : <FiEye className="w-4 h-4" />}
                 </button>
               </div>
             </div>
@@ -260,7 +260,7 @@ const AdminLogin = () => {
                 className="w-full justify-center py-2.5 font-semibold text-xs shadow-md"
                 loading={loading}
                 disabled={loading}
-                rightIcon={!loading && <ArrowRight className="w-3.5 h-3.5" />}
+                rightIcon={!loading && <FiArrowRight className="w-3.5 h-3.5" />}
               >
                 {loading ? 'Authenticating...' : 'Sign In to Operations Console'}
               </Button>

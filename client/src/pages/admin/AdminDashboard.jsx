@@ -2,9 +2,9 @@ import React from 'react';
 import { Link } from 'react-router-dom';
 import { useQuery } from '@apollo/client';
 import {
-  Package, FolderTree, Tag, Truck, ShieldCheck,
-  ArrowUpRight, Users, Plus, CheckCircle, Clock, ExternalLink
-} from 'lucide-react';
+  FiPackage, FiFolder, FiTag, FiTruck, FiShield,
+  FiArrowUpRight, FiUsers, FiPlus, FiCheckCircle, FiClock, FiExternalLink
+} from 'react-icons/fi';
 import { GET_ALL_PRODUCTS, GET_ALL_CATEGORIES } from '../../graphql/products';
 import { ADMIN_GET_ALL_PROMOTIONS } from '../../graphql/promotions';
 import { ADMIN_GET_ALL_SHIPPING_METHODS } from '../../graphql/shipping';
@@ -39,12 +39,12 @@ const AdminDashboard = () => {
         </div>
         <div className="flex items-center gap-2">
           <Link to="/admin/products">
-            <Button variant="primary" size="sm" leftIcon={<Plus className="w-4 h-4" />}>
+            <Button variant="primary" size="sm" leftIcon={<FiPlus className="w-4 h-4" />}>
               Add Product
             </Button>
           </Link>
           <Link to="/" target="_blank">
-            <Button variant="outline" size="sm" rightIcon={<ExternalLink className="w-3.5 h-3.5" />}>
+            <Button variant="outline" size="sm" rightIcon={<FiExternalLink className="w-3.5 h-3.5" />}>
               Storefront
             </Button>
           </Link>
@@ -61,11 +61,11 @@ const AdminDashboard = () => {
                 {prodLoading ? '...' : productsCount}
               </div>
               <Link to="/admin/products" className="text-xs text-primary font-semibold hover:underline mt-2 inline-flex items-center gap-1">
-                Manage Products <ArrowUpRight className="w-3 h-3" />
+                Manage Products <FiArrowUpRight className="w-3 h-3" />
               </Link>
             </div>
             <div className="w-12 h-12 rounded-xl bg-primary/10 text-primary flex items-center justify-center shrink-0">
-              <Package className="w-6 h-6" />
+              <FiPackage className="w-6 h-6" />
             </div>
           </CardBody>
         </Card>
@@ -78,11 +78,11 @@ const AdminDashboard = () => {
                 {categoriesCount}
               </div>
               <Link to="/admin/categories" className="text-xs text-primary font-semibold hover:underline mt-2 inline-flex items-center gap-1">
-                Manage Categories <ArrowUpRight className="w-3 h-3" />
+                Manage Categories <FiArrowUpRight className="w-3 h-3" />
               </Link>
             </div>
             <div className="w-12 h-12 rounded-xl bg-amber-50 text-amber-600 flex items-center justify-center shrink-0">
-              <FolderTree className="w-6 h-6" />
+              <FiFolder className="w-6 h-6" />
             </div>
           </CardBody>
         </Card>
@@ -95,11 +95,11 @@ const AdminDashboard = () => {
                 {promoCount}
               </div>
               <Link to="/admin/promotions" className="text-xs text-primary font-semibold hover:underline mt-2 inline-flex items-center gap-1">
-                Manage Coupons <ArrowUpRight className="w-3 h-3" />
+                Manage Coupons <FiArrowUpRight className="w-3 h-3" />
               </Link>
             </div>
             <div className="w-12 h-12 rounded-xl bg-emerald-50 text-emerald-600 flex items-center justify-center shrink-0">
-              <Tag className="w-6 h-6" />
+              <FiTag className="w-6 h-6" />
             </div>
           </CardBody>
         </Card>
@@ -112,11 +112,11 @@ const AdminDashboard = () => {
                 {shippingMethodsCount}
               </div>
               <Link to="/admin/shipping" className="text-xs text-primary font-semibold hover:underline mt-2 inline-flex items-center gap-1">
-                Configure Rules <ArrowUpRight className="w-3 h-3" />
+                Configure Rules <FiArrowUpRight className="w-3 h-3" />
               </Link>
             </div>
             <div className="w-12 h-12 rounded-xl bg-blue-50 text-blue-600 flex items-center justify-center shrink-0">
-              <Truck className="w-6 h-6" />
+              <FiTruck className="w-6 h-6" />
             </div>
           </CardBody>
         </Card>

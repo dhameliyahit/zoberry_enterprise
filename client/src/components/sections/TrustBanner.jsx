@@ -1,25 +1,25 @@
 import React from 'react';
-import { Truck, ShieldCheck, Tag, Phone } from 'lucide-react';
+import { FiTruck, FiShield, FiTag, FiPhone } from 'react-icons/fi';
 
 export function TrustBanner() {
   const items = [
     {
-      icon: Truck,
+      icon: FiTruck,
       title: 'Free Shipping Available',
       desc: 'Free standard delivery on orders above ₹499 across India',
     },
     {
-      icon: ShieldCheck,
+      icon: FiShield,
       title: 'PhonePe Encrypted Checkout',
       desc: '100% digital prepaid security with instant confirmation',
     },
     {
-      icon: Tag,
+      icon: FiTag,
       title: 'Direct Warehouse Value',
       desc: 'Smart utilities & home essentials at transparent pricing',
     },
     {
-      icon: Phone,
+      icon: FiPhone,
       title: 'Direct Customer Support',
       desc: '+91 96386 01192 • Mon to Sat (10 AM to 7 PM)',
     },

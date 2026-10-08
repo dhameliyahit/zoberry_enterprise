@@ -1,5 +1,5 @@
 import React from 'react';
-import { Minus, Plus } from 'lucide-react';
+import { FiMinus, FiPlus } from 'react-icons/fi';
 import { cn } from '../../utils/cn';
 
 /**
@@ -69,7 +69,7 @@ export function QuantitySelector({
           currentSize.btn
         )}
       >
-        <Minus className={currentSize.icon} />
+        <FiMinus className={currentSize.icon} />
       </button>
 
       <input
@@ -96,7 +96,7 @@ export function QuantitySelector({
           currentSize.btn
         )}
       >
-        <Plus className={currentSize.icon} />
+        <FiPlus className={currentSize.icon} />
       </button>
     </div>
   );

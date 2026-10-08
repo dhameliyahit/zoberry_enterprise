@@ -1,7 +1,7 @@
 import React, { useState, useEffect } from 'react';
 import { useMutation } from '@apollo/client';
 import { GoogleLogin } from '@react-oauth/google';
-import { Mail, Lock, AlertCircle, ShieldCheck } from 'lucide-react';
+import { FiMail, FiLock, FiAlertCircle, FiShield } from 'react-icons/fi';
 import { Modal, Button, Input } from '../ui';
 import { useUIStore } from '../../store/uiStore';
 import { useCart } from '../../hooks/useCart';
@@ -83,7 +83,7 @@ const AuthModal = () => {
           </div>
 
           <div className="relative z-10 pt-6 border-t border-slate-800 text-[11px] text-slate-400 flex items-center gap-2">
-            <ShieldCheck className="w-4 h-4 text-emerald-400 shrink-0" />
+            <FiShield className="w-4 h-4 text-emerald-400 shrink-0" />
             <span>Encrypted & secure customer sessions</span>
           </div>
         </div>
@@ -99,7 +99,7 @@ const AuthModal = () => {
 
           {errorMsg && (
             <div className="mb-4 p-3 bg-red-50 border border-red-200 text-red-700 rounded-lg flex items-start gap-2 text-xs font-medium">
-              <AlertCircle className="w-4 h-4 mt-0.5 shrink-0" /> 
+              <FiAlertCircle className="w-4 h-4 mt-0.5 shrink-0" /> 
               <span>{errorMsg.replace('GraphQL error: ', '')}</span>
             </div>
           )}
@@ -135,7 +135,7 @@ const AuthModal = () => {
               value={email}
               onChange={(e) => setEmail(e.target.value)}
               placeholder="name@example.com"
-              leftIcon={<Mail className="w-4 h-4 text-slate-400" />}
+              leftIcon={<FiMail className="w-4 h-4 text-slate-400" />}
             />
 
             <Input
@@ -145,7 +145,7 @@ const AuthModal = () => {
               value={password}
               onChange={(e) => setPassword(e.target.value)}
               placeholder="••••••••"
-              leftIcon={<Lock className="w-4 h-4 text-slate-400" />}
+              leftIcon={<FiLock className="w-4 h-4 text-slate-400" />}
             />
 
             <Button

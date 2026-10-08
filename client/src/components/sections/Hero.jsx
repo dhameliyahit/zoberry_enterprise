@@ -1,7 +1,7 @@
 import React, { useState } from 'react';
 import { Link, useNavigate } from 'react-router-dom';
 import { useQuery } from '@apollo/client';
-import { ChevronLeft, ChevronRight, ShoppingBag, ArrowRight, Sparkles, Truck } from 'lucide-react';
+import { FiChevronLeft, FiChevronRight, FiShoppingBag, FiArrowRight } from 'react-icons/fi';
 import { useUIStore } from '../../store/uiStore';
 import { useCart } from '../../hooks/useCart';
 import { Button } from '../ui/Button';
@@ -61,7 +61,7 @@ export function Hero() {
           </p>
           <div className="pt-2">
             <Link to="/products">
-              <Button variant="primary" size="md" rightIcon={<ArrowRight className="w-4 h-4" />}>
+              <Button variant="primary" size="md" rightIcon={<FiArrowRight className="w-4 h-4" />}>
                 Browse All Products
               </Button>
             </Link>
@@ -117,7 +117,7 @@ export function Hero() {
           </div>
           <Link to="/products" className="text-primary hover:underline font-bold text-xs inline-flex items-center gap-1 uppercase tracking-wider">
             <span>Explore All</span>
-            <ArrowRight className="w-3 h-3" />
+            <FiArrowRight className="w-3 h-3" />
           </Link>
         </div>
 
@@ -193,7 +193,7 @@ export function Hero() {
                   variant="primary"
                   size="md"
                   className="w-full sm:flex-1 justify-center h-10"
-                  leftIcon={<ShoppingBag className="w-4 h-4" />}
+                  leftIcon={<FiShoppingBag className="w-4 h-4" />}
                 >
                   {currentProduct.hasVariants ? 'Choose Options' : 'Add to Cart'}
                 </Button>
@@ -202,7 +202,7 @@ export function Hero() {
                     variant="outline"
                     size="md"
                     className="w-full justify-center h-10"
-                    rightIcon={<ArrowRight className="w-3.5 h-3.5" />}
+                    rightIcon={<FiArrowRight className="w-3.5 h-3.5" />}
                   >
                     View Details
                   </Button>
@@ -237,7 +237,7 @@ export function Hero() {
                 aria-label="Previous spotlight"
                 className="p-1.5 rounded-[2px] bg-white border border-slate-200 text-slate-700 hover:text-primary hover:border-slate-400 transition-colors"
               >
-                <ChevronLeft className="w-3.5 h-3.5" />
+                <FiChevronLeft className="w-3.5 h-3.5" />
               </button>
               <button
                 type="button"
@@ -245,7 +245,7 @@ export function Hero() {
                 aria-label="Next spotlight"
                 className="p-1.5 rounded-[2px] bg-white border border-slate-200 text-slate-700 hover:text-primary hover:border-slate-400 transition-colors"
               >
-                <ChevronRight className="w-3.5 h-3.5" />
+                <FiChevronRight className="w-3.5 h-3.5" />
               </button>
             </div>
           </div>

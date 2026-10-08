@@ -1,6 +1,6 @@
 import React from 'react';
 import { Link, useNavigate } from 'react-router-dom';
-import { Trash2, ArrowRight, ShoppingBag, ShieldCheck, Truck, RefreshCw } from 'lucide-react';
+import { FiTrash2, FiArrowRight, FiShoppingBag, FiShield, FiTruck, FiRefreshCw } from 'react-icons/fi';
 import { useCart } from '../hooks/useCart';
 import { Button } from '../components/ui/Button';
 import { Card, CardBody } from '../components/ui/Card';
@@ -50,7 +50,7 @@ export function CartPage() {
 
         {!hasItems ? (
           <EmptyState
-            icon={ShoppingBag}
+            icon={FiShoppingBag}
             title="Your cart is empty"
             description="Looks like you haven't added anything to your cart yet. Explore our top utility items!"
             actionLabel="Explore Products"
@@ -96,7 +96,7 @@ export function CartPage() {
                               aria-label="Remove product from cart"
                               className="text-slate-400 hover:text-red-600 p-1 rounded transition-colors shrink-0"
                             >
-                              <Trash2 className="w-4 h-4" />
+                              <FiTrash2 className="w-4 h-4" />
                             </button>
                           </div>
 
@@ -178,7 +178,7 @@ export function CartPage() {
                     variant="primary"
                     size="lg"
                     className="w-full"
-                    rightIcon={<ArrowRight className="w-4 h-4" />}
+                    rightIcon={<FiArrowRight className="w-4 h-4" />}
                   >
                     Proceed to Checkout
                   </Button>
@@ -197,15 +197,15 @@ export function CartPage() {
               {/* Trust Guarantees */}
               <div className="bg-white rounded-xl border border-slate-200 p-4 shadow-2xs space-y-3 text-xs text-slate-600">
                 <div className="flex items-center gap-2.5">
-                  <ShieldCheck className="w-4 h-4 text-primary shrink-0" />
+                  <FiShield className="w-4 h-4 text-primary shrink-0" />
                   <span>100% Secure PhonePe Digital Payments</span>
                 </div>
                 <div className="flex items-center gap-2.5">
-                  <Truck className="w-4 h-4 text-primary shrink-0" />
+                  <FiTruck className="w-4 h-4 text-primary shrink-0" />
                   <span>Free Standard Delivery on Orders Over ₹999</span>
                 </div>
                 <div className="flex items-center gap-2.5">
-                  <RefreshCw className="w-4 h-4 text-primary shrink-0" />
+                  <FiRefreshCw className="w-4 h-4 text-primary shrink-0" />
                   <span>7-Day Replacement Policy for Transit Damage</span>
                 </div>
               </div>

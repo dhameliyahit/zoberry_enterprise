@@ -1,5 +1,5 @@
 import React, { useEffect } from 'react';
-import { X } from 'lucide-react';
+import { FiX } from 'react-icons/fi';
 import { cn } from '../../utils/cn';
 
 /**
@@ -75,9 +75,9 @@ export function Drawer({
             type="button"
             onClick={onClose}
             aria-label="Close panel"
-            className="p-1.5 text-slate-400 hover:text-slate-700 hover:bg-slate-200 rounded-md transition-colors"
+            className="p-1.5 text-slate-400 hover:text-slate-700 hover:bg-slate-200 rounded-[2px] transition-colors"
           >
-            <X className="w-5 h-5" />
+            <FiX className="w-5 h-5" />
           </button>
         </div>
 

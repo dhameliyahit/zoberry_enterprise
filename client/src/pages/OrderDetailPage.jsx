@@ -2,10 +2,10 @@ import React, { useState } from 'react';
 import { useParams, useSearchParams, Link } from 'react-router-dom';
 import { useQuery, useMutation } from '@apollo/client';
 import {
-  CheckCircle2, Package, Truck, MapPin,
-  Clock, ArrowRight, ShoppingBag, CreditCard, AlertTriangle, RefreshCw, Tag, Navigation,
-  ExternalLink, Copy, Check
-} from 'lucide-react';
+  FiCheckCircle, FiPackage, FiTruck, FiMapPin,
+  FiClock, FiArrowRight, FiShoppingBag, FiCreditCard, FiAlertTriangle, FiRefreshCw, FiTag, FiNavigation,
+  FiExternalLink, FiCopy, FiCheck
+} from 'react-icons/fi';
 import { GET_ORDER_BY_NUMBER } from '../graphql/orders';
 import { GET_PAYMENT_STATUS, INITIATE_PAYMENT } from '../graphql/payment';
 import { useUIStore } from '../store/uiStore';
@@ -84,7 +84,7 @@ const OrderDetailPage = () => {
       <div className="min-h-[60vh] flex items-center justify-center bg-slate-50 px-4">
         <div className="text-center max-w-md bg-white p-8 rounded-xl border border-slate-200 shadow-sm">
           <div className="w-12 h-12 bg-red-50 text-red-500 rounded-full flex items-center justify-center mx-auto mb-3">
-            <AlertTriangle className="w-6 h-6" />
+            <FiAlertTriangle className="w-6 h-6" />
           </div>
           <h2 className="text-lg font-bold text-slate-900 mb-2">Order Not Found</h2>
           <p className="text-slate-500 text-sm mb-6">
@@ -131,7 +131,7 @@ const OrderDetailPage = () => {
           <div className="bg-red-50 border border-red-200 rounded-xl p-5 md:p-6 shadow-xs flex flex-col md:flex-row items-center justify-between gap-4">
             <div className="flex items-start gap-3.5">
               <div className="w-10 h-10 rounded-full bg-red-100 text-red-600 flex items-center justify-center shrink-0 mt-0.5">
-                <AlertTriangle className="w-5 h-5" />
+                <FiAlertTriangle className="w-5 h-5" />
               </div>
               <div>
                 <h3 className="text-base font-bold text-red-900">Payment Unsuccessful</h3>
@@ -145,7 +145,7 @@ const OrderDetailPage = () => {
               size="sm"
               onClick={handleRetryPayment}
               loading={retrying}
-              leftIcon={<RefreshCw className="w-4 h-4" />}
+              leftIcon={<FiRefreshCw className="w-4 h-4" />}
             >
               Retry Payment with PhonePe
             </Button>
@@ -156,7 +156,7 @@ const OrderDetailPage = () => {
         {isPaid ? (
           <div className="bg-white rounded-xl border border-emerald-200 p-6 md:p-8 text-center shadow-xs">
             <div className="w-16 h-16 bg-emerald-100 text-emerald-600 rounded-full flex items-center justify-center mx-auto mb-4">
-              <CheckCircle2 className="w-8 h-8" />
+              <FiCheckCircle className="w-8 h-8" />
             </div>
             <Badge variant="green" className="mb-2">Order Confirmed & Payment Verified</Badge>
             <h1 className="text-2xl md:text-3xl font-extrabold text-slate-900 mt-2 mb-2">
@@ -169,7 +169,7 @@ const OrderDetailPage = () => {
         ) : !isFailed ? (
           <div className="bg-white rounded-xl border border-blue-200 p-6 md:p-8 text-center shadow-xs">
             <div className="w-16 h-16 bg-blue-50 text-primary rounded-full flex items-center justify-center mx-auto mb-4">
-              <CheckCircle2 className="w-8 h-8" />
+              <FiCheckCircle className="w-8 h-8" />
             </div>
             <Badge variant="blue" className="mb-2">Order Received</Badge>
             <h1 className="text-2xl md:text-3xl font-extrabold text-slate-900 mt-2 mb-2">
@@ -194,7 +194,7 @@ const OrderDetailPage = () => {
                   className="text-slate-400 hover:text-slate-600 p-1 transition-colors"
                   title="Copy Order Number"
                 >
-                  {copied ? <Check className="w-4 h-4 text-emerald-600" /> : <Copy className="w-4 h-4" />}
+                  {copied ? <FiCheck className="w-4 h-4 text-emerald-600" /> : <FiCopy className="w-4 h-4" />}
                 </button>
               </div>
               <span className="text-[11px] text-slate-400 mt-2.5 block">{dateStr}</span>
@@ -232,7 +232,7 @@ const OrderDetailPage = () => {
             <CardHeader className="p-5 border-b border-slate-100 flex flex-col sm:flex-row sm:items-center justify-between gap-3">
               <div>
                 <h2 className="text-sm font-bold text-slate-900 flex items-center gap-2">
-                  <Navigation className="w-4 h-4 text-primary" /> Tracking & Logistics Information
+                  <FiNavigation className="w-4 h-4 text-primary" /> Tracking & Logistics Information
                 </h2>
                 <p className="text-xs text-slate-500 mt-0.5">
                   Carrier: <strong className="text-slate-800">{primaryShipment.provider}</strong> • Method: <strong className="text-slate-800">{primaryShipment.shippingMethodCode || order.shippingMethod}</strong>
@@ -277,7 +277,7 @@ const OrderDetailPage = () => {
           <div className="bg-blue-50/80 border border-blue-200 rounded-xl p-5 shadow-xs flex items-center justify-between text-xs">
             <div className="flex items-center gap-3">
               <div className="w-9 h-9 rounded-full bg-primary/10 text-primary flex items-center justify-center shrink-0">
-                <Package className="w-5 h-5" />
+                <FiPackage className="w-5 h-5" />
               </div>
               <div>
                 <h4 className="font-bold text-slate-900">Shipment in Preparation</h4>
@@ -336,7 +336,7 @@ const OrderDetailPage = () => {
             {/* Shipping Address Snapshot */}
             <div>
               <h3 className="font-bold text-slate-800 uppercase tracking-wide mb-2 flex items-center gap-1.5">
-                <MapPin className="w-3.5 h-3.5 text-primary" /> Delivery Address
+                <FiMapPin className="w-3.5 h-3.5 text-primary" /> Delivery Address
               </h3>
               <div className="text-slate-600 space-y-0.5 leading-relaxed bg-white p-3.5 rounded-lg border border-slate-200">
                 <div className="font-bold text-slate-900">{shipping.fullName}</div>
@@ -364,7 +364,7 @@ const OrderDetailPage = () => {
                 {order.discountAmount > 0 && (
                   <div className="flex justify-between text-emerald-600 font-semibold">
                     <span className="flex items-center gap-1">
-                      <Tag className="w-3.5 h-3.5" /> Coupon Discount ({order.couponCode || 'APPLIED'})
+                      <FiTag className="w-3.5 h-3.5" /> Coupon Discount ({order.couponCode || 'APPLIED'})
                     </span>
                     <span>- ₹{order.discountAmount?.toLocaleString()}</span>
                   </div>
@@ -395,7 +395,7 @@ const OrderDetailPage = () => {
         {/* Actions */}
         <div className="flex flex-wrap items-center justify-center gap-4">
           <Link to="/products">
-            <Button variant="primary" leftIcon={<ShoppingBag className="w-4 h-4" />}>
+            <Button variant="primary" leftIcon={<FiShoppingBag className="w-4 h-4" />}>
               Continue Shopping
             </Button>
           </Link>

@@ -2,10 +2,10 @@ import React, { useState, useEffect } from 'react';
 import { useNavigate, Link } from 'react-router-dom';
 import { useQuery, useMutation, useLazyQuery } from '@apollo/client';
 import {
-  ShieldCheck, AlertCircle, Lock, Truck, MapPin,
-  ShoppingBag, ArrowRight, User, CreditCard, Tag, X,
-  CheckCircle2, Sparkles, ChevronRight, HelpCircle
-} from 'lucide-react';
+  FiShield, FiAlertCircle, FiLock, FiTruck, FiMapPin,
+  FiShoppingBag, FiArrowRight, FiUser, FiCreditCard, FiTag, FiX,
+  FiCheckCircle, FiChevronRight, FiHelpCircle
+} from 'react-icons/fi';
 import { PREVIEW_CHECKOUT, CREATE_ORDER_FROM_CART } from '../graphql/orders';
 import { VALIDATE_COUPON } from '../graphql/promotions';
 import { INITIATE_PAYMENT } from '../graphql/payment';
@@ -268,7 +268,7 @@ const CheckoutPage = () => {
       <div className="min-h-[60vh] flex items-center justify-center bg-slate-50 px-4">
         <div className="text-center max-w-md bg-white p-8 rounded-xl border border-slate-200 shadow-sm">
           <div className="w-14 h-14 bg-slate-100 text-slate-400 rounded-full flex items-center justify-center mx-auto mb-4">
-            <ShoppingBag className="w-7 h-7" />
+            <FiShoppingBag className="w-7 h-7" />
           </div>
           <h2 className="text-lg font-bold text-slate-900 mb-2">Your Cart is Empty</h2>
           <p className="text-slate-500 text-sm mb-6">
@@ -301,7 +301,7 @@ const CheckoutPage = () => {
           <div>
             <div className="flex items-center gap-2 text-xs text-slate-500 mb-1">
               <Link to="/cart" className="hover:text-primary transition-colors">Cart</Link>
-              <ChevronRight className="w-3.5 h-3.5" />
+              <FiChevronRight className="w-3.5 h-3.5" />
               <span className="text-slate-900 font-semibold">Checkout</span>
             </div>
             <h1 className="text-2xl md:text-3xl font-extrabold text-slate-900 tracking-tight">
@@ -309,7 +309,7 @@ const CheckoutPage = () => {
             </h1>
           </div>
           <div className="flex items-center gap-2 text-xs font-semibold text-emerald-700 bg-emerald-50 px-3.5 py-2 rounded-lg border border-emerald-200 self-start sm:self-auto">
-            <ShieldCheck className="w-4 h-4 text-emerald-600 shrink-0" />
+            <FiShield className="w-4 h-4 text-emerald-600 shrink-0" />
             <span>256-Bit Encrypted & Verified</span>
           </div>
         </div>
@@ -317,13 +317,13 @@ const CheckoutPage = () => {
         {/* Free Shipping Alert Banner */}
         {isFreeEligible ? (
           <div className="mb-6 p-4 bg-emerald-50/90 border border-emerald-200 rounded-xl text-xs font-semibold text-emerald-800 flex items-center gap-2.5">
-            <CheckCircle2 className="text-emerald-600 shrink-0 w-4 h-4" />
+            <FiCheckCircle className="text-emerald-600 shrink-0 w-4 h-4" />
             <span>🎉 Congratulations! Your order qualifies for <strong>FREE Standard Delivery</strong> (Orders over ₹999).</span>
           </div>
         ) : (
           <div className="mb-6 p-4 bg-blue-50/80 border border-blue-200 rounded-xl text-xs text-blue-900 flex items-center justify-between gap-3">
             <div className="flex items-center gap-2.5">
-              <Truck className="text-primary shrink-0 w-4 h-4" />
+              <FiTruck className="text-primary shrink-0 w-4 h-4" />
               <span>Add <strong>₹{neededForFree.toLocaleString()}</strong> more to unlock <strong>FREE Standard Shipping</strong>!</span>
             </div>
             <Link to="/products" className="text-primary font-bold hover:underline shrink-0 text-xs">
@@ -336,7 +336,7 @@ const CheckoutPage = () => {
         {validationErrors.length > 0 && (
           <div className="mb-6 p-4 bg-red-50 border border-red-200 rounded-xl text-xs text-red-700 space-y-1.5">
             <div className="font-bold flex items-center gap-2">
-              <AlertCircle className="w-4 h-4" /> Action required before placing order:
+              <FiAlertCircle className="w-4 h-4" /> Action required before placing order:
             </div>
             {validationErrors.map((err, i) => (
               <div key={i} className="pl-6">• {err}</div>
@@ -346,7 +346,7 @@ const CheckoutPage = () => {
 
         {formError && (
           <div className="mb-6 p-4 bg-red-50 border border-red-200 rounded-xl text-xs font-semibold text-red-700 flex items-center gap-2.5">
-            <AlertCircle className="w-4 h-4 shrink-0" />
+            <FiAlertCircle className="w-4 h-4 shrink-0" />
             <span>{formError}</span>
           </div>
         )}
@@ -380,7 +380,7 @@ const CheckoutPage = () => {
                 <CardBody className="p-4 flex items-center justify-between text-xs">
                   <div className="flex items-center gap-3">
                     <div className="w-8 h-8 rounded-full bg-primary/10 text-primary font-bold flex items-center justify-center">
-                      <User className="w-4 h-4" />
+                      <FiUser className="w-4 h-4" />
                     </div>
                     <div>
                       <span className="font-bold text-slate-900">{user.email}</span>
@@ -396,7 +396,7 @@ const CheckoutPage = () => {
             <Card>
               <CardHeader className="p-5 border-b border-slate-100 flex items-center justify-between">
                 <h2 className="text-sm font-bold text-slate-900 flex items-center gap-2">
-                  <MapPin className="w-4 h-4 text-primary" /> 1. Shipping Address
+                  <FiMapPin className="w-4 h-4 text-primary" /> 1. Shipping Address
                 </h2>
                 <span className="text-xs text-slate-400">Step 1 of 3</span>
               </CardHeader>
@@ -543,7 +543,7 @@ const CheckoutPage = () => {
             <Card>
               <CardHeader className="p-5 border-b border-slate-100 flex items-center justify-between">
                 <h2 className="text-sm font-bold text-slate-900 flex items-center gap-2">
-                  <Truck className="w-4 h-4 text-primary" /> 2. Delivery Method
+                  <FiTruck className="w-4 h-4 text-primary" /> 2. Delivery Method
                 </h2>
                 <span className="text-xs text-slate-400">Step 2 of 3</span>
               </CardHeader>
@@ -602,7 +602,7 @@ const CheckoutPage = () => {
             <Card>
               <CardHeader className="p-5 border-b border-slate-100 flex items-center justify-between">
                 <h2 className="text-sm font-bold text-slate-900 flex items-center gap-2">
-                  <CreditCard className="w-4 h-4 text-primary" /> 3. Payment Method
+                  <FiCreditCard className="w-4 h-4 text-primary" /> 3. Payment Method
                 </h2>
                 <span className="text-xs text-slate-400">Step 3 of 3</span>
               </CardHeader>
@@ -731,7 +731,7 @@ const CheckoutPage = () => {
                 {/* Promo / Coupon Code Section */}
                 <div className="pt-3 border-t border-slate-100">
                   <label className="block text-[11px] font-bold text-slate-700 uppercase mb-1.5 flex items-center gap-1.5">
-                    <Tag className="w-3.5 h-3.5 text-primary" /> Promo / Coupon Code
+                    <FiTag className="w-3.5 h-3.5 text-primary" /> Promo / Coupon Code
                   </label>
                   {appliedCouponCode ? (
                     <div className="flex items-center justify-between bg-emerald-50 border border-emerald-200 text-emerald-800 px-3.5 py-2.5 rounded-lg text-xs">
@@ -747,7 +747,7 @@ const CheckoutPage = () => {
                         className="text-slate-400 hover:text-red-500 transition-colors p-1"
                         title="Remove coupon"
                       >
-                        <X className="w-4 h-4" />
+                        <FiX className="w-4 h-4" />
                       </button>
                     </div>
                   ) : (
@@ -796,7 +796,7 @@ const CheckoutPage = () => {
                   {preview?.discountAmount > 0 && (
                     <div className="flex justify-between text-emerald-600 font-semibold">
                       <span className="flex items-center gap-1">
-                        <Tag className="w-3.5 h-3.5" /> Coupon Discount ({preview?.couponCode || appliedCouponCode})
+                        <FiTag className="w-3.5 h-3.5" /> Coupon Discount ({preview?.couponCode || appliedCouponCode})
                       </span>
                       <span>- ₹{preview?.discountAmount?.toLocaleString()}</span>
                     </div>

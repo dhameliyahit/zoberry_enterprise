@@ -1,6 +1,6 @@
 import React from 'react';
 import { Link } from 'react-router-dom';
-import { Heart, Trash2, ShoppingCart, ArrowRight } from 'lucide-react';
+import { FiHeart, FiTrash2, FiShoppingCart, FiArrowRight } from 'react-icons/fi';
 import { useWishlist } from '../hooks/useWishlist';
 import { useCart } from '../hooks/useCart';
 import { useUIStore } from '../store/uiStore';
@@ -30,7 +30,7 @@ const WishlistPage = () => {
         <SEO title="My Wishlist | Zoberry Enterprise" url="/wishlist" />
         <Card className="p-8 text-center max-w-md w-full shadow-xs">
           <div className="w-16 h-16 bg-red-50 text-red-500 rounded-full flex items-center justify-center mx-auto mb-4">
-            <Heart className="w-8 h-8 fill-red-100" />
+            <FiHeart className="w-8 h-8 fill-red-100" />
           </div>
           <h2 className="text-xl font-bold text-slate-900 mb-2">Save Your Favorite Items</h2>
           <p className="text-slate-500 text-xs md:text-sm mb-6">
@@ -76,7 +76,7 @@ const WishlistPage = () => {
         ) : wishlist.length === 0 ? (
           <Card className="p-12 text-center max-w-md mx-auto shadow-xs">
             <EmptyState
-              icon={Heart}
+              icon={FiHeart}
               title="No items saved yet"
               description="Browse our catalog and click the heart icon on items you want to save for later."
               actionLabel="Explore Catalog"
@@ -109,7 +109,7 @@ const WishlistPage = () => {
                       className="absolute top-2.5 right-2.5 w-8 h-8 rounded-full bg-white/95 text-slate-400 hover:text-red-500 flex items-center justify-center shadow-sm transition-colors"
                       title="Remove from wishlist"
                     >
-                      <Trash2 className="w-4 h-4" />
+                      <FiTrash2 className="w-4 h-4" />
                     </button>
                   </div>
 
@@ -144,7 +144,7 @@ const WishlistPage = () => {
                         className="w-full"
                         onClick={() => handleMoveToCart(product)}
                         disabled={cartLoading}
-                        leftIcon={<ShoppingCart className="w-3.5 h-3.5" />}
+                        leftIcon={<FiShoppingCart className="w-3.5 h-3.5" />}
                       >
                         Move to Cart
                       </Button>

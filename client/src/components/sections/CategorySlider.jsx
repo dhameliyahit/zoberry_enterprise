@@ -1,7 +1,7 @@
 import React from 'react';
 import { Link } from 'react-router-dom';
 import { useQuery } from '@apollo/client';
-import { ArrowRight, Folder } from 'lucide-react';
+import { FiArrowRight, FiFolder } from 'react-icons/fi';
 import { GET_ALL_CATEGORIES } from '../../graphql/products';
 import { getImageUrl } from '../../utils/imageUrl';
 import { Skeleton } from '../ui/Skeleton';
@@ -47,7 +47,7 @@ export function CategorySlider() {
             className="inline-flex items-center gap-1 text-xs font-bold text-primary hover:underline uppercase tracking-wider"
           >
             <span>View All</span>
-            <ArrowRight className="w-3.5 h-3.5" />
+            <FiArrowRight className="w-3.5 h-3.5" />
           </Link>
         </div>
 
@@ -72,7 +72,7 @@ export function CategorySlider() {
                       className="w-full h-full object-cover"
                     />
                   ) : (
-                    <Folder className="w-6 h-6 text-primary" />
+                    <FiFolder className="w-6 h-6 text-primary" />
                   )}
                 </div>
                 <span className="text-xs font-semibold text-slate-900 group-hover:text-primary line-clamp-1 transition-colors">

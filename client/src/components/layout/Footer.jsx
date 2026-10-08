@@ -1,6 +1,6 @@
 import React from 'react';
 import { Link } from 'react-router-dom';
-import { ShieldCheck, Phone, Mail, MapPin, ArrowRight } from 'lucide-react';
+import { FiShield, FiPhone, FiMail, FiMapPin, FiArrowRight } from 'react-icons/fi';
 
 export function Footer() {
   return (
@@ -25,15 +25,15 @@ export function Footer() {
             </p>
             <div className="space-y-1.5 text-slate-400 text-xs pt-1">
               <div className="flex items-center gap-2">
-                <Phone className="w-3.5 h-3.5 text-primary shrink-0" />
+                <FiPhone className="w-3.5 h-3.5 text-primary shrink-0" />
                 <span>+91 96386 01192 (Mon - Sat, 10 AM - 7 PM)</span>
               </div>
               <div className="flex items-center gap-2">
-                <Mail className="w-3.5 h-3.5 text-primary shrink-0" />
+                <FiMail className="w-3.5 h-3.5 text-primary shrink-0" />
                 <span>support@zoberryenterprise.shop</span>
               </div>
               <div className="flex items-center gap-2">
-                <MapPin className="w-3.5 h-3.5 text-primary shrink-0" />
+                <FiMapPin className="w-3.5 h-3.5 text-primary shrink-0" />
                 <span>Surat, Gujarat, India - 395004</span>
               </div>
             </div>
@@ -99,8 +99,8 @@ export function Footer() {
             <p className="text-slate-400 text-xs leading-relaxed mb-3">
               100% encrypted online payments powered by PhonePe Standard Gateway (UPI, Cards & NetBanking).
             </p>
-            <div className="inline-flex items-center gap-2 px-3 py-1.5 rounded-lg bg-slate-900 border border-slate-800 text-[11px] text-emerald-400 font-semibold">
-              <ShieldCheck className="w-4 h-4 text-emerald-400" />
+            <div className="inline-flex items-center gap-2 px-3 py-1.5 rounded-[2px] bg-slate-900 border border-slate-800 text-[11px] text-emerald-400 font-semibold">
+              <FiShield className="w-4 h-4 text-emerald-400" />
               <span>256-Bit SSL Encrypted</span>
             </div>
           </div>

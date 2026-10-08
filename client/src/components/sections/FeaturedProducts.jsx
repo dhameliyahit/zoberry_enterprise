@@ -1,7 +1,8 @@
 import React from 'react';
 import { Link } from 'react-router-dom';
 import { useQuery } from '@apollo/client';
-import { ArrowRight, Flame } from 'lucide-react';
+import { FiArrowRight } from 'react-icons/fi';
+import { FaFire } from 'react-icons/fa6';
 import { ProductCard } from '../products/ProductCard';
 import { ProductCardSkeleton } from '../ui/Skeleton';
 import { GET_ALL_PRODUCTS } from '../../graphql/products';
@@ -19,7 +20,7 @@ export function FeaturedProducts() {
         {/* Section Header */}
         <div className="flex items-center justify-between mb-4 pb-2.5 border-b border-slate-200">
           <div className="flex items-center gap-2">
-            <Flame className="w-4 h-4 text-red-600" />
+            <FaFire className="w-4 h-4 text-red-600" />
             <h2 className="text-sm sm:text-base font-bold text-slate-900 uppercase tracking-wide">
               Featured Products & Best Sellers
             </h2>
@@ -29,7 +30,7 @@ export function FeaturedProducts() {
             className="inline-flex items-center gap-1 text-xs font-bold text-primary hover:underline uppercase tracking-wider"
           >
             <span>View All ({products.length})</span>
-            <ArrowRight className="w-3.5 h-3.5" />
+            <FiArrowRight className="w-3.5 h-3.5" />
           </Link>
         </div>
 

@@ -3,18 +3,18 @@ import { Outlet, NavLink, useNavigate, useLocation } from 'react-router-dom';
 import { useUIStore } from '../store/uiStore';
 import AdminLogin from '../pages/admin/AdminLogin';
 import { 
-  LayoutDashboard, 
-  Package, 
-  FolderTree, 
-  Tag, 
-  Truck, 
-  LogOut,
-  Menu,
-  X,
-  User,
-  ExternalLink,
-  ShieldCheck
-} from 'lucide-react';
+  FiGrid, 
+  FiPackage, 
+  FiFolder, 
+  FiTag, 
+  FiTruck, 
+  FiLogOut,
+  FiMenu,
+  FiX,
+  FiUser,
+  FiExternalLink,
+  FiShield
+} from 'react-icons/fi';
 import { Badge } from '../components/ui';
 
 const AdminLayout = () => {
@@ -34,11 +34,11 @@ const AdminLayout = () => {
   };
 
   const navItems = [
-    { name: 'Dashboard', path: '/admin', icon: <LayoutDashboard className="w-4 h-4" />, exact: true },
-    { name: 'Products', path: '/admin/products', icon: <Package className="w-4 h-4" /> },
-    { name: 'Categories', path: '/admin/categories', icon: <FolderTree className="w-4 h-4" /> },
-    { name: 'Promotions', path: '/admin/promotions', icon: <Tag className="w-4 h-4" /> },
-    { name: 'Shipping & Tax', path: '/admin/shipping', icon: <Truck className="w-4 h-4" /> },
+    { name: 'Dashboard', path: '/admin', icon: <FiGrid className="w-4 h-4" />, exact: true },
+    { name: 'Products', path: '/admin/products', icon: <FiPackage className="w-4 h-4" /> },
+    { name: 'Categories', path: '/admin/categories', icon: <FiFolder className="w-4 h-4" /> },
+    { name: 'Promotions', path: '/admin/promotions', icon: <FiTag className="w-4 h-4" /> },
+    { name: 'Shipping & Tax', path: '/admin/shipping', icon: <FiTruck className="w-4 h-4" /> },
   ];
 
   // Dynamically get the current page title based on the route
@@ -74,7 +74,7 @@ const AdminLayout = () => {
             className="lg:hidden text-slate-400 hover:text-white"
             onClick={() => setSidebarOpen(false)}
           >
-            <X className="w-5 h-5" />
+            <FiX className="w-5 h-5" />
           </button>
         </div>
         
@@ -106,7 +106,7 @@ const AdminLayout = () => {
         <div className="p-4 bg-slate-950 border-t border-slate-800/80">
           <div className="flex items-center mb-3">
             <div className="h-8 w-8 rounded-full bg-slate-800 text-slate-300 flex items-center justify-center font-bold text-xs">
-              <User className="w-4 h-4" />
+              <FiUser className="w-4 h-4" />
             </div>
             <div className="ml-3 overflow-hidden">
               <div className="text-xs font-semibold text-white truncate">{user.name || 'Administrator'}</div>
@@ -117,7 +117,7 @@ const AdminLayout = () => {
             onClick={handleLogout}
             className="flex items-center w-full px-3 py-2 text-xs font-semibold text-slate-300 hover:text-red-400 hover:bg-slate-800/80 rounded-lg transition-colors cursor-pointer"
           >
-            <LogOut className="w-4 h-4 mr-2.5" />
+            <FiLogOut className="w-4 h-4 mr-2.5" />
             Sign Out
           </button>
         </div>
@@ -133,7 +133,7 @@ const AdminLayout = () => {
               onClick={() => setSidebarOpen(true)}
               className="lg:hidden mr-4 text-slate-500 hover:text-slate-700 focus:outline-none"
             >
-              <Menu className="w-6 h-6" />
+              <FiMenu className="w-6 h-6" />
             </button>
             <h1 className="text-lg font-bold text-slate-900">{currentPage}</h1>
           </div>
@@ -146,7 +146,7 @@ const AdminLayout = () => {
               className="hidden sm:inline-flex items-center gap-1.5 text-xs font-medium text-slate-600 hover:text-primary transition-colors px-2.5 py-1.5 rounded-lg border border-slate-200 hover:border-slate-300"
             >
               <span>View Storefront</span>
-              <ExternalLink className="w-3.5 h-3.5" />
+              <FiExternalLink className="w-3.5 h-3.5" />
             </a>
 
             <div className="flex items-center gap-2 text-xs text-slate-600 pl-3 border-l border-slate-200">

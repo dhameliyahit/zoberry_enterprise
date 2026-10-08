@@ -1,6 +1,6 @@
 import React from 'react';
 import SEO from '../components/common/SEO';
-import { ShieldCheck, Truck, Heart, Sparkles, CheckCircle2 } from 'lucide-react';
+import { FiShield, FiTruck, FiHeart } from 'react-icons/fi';
 import { Card, CardBody } from '../components/ui';
 
 const AboutPage = () => {
@@ -32,7 +32,7 @@ const AboutPage = () => {
           <div className="grid grid-cols-1 sm:grid-cols-3 gap-4 mt-10 pt-10 border-t border-slate-100">
             <div className="p-5 bg-slate-50 rounded-xl text-center border border-slate-100">
               <div className="w-12 h-12 bg-primary/10 text-primary rounded-xl flex items-center justify-center mx-auto mb-3">
-                <ShieldCheck className="w-6 h-6" />
+                <FiShield className="w-6 h-6" />
               </div>
               <h3 className="font-bold text-slate-900 text-sm mb-1">Quality Guaranteed</h3>
               <p className="text-xs text-slate-500 leading-relaxed">Every product is tested and verified for long-lasting durability.</p>
@@ -40,7 +40,7 @@ const AboutPage = () => {
 
             <div className="p-5 bg-slate-50 rounded-xl text-center border border-slate-100">
               <div className="w-12 h-12 bg-emerald-50 text-emerald-600 rounded-xl flex items-center justify-center mx-auto mb-3">
-                <Truck className="w-6 h-6" />
+                <FiTruck className="w-6 h-6" />
               </div>
               <h3 className="font-bold text-slate-900 text-sm mb-1">Fast Ground Shipping</h3>
               <p className="text-xs text-slate-500 leading-relaxed">Quick dispatch with reliable doorstep delivery across India.</p>
@@ -48,7 +48,7 @@ const AboutPage = () => {
 
             <div className="p-5 bg-slate-50 rounded-xl text-center border border-slate-100">
               <div className="w-12 h-12 bg-purple-50 text-purple-600 rounded-xl flex items-center justify-center mx-auto mb-3">
-                <Heart className="w-6 h-6" />
+                <FiHeart className="w-6 h-6" />
               </div>
               <h3 className="font-bold text-slate-900 text-sm mb-1">Customer First</h3>
               <p className="text-xs text-slate-500 leading-relaxed">Dedicated support via WhatsApp and phone for complete peace of mind.</p>

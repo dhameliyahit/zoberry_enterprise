@@ -1,6 +1,6 @@
 import React, { useEffect } from 'react';
 import ReactModal from 'react-modal';
-import { X } from 'lucide-react';
+import { FiX } from 'react-icons/fi';
 import { cn } from '../../utils/cn';
 
 // Set app element for accessibility
@@ -72,7 +72,7 @@ export function Modal({
                 aria-label="Close dialog"
                 className="p-1 text-slate-400 hover:text-slate-700 hover:bg-slate-200 rounded-[2px] transition-colors"
               >
-                <X className="w-4 h-4" />
+                <FiX className="w-4 h-4" />
               </button>
             )}
           </div>

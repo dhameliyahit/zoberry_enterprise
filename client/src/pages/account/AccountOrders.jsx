@@ -1,7 +1,7 @@
 import React from 'react';
 import { useQuery } from '@apollo/client';
 import { Link } from 'react-router-dom';
-import { Package, ArrowUpRight, Calendar, ShoppingBag } from 'lucide-react';
+import { FiPackage, FiArrowUpRight, FiCalendar, FiShoppingBag } from 'react-icons/fi';
 import { GET_MY_ORDERS } from '../../graphql/orders';
 import { Card, CardBody, CardHeader, StatusBadge, Button, EmptyState } from '../../components/ui';
 
@@ -29,7 +29,7 @@ const AccountOrders = () => {
       ) : orders.length === 0 ? (
         <Card className="p-8 text-center max-w-md mx-auto">
           <EmptyState
-            icon={Package}
+            icon={FiPackage}
             title="No Orders Placed Yet"
             description="You haven't placed any orders with us yet. Discover our catalog of quality essentials."
             actionLabel="Start Shopping"
@@ -75,7 +75,7 @@ const AccountOrders = () => {
                       to={`/order/${order.orderNumber}`}
                       className="inline-flex items-center gap-1 text-xs font-bold text-primary hover:underline ml-1"
                     >
-                      View Order <ArrowUpRight className="w-3.5 h-3.5" />
+                      View Order <FiArrowUpRight className="w-3.5 h-3.5" />
                     </Link>
                   </div>
                 </div>

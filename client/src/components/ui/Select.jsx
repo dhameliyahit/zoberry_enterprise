@@ -1,5 +1,5 @@
 import React, { forwardRef } from 'react';
-import { ChevronDown } from 'lucide-react';
+import { FiChevronDown } from 'react-icons/fi';
 import { cn } from '../../utils/cn';
 
 /**
@@ -58,7 +58,7 @@ export const Select = forwardRef(({
         </select>
 
         <div className="absolute right-3 pointer-events-none text-slate-400">
-          <ChevronDown className="w-4 h-4" />
+          <FiChevronDown className="w-4 h-4" />
         </div>
       </div>
 

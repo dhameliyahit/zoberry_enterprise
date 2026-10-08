@@ -2,19 +2,19 @@ import React, { useState, useEffect } from 'react';
 import { useParams, Link, useNavigate } from 'react-router-dom';
 import { useQuery } from '@apollo/client';
 import {
-  ShoppingBag,
-  Zap,
-  Truck,
-  ShieldCheck,
-  RefreshCw,
-  CheckCircle2,
-  Play,
-  Share2,
-  Heart,
-  ChevronRight,
-  AlertCircle,
-  PackageCheck,
-} from 'lucide-react';
+  FiShoppingBag,
+  FiZap,
+  FiTruck,
+  FiShield,
+  FiRefreshCw,
+  FiCheckCircle,
+  FiPlay,
+  FiShare2,
+  FiHeart,
+  FiChevronRight,
+  FiAlertCircle,
+  FiPackage,
+} from 'react-icons/fi';
 import { SEO } from '../components/common/SEO';
 import { Button } from '../components/ui/Button';
 import { Badge } from '../components/ui/Badge';
@@ -172,13 +172,13 @@ export function ProductDetailPage() {
           <Link to="/" className="hover:text-primary transition-colors">
             Home
           </Link>
-          <ChevronRight className="w-3 h-3 text-slate-400" />
+          <FiChevronRight className="w-3 h-3 text-slate-400" />
           <Link to="/products" className="hover:text-primary transition-colors">
             Products
           </Link>
           {category && (
             <>
-              <ChevronRight className="w-3 h-3 text-slate-400" />
+              <FiChevronRight className="w-3 h-3 text-slate-400" />
               <Link
                 to={`/category/${category.slug}`}
                 className="hover:text-primary transition-colors"
@@ -187,7 +187,7 @@ export function ProductDetailPage() {
               </Link>
             </>
           )}
-          <ChevronRight className="w-3 h-3 text-slate-400" />
+          <FiChevronRight className="w-3 h-3 text-slate-400" />
           <span className="text-slate-900 font-semibold truncate max-w-xs">{name}</span>
         </nav>
 
@@ -242,7 +242,7 @@ export function ProductDetailPage() {
                       : 'border-slate-200 opacity-80'
                   }`}
                 >
-                  <Play className="w-3.5 h-3.5" /> Video
+                  <FiPlay className="w-3.5 h-3.5" /> Video
                 </button>
               )}
               {formattedImages.map((img, idx) => (
@@ -278,7 +278,7 @@ export function ProductDetailPage() {
                   title="Share product link"
                   aria-label="Share product"
                 >
-                  <Share2 className="w-4 h-4" />
+                  <FiShare2 className="w-4 h-4" />
                 </button>
                 <button
                   type="button"
@@ -289,7 +289,7 @@ export function ProductDetailPage() {
                   title={inWishlist ? 'Remove from Wishlist' : 'Add to Wishlist'}
                   aria-label="Toggle wishlist"
                 >
-                  <Heart className={`w-4 h-4 ${inWishlist ? 'fill-current' : ''}`} />
+                  <FiHeart className={`w-4 h-4 ${inWishlist ? 'fill-current' : ''}`} />
                 </button>
               </div>
             </div>
@@ -307,7 +307,7 @@ export function ProductDetailPage() {
               <span>•</span>
               {isOutOfStock ? (
                 <span className="text-red-600 font-semibold flex items-center gap-1">
-                  <AlertCircle className="w-3.5 h-3.5" /> Out of Stock
+                  <FiAlertCircle className="w-3.5 h-3.5" /> Out of Stock
                 </span>
               ) : isLowStock ? (
                 <span className="text-amber-600 font-semibold">
@@ -315,7 +315,7 @@ export function ProductDetailPage() {
                 </span>
               ) : (
                 <span className="text-emerald-600 font-semibold flex items-center gap-1">
-                  <CheckCircle2 className="w-3.5 h-3.5" /> In Stock & Ready to Ship
+                  <FiCheckCircle className="w-3.5 h-3.5" /> In Stock & Ready to Ship
                 </span>
               )}
             </div>
@@ -399,7 +399,7 @@ export function ProductDetailPage() {
                   variant="outline"
                   size="md"
                   className="h-11 font-bold uppercase tracking-wider"
-                  leftIcon={<ShoppingBag className="w-4 h-4" />}
+                  leftIcon={<FiShoppingBag className="w-4 h-4" />}
                 >
                   {isOutOfStock ? 'Out of Stock' : 'Add to Cart'}
                 </Button>
@@ -409,7 +409,7 @@ export function ProductDetailPage() {
                   variant="primary"
                   size="md"
                   className="h-11 font-bold uppercase tracking-wider"
-                  leftIcon={<Zap className="w-4 h-4" />}
+                  leftIcon={<FiZap className="w-4 h-4" />}
                 >
                   Buy It Now
                 </Button>
@@ -419,15 +419,15 @@ export function ProductDetailPage() {
             {/* Trust Highlights */}
             <div className="grid grid-cols-3 gap-2 p-3 bg-[#f8fafc] rounded-[2px] border border-slate-200 text-center text-xs text-slate-600 mb-5">
               <div className="flex flex-col items-center gap-1">
-                <Truck className="w-4 h-4 text-primary" />
+                <FiTruck className="w-4 h-4 text-primary" />
                 <span className="font-bold text-[10px] text-slate-800 uppercase tracking-wider">Fast Dispatch</span>
               </div>
               <div className="flex flex-col items-center gap-1">
-                <ShieldCheck className="w-4 h-4 text-primary" />
+                <FiShield className="w-4 h-4 text-primary" />
                 <span className="font-bold text-[10px] text-slate-800 uppercase tracking-wider">PhonePe Secured</span>
               </div>
               <div className="flex flex-col items-center gap-1">
-                <PackageCheck className="w-4 h-4 text-primary" />
+                <FiPackage className="w-4 h-4 text-primary" />
                 <span className="font-bold text-[10px] text-slate-800 uppercase tracking-wider">Quality Checked</span>
               </div>
             </div>
@@ -441,7 +441,7 @@ export function ProductDetailPage() {
                 <ul className="space-y-1.5 text-xs text-slate-600">
                   {features.map((feat, i) => (
                     <li key={i} className="flex items-start gap-2">
-                      <CheckCircle2 className="w-3.5 h-3.5 text-emerald-600 mt-0.5 shrink-0" />
+                      <FiCheckCircle className="w-3.5 h-3.5 text-emerald-600 mt-0.5 shrink-0" />
                       <span>{feat}</span>
                     </li>
                   ))}

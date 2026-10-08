@@ -1,10 +1,10 @@
 import React, { useState, useEffect } from 'react';
-import { ChevronLeft, ChevronRight, ShieldCheck, Truck, Tag } from 'lucide-react';
+import { FiChevronLeft, FiChevronRight, FiShield, FiTruck, FiTag } from 'react-icons/fi';
 
 const announcements = [
-  { text: 'FREE Standard Shipping on eligible orders above ₹999', icon: Truck },
-  { text: '100% Secure & Verified Payments via PhonePe', icon: ShieldCheck },
-  { text: 'Direct Warehouse Value — Smart Home & Kitchen Utilities', icon: Tag },
+  { text: 'FREE Standard Shipping on eligible orders above ₹499', icon: FiTruck },
+  { text: '100% Secure & Verified Payments via PhonePe', icon: FiShield },
+  { text: 'Direct Warehouse Value — Smart Home & Kitchen Utilities', icon: FiTag },
 ];
 
 export function Topbar() {
@@ -36,7 +36,7 @@ export function Topbar() {
           aria-label="Previous announcement"
           className="p-1 hover:bg-slate-800 text-slate-400 hover:text-white rounded transition-colors"
         >
-          <ChevronLeft className="w-3.5 h-3.5" />
+          <FiChevronLeft className="w-3.5 h-3.5" />
         </button>
 
         <div className="flex items-center justify-center gap-2 overflow-hidden text-center px-4 font-medium tracking-wide">
@@ -52,7 +52,7 @@ export function Topbar() {
           aria-label="Next announcement"
           className="p-1 hover:bg-slate-800 text-slate-400 hover:text-white rounded transition-colors"
         >
-          <ChevronRight className="w-3.5 h-3.5" />
+          <FiChevronRight className="w-3.5 h-3.5" />
         </button>
       </div>
     </div>

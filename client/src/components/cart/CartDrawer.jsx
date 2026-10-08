@@ -1,6 +1,6 @@
 import React from 'react';
 import { Link, useNavigate } from 'react-router-dom';
-import { ShoppingBag, Trash2, ArrowRight, AlertTriangle } from 'lucide-react';
+import { FiShoppingBag, FiTrash2, FiArrowRight, FiAlertTriangle } from 'react-icons/fi';
 import { Drawer } from '../ui/Drawer';
 import { Button } from '../ui/Button';
 import { QuantitySelector } from '../ui/QuantitySelector';
@@ -60,7 +60,7 @@ export function CartDrawer() {
                 variant="primary"
                 size="md"
                 className="w-full"
-                rightIcon={<ArrowRight className="w-4 h-4" />}
+                rightIcon={<FiArrowRight className="w-4 h-4" />}
               >
                 Checkout
               </Button>
@@ -72,7 +72,7 @@ export function CartDrawer() {
       <div className="flex flex-col h-full">
         {!hasItems ? (
           <EmptyState
-            icon={ShoppingBag}
+            icon={FiShoppingBag}
             title="Your cart is empty"
             description="Explore our curated collection of smart home utility items and organizers."
             actionLabel="Start Shopping"
@@ -120,7 +120,7 @@ export function CartDrawer() {
                         aria-label="Remove item"
                         className="text-slate-400 hover:text-red-600 p-1 rounded transition-colors shrink-0"
                       >
-                        <Trash2 className="w-3.5 h-3.5" />
+                        <FiTrash2 className="w-3.5 h-3.5" />
                       </button>
                     </div>
 
@@ -132,7 +132,7 @@ export function CartDrawer() {
 
                     {!item.isAvailable && (
                       <div className="flex items-center gap-1 text-[11px] text-red-600 font-semibold mt-1">
-                        <AlertTriangle className="w-3 h-3" /> Out of stock
+                        <FiAlertTriangle className="w-3 h-3" /> Out of stock
                       </div>
                     )}
 

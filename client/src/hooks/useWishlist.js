@@ -14,10 +14,18 @@ export const useWishlist = () => {
   const wishlist = data?.getMyWishlist || [];
 
   useEffect(() => {
-    if (user && wishlist.length >= 0) {
-      setWishlistIds(wishlist.map((p) => p.id));
+    if (data?.getMyWishlist) {
+      const newIds = data.getMyWishlist.map((p) => p.id);
+      const currentIds = Array.from(wishlistIds);
+      const isDifferent =
+        newIds.length !== currentIds.length ||
+        newIds.some((id, idx) => id !== currentIds[idx]);
+
+      if (isDifferent) {
+        setWishlistIds(newIds);
+      }
     }
-  }, [user, wishlist, setWishlistIds]);
+  }, [data?.getMyWishlist]);
 
   const [toggleWishlistMutation] = useMutation(TOGGLE_WISHLIST, {
     refetchQueries: [{ query: GET_MY_WISHLIST }],

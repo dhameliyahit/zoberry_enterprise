@@ -1,6 +1,6 @@
 import React from 'react';
 import { Link, useNavigate, useSearchParams } from 'react-router-dom';
-import { User, Package, MapPin, Heart, LogOut, Shield } from 'lucide-react';
+import { FiUser, FiPackage, FiMapPin, FiHeart, FiLogOut, FiShield } from 'react-icons/fi';
 import { useUIStore } from '../../store/uiStore';
 import AccountOrders from './AccountOrders';
 import AccountAddresses from './AccountAddresses';
@@ -54,7 +54,7 @@ const AccountPage = () => {
             <div className="flex items-center gap-2 w-full sm:w-auto">
               {user?.role === 'admin' && (
                 <Link to="/admin">
-                  <Button variant="outline" size="sm" leftIcon={<Shield className="w-3.5 h-3.5" />}>
+                  <Button variant="outline" size="sm" leftIcon={<FiShield className="w-3.5 h-3.5" />}>
                     Admin Panel
                   </Button>
                 </Link>
@@ -64,7 +64,7 @@ const AccountPage = () => {
                 size="sm"
                 onClick={handleLogout}
                 className="text-slate-600 hover:text-red-600 hover:bg-red-50"
-                leftIcon={<LogOut className="w-3.5 h-3.5" />}
+                leftIcon={<FiLogOut className="w-3.5 h-3.5" />}
               >
                 Log Out
               </Button>
@@ -85,7 +85,7 @@ const AccountPage = () => {
                     : 'text-slate-700 hover:bg-slate-100/80'
                 }`}
               >
-                <Package className="w-4 h-4" /> Orders & Tracking
+                <FiPackage className="w-4 h-4" /> Orders & Tracking
               </button>
 
               <button
@@ -96,14 +96,14 @@ const AccountPage = () => {
                     : 'text-slate-700 hover:bg-slate-100/80'
                 }`}
               >
-                <MapPin className="w-4 h-4" /> Saved Addresses
+                <FiMapPin className="w-4 h-4" /> Saved Addresses
               </button>
 
               <Link
                 to="/wishlist"
                 className="w-full flex items-center gap-3 px-4 py-2.5 rounded-lg text-xs font-bold text-slate-700 hover:bg-slate-100/80 transition-all text-left"
               >
-                <Heart className="w-4 h-4" /> Wishlist
+                <FiHeart className="w-4 h-4" /> Wishlist
               </Link>
 
               <button
@@ -114,7 +114,7 @@ const AccountPage = () => {
                     : 'text-slate-700 hover:bg-slate-100/80'
                 }`}
               >
-                <User className="w-4 h-4" /> Profile Details
+                <FiUser className="w-4 h-4" /> Profile Details
               </button>
             </Card>
           </div>

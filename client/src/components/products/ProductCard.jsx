@@ -1,6 +1,7 @@
 import React, { useState } from 'react';
 import { Link, useNavigate } from 'react-router-dom';
-import { ShoppingBag, Heart, Eye, Check } from 'lucide-react';
+import { FiShoppingBag, FiHeart, FiEye } from 'react-icons/fi';
+import { FaHeart } from 'react-icons/fa';
 import { Modal } from '../ui/Modal';
 import { Button } from '../ui/Button';
 import { Badge } from '../ui/Badge';
@@ -94,7 +95,7 @@ export function ProductCard({ product }) {
                 : 'bg-white text-slate-500 hover:text-red-600 border-slate-200 hover:bg-slate-50'
             }`}
           >
-            <Heart className={`w-3.5 h-3.5 ${inWishlist ? 'fill-red-600' : ''}`} />
+            {inWishlist ? <FaHeart className="w-3.5 h-3.5 text-red-600" /> : <FiHeart className="w-3.5 h-3.5" />}
           </button>
 
           <button
@@ -107,7 +108,7 @@ export function ProductCard({ product }) {
             aria-label="Quick preview"
             className="w-7 h-7 rounded-[2px] bg-white text-slate-500 hover:text-primary border border-slate-200 hover:bg-slate-50 shadow-2xs flex items-center justify-center transition-colors"
           >
-            <Eye className="w-3.5 h-3.5" />
+            <FiEye className="w-3.5 h-3.5" />
           </button>
         </div>
 
@@ -159,7 +160,7 @@ export function ProductCard({ product }) {
               variant={isOutOfStock ? 'secondary' : 'primary'}
               size="sm"
               className="w-full text-xs font-bold uppercase tracking-wider h-8"
-              leftIcon={<ShoppingBag className="w-3.5 h-3.5" />}
+              leftIcon={<FiShoppingBag className="w-3.5 h-3.5" />}
             >
               {hasVariants ? 'Choose Options' : isOutOfStock ? 'Sold Out' : 'Quick Add'}
             </Button>
@@ -218,7 +219,7 @@ export function ProductCard({ product }) {
                 variant="primary"
                 size="md"
                 className="w-full"
-                leftIcon={<ShoppingBag className="w-4 h-4" />}
+                leftIcon={<FiShoppingBag className="w-4 h-4" />}
               >
                 {hasVariants ? 'View Options' : isOutOfStock ? 'Sold Out' : 'Add to Cart'}
               </Button>

@@ -1,6 +1,6 @@
 import React, { useState } from 'react';
 import { useQuery, useMutation } from '@apollo/client';
-import { Plus, Trash2, Edit2, Check, MapPin, Phone, User, Home, Building2 } from 'lucide-react';
+import { FiPlus, FiTrash2, FiEdit2, FiCheck, FiMapPin, FiPhone, FiUser, FiHome } from 'react-icons/fi';
 import {
   GET_MY_ADDRESSES,
   CREATE_ADDRESS,
@@ -135,7 +135,7 @@ const AccountAddresses = () => {
           variant="primary"
           size="sm"
           onClick={handleOpenAdd}
-          leftIcon={<Plus className="w-4 h-4" />}
+          leftIcon={<FiPlus className="w-4 h-4" />}
         >
           Add New Address
         </Button>
@@ -149,7 +149,7 @@ const AccountAddresses = () => {
       ) : addresses.length === 0 ? (
         <Card className="p-8 text-center max-w-md mx-auto">
           <div className="w-12 h-12 bg-primary/10 text-primary rounded-full flex items-center justify-center mx-auto mb-3">
-            <MapPin className="w-6 h-6" />
+            <FiMapPin className="w-6 h-6" />
           </div>
           <h3 className="text-sm font-bold text-slate-900 mb-1">No Addresses Saved Yet</h3>
           <p className="text-xs text-slate-500 mb-4">Add your shipping address for quicker checkouts.</p>
@@ -184,24 +184,24 @@ const AccountAddresses = () => {
                       className="p-1.5 text-slate-400 hover:text-primary transition-colors"
                       title="Edit address"
                     >
-                      <Edit2 className="w-3.5 h-3.5" />
+                      <FiEdit2 className="w-3.5 h-3.5" />
                     </button>
                     <button
                       onClick={() => deleteAddress({ variables: { id: addr.id } })}
                       className="p-1.5 text-slate-400 hover:text-red-500 transition-colors"
                       title="Delete address"
                     >
-                      <Trash2 className="w-3.5 h-3.5" />
+                      <FiTrash2 className="w-3.5 h-3.5" />
                     </button>
                   </div>
                 </div>
 
                 <div className="text-sm font-bold text-slate-900 flex items-center gap-2">
-                  <User className="w-3.5 h-3.5 text-slate-400" />
+                  <FiUser className="w-3.5 h-3.5 text-slate-400" />
                   {addr.fullName}
                 </div>
                 <div className="text-xs text-slate-600 mt-1 flex items-center gap-2">
-                  <Phone className="w-3.5 h-3.5 text-slate-400" />
+                  <FiPhone className="w-3.5 h-3.5 text-slate-400" />
                   {addr.phone}
                 </div>
 

@@ -1,6 +1,6 @@
 import React, { useState } from 'react';
 import SEO from '../components/common/SEO';
-import { Phone, Mail, MapPin, MessageCircle, Check, ArrowRight } from 'lucide-react';
+import { FiPhone, FiMail, FiMapPin, FiMessageCircle, FiCheck, FiArrowRight } from 'react-icons/fi';
 import { Card, CardBody, Button, Input } from '../components/ui';
 
 const ContactPage = () => {
@@ -36,7 +36,7 @@ const ContactPage = () => {
             <div className="space-y-6">
               <div className="flex items-start gap-4">
                 <div className="w-10 h-10 rounded-xl bg-primary/10 text-primary flex items-center justify-center shrink-0">
-                  <Phone className="w-5 h-5" />
+                  <FiPhone className="w-5 h-5" />
                 </div>
                 <div>
                   <h3 className="font-bold text-slate-900 text-sm">Phone Support</h3>
@@ -47,7 +47,7 @@ const ContactPage = () => {
 
               <div className="flex items-start gap-4">
                 <div className="w-10 h-10 rounded-xl bg-emerald-50 text-emerald-600 flex items-center justify-center shrink-0">
-                  <MessageCircle className="w-5 h-5" />
+                  <FiMessageCircle className="w-5 h-5" />
                 </div>
                 <div>
                   <h3 className="font-bold text-slate-900 text-sm">WhatsApp Support</h3>
@@ -58,14 +58,14 @@ const ContactPage = () => {
                     rel="noreferrer"
                     className="inline-flex items-center gap-1 mt-1 text-xs font-bold text-emerald-600 hover:underline"
                   >
-                    Chat on WhatsApp <ArrowRight className="w-3 h-3" />
+                    Chat on WhatsApp <FiArrowRight className="w-3 h-3" />
                   </a>
                 </div>
               </div>
 
               <div className="flex items-start gap-4">
                 <div className="w-10 h-10 rounded-xl bg-purple-50 text-purple-600 flex items-center justify-center shrink-0">
-                  <Mail className="w-5 h-5" />
+                  <FiMail className="w-5 h-5" />
                 </div>
                 <div>
                   <h3 className="font-bold text-slate-900 text-sm">Email Inquiries</h3>
@@ -75,7 +75,7 @@ const ContactPage = () => {
 
               <div className="flex items-start gap-4">
                 <div className="w-10 h-10 rounded-xl bg-amber-50 text-amber-600 flex items-center justify-center shrink-0">
-                  <MapPin className="w-5 h-5" />
+                  <FiMapPin className="w-5 h-5" />
                 </div>
                 <div>
                   <h3 className="font-bold text-slate-900 text-sm">Warehouse Location</h3>
@@ -89,7 +89,7 @@ const ContactPage = () => {
               {submitted ? (
                 <div className="text-center py-8">
                   <div className="w-12 h-12 bg-emerald-100 text-emerald-600 rounded-full flex items-center justify-center mx-auto mb-3">
-                    <Check className="w-6 h-6" />
+                    <FiCheck className="w-6 h-6" />
                   </div>
                   <h3 className="font-bold text-slate-900 text-base mb-1">Message Sent!</h3>
                   <p className="text-xs text-slate-500">Thank you for reaching out. We will get back to you shortly.</p>

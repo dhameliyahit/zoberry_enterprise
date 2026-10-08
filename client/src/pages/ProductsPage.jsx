@@ -1,7 +1,7 @@
 import React, { useState, useMemo, useEffect } from 'react';
 import { useSearchParams, useParams, Link } from 'react-router-dom';
 import { useQuery } from '@apollo/client';
-import { Search, X, ChevronRight, SlidersHorizontal } from 'lucide-react';
+import { FiSearch, FiX, FiChevronRight, FiSliders } from 'react-icons/fi';
 import { ProductCard } from '../components/products/ProductCard';
 import { ProductCardSkeleton, EmptyState, Button } from '../components/ui';
 import SEO from '../components/common/SEO';
@@ -131,7 +131,7 @@ export function ProductsPage() {
             <Link to="/" className="hover:text-primary transition-colors">
               Home
             </Link>
-            <ChevronRight className="w-3 h-3 text-slate-400" />
+            <FiChevronRight className="w-3 h-3 text-slate-400" />
             <span className="text-slate-900 font-semibold truncate">
               {activeCategoryObj ? activeCategoryObj.name : 'All Products'}
             </span>
@@ -154,14 +154,14 @@ export function ProductsPage() {
               placeholder="Search by product name or keyword..."
               className="w-full pl-9 pr-8 py-2 bg-[#f8fafc] border border-slate-200 rounded-[2px] text-xs sm:text-sm text-slate-900 placeholder:text-slate-400 focus:bg-white focus:outline-none focus:border-primary transition-colors"
             />
-            <Search className="w-4 h-4 text-slate-400 absolute left-3 top-1/2 -translate-y-1/2" />
+            <FiSearch className="w-4 h-4 text-slate-400 absolute left-3 top-1/2 -translate-y-1/2" />
             {searchTerm && (
               <button
                 type="button"
                 onClick={() => handleSearchChange('')}
                 className="absolute right-2.5 top-1/2 -translate-y-1/2 text-slate-400 hover:text-slate-600 p-0.5"
               >
-                <X className="w-3.5 h-3.5" />
+                <FiX className="w-3.5 h-3.5" />
               </button>
             )}
           </div>
