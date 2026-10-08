@@ -12,7 +12,7 @@
  * 6. Master GraphQL schema compilation with Payment typeDefs and resolvers
  * 7. Security gates protecting unauthorized payment access (IDOR / BOLA)
  */
-
+require('dotenv').config();
 const assert = require('assert');
 const { ApolloServer } = require('@apollo/server');
 const typeDefs = require('../graphql/typeDefs');
