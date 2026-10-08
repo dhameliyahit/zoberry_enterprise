@@ -7,6 +7,7 @@ import {
 } from 'react-icons/fi';
 import { PREVIEW_CHECKOUT, CREATE_ORDER_FROM_CART } from '../graphql/orders';
 import { VALIDATE_COUPON } from '../graphql/promotions';
+import { INITIATE_PAYMENT } from '../graphql/payment';
 import { GET_MY_ADDRESSES } from '../graphql/address';
 import { getGuestSessionToken, clearGuestSessionToken } from '../utils/guestToken';
 import { useUIStore } from '../store/uiStore';
@@ -18,6 +19,9 @@ const CheckoutPage = () => {
   const navigate = useNavigate();
   const guestSessionToken = getGuestSessionToken();
   const { user, openAuthModal, addToast, setCartCount } = useUIStore();
+
+  // Payment Method Selection
+  const [selectedPaymentMethod, setSelectedPaymentMethod] = useState('PHONEPE');
 
   // Guest Address State
   const [guestAddress, setGuestAddress] = useState({
@@ -82,8 +86,9 @@ const CheckoutPage = () => {
   const validationErrors = preview?.validationErrors || [];
   const isReady = preview?.isReadyForCheckout && validationErrors.length === 0;
 
-  // 3. Create Order Mutation
+  // 3. Order & Payment Mutations
   const [createOrderMutation] = useMutation(CREATE_ORDER_FROM_CART);
+  const [initiatePaymentMutation] = useMutation(INITIATE_PAYMENT);
 
   const handleApplyCoupon = async (e) => {
     e?.preventDefault();
@@ -192,7 +197,26 @@ const CheckoutPage = () => {
 
       if (order?.orderNumber) {
         setCartCount(0);
-        addToast(`Order placed successfully! Order #${order.orderNumber}`, 'success');
+
+        if (selectedPaymentMethod === 'PHONEPE') {
+          addToast(`Order #${order.orderNumber} created. Redirecting to PhonePe...`, 'info');
+          try {
+            const payRes = await initiatePaymentMutation({
+              variables: { orderNumber: order.orderNumber },
+            });
+            const redirectUrl = payRes.data?.initiatePayment?.redirectUrl;
+            if (redirectUrl) {
+              window.location.href = redirectUrl;
+              return;
+            }
+          } catch (payErr) {
+            console.error('Payment initiation error:', payErr);
+            addToast('Could not redirect to PhonePe. You can complete payment from your order page.', 'warning');
+          }
+        } else {
+          addToast(`Order placed successfully! Order #${order.orderNumber}`, 'success');
+        }
+
         navigate(`/order/${order.orderNumber}`);
       }
     } catch (err) {
@@ -506,32 +530,72 @@ const CheckoutPage = () => {
             </div>
 
             {/* Step 3: Payment Method Selection */}
-            <div className="bg-white rounded-lg border border-gray-200 p-6 shadow-xs space-y-3">
+            <div className="bg-white rounded-lg border border-gray-200 p-6 shadow-xs space-y-4">
               <h2 className="text-base font-bold text-gray-900 flex items-center gap-2 border-b border-gray-100 pb-3">
                 <FiCreditCard className="text-primary" /> Payment Method
               </h2>
               
-              <div className="p-4 rounded border border-primary bg-blue-50/20 flex items-center justify-between">
+              {/* PhonePe Option */}
+              <label
+                onClick={() => setSelectedPaymentMethod('PHONEPE')}
+                className={`p-4 rounded-lg border cursor-pointer flex items-center justify-between transition-all ${
+                  selectedPaymentMethod === 'PHONEPE'
+                    ? 'border-blue-600 bg-blue-50/30 ring-1 ring-blue-600'
+                    : 'border-gray-200 hover:border-gray-300'
+                }`}
+              >
                 <div className="flex items-center gap-3">
                   <input
                     type="radio"
                     name="paymentMethod"
-                    defaultChecked
-                    className="accent-primary"
+                    checked={selectedPaymentMethod === 'PHONEPE'}
+                    onChange={() => setSelectedPaymentMethod('PHONEPE')}
+                    className="accent-blue-600 w-4 h-4 cursor-pointer"
                   />
                   <div>
-                    <span className="text-xs font-bold text-gray-900 block">
-                      Direct Standard Order / Cash On Delivery
+                    <span className="text-xs font-bold text-gray-900 flex items-center gap-2">
+                      PhonePe Gateway <span className="text-[10px] font-semibold text-blue-600 bg-blue-100 px-1.5 py-0.5 rounded">UPI / Cards / NetBanking</span>
                     </span>
-                    <span className="text-[11px] text-gray-500 block">
-                      Pay securely when the courier arrives at your door.
+                    <span className="text-[11px] text-gray-500 block mt-0.5">
+                      Fast, instant & secure online checkout via PhonePe Standard Gateway.
                     </span>
                   </div>
                 </div>
-                <span className="text-[10px] font-bold uppercase tracking-wider bg-emerald-100 text-emerald-800 px-2 py-0.5 rounded">
-                  Available
+                <span className="text-[10px] font-bold uppercase tracking-wider bg-blue-600 text-white px-2 py-0.5 rounded shrink-0">
+                  Recommended
                 </span>
-              </div>
+              </label>
+
+              {/* Cash On Delivery Option */}
+              <label
+                onClick={() => setSelectedPaymentMethod('COD')}
+                className={`p-4 rounded-lg border cursor-pointer flex items-center justify-between transition-all ${
+                  selectedPaymentMethod === 'COD'
+                    ? 'border-blue-600 bg-blue-50/30 ring-1 ring-blue-600'
+                    : 'border-gray-200 hover:border-gray-300'
+                }`}
+              >
+                <div className="flex items-center gap-3">
+                  <input
+                    type="radio"
+                    name="paymentMethod"
+                    checked={selectedPaymentMethod === 'COD'}
+                    onChange={() => setSelectedPaymentMethod('COD')}
+                    className="accent-blue-600 w-4 h-4 cursor-pointer"
+                  />
+                  <div>
+                    <span className="text-xs font-bold text-gray-900 block">
+                      Cash On Delivery / Standard Order
+                    </span>
+                    <span className="text-[11px] text-gray-500 block mt-0.5">
+                      Pay securely with cash or UPI when the courier delivers to your address.
+                    </span>
+                  </div>
+                </div>
+                <span className="text-[10px] font-bold uppercase tracking-wider bg-gray-100 text-gray-700 px-2 py-0.5 rounded shrink-0">
+                  COD
+                </span>
+              </label>
             </div>
 
             {/* Step 4: Optional Order Notes */}

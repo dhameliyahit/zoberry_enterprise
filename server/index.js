@@ -16,6 +16,7 @@ const { processAndSaveImage, ALLOWED_MIME_TYPES, MAX_FILE_SIZE_BYTES } = require
 const { generateSitemapXml, renderHtmlWithSSRMeta } = require('./helpers/ssrHelper');
 const { getAuthUserFromReq, expressRequireAdmin } = require('./helpers/authMiddleware');
 const { formatGraphQLError } = require('./helpers/errorHelper');
+const paymentRoutes = require('./routes/paymentRoutes');
 
 const app = express();
 const PORT = process.env.PORT || 9000;
@@ -39,6 +40,10 @@ const initializeServer = async () => {
     // 3. Apply standard Express middlewares
     app.use(cors());
     app.use(express.json());
+    app.use(express.urlencoded({ extended: true }));
+
+    // 4. Mount REST Payment Callback Routes
+    app.use('/api/payment', paymentRoutes);
 
     // 4. Serve the uploads folder statically so images can be viewed via URL
     app.use('/uploads', express.static(path.join(__dirname, 'uploads')));

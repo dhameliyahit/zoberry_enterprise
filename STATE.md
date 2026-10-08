@@ -13,9 +13,10 @@
 | **Phase 1** | **Production Foundation & Security** | ✅ **COMPLETE** | 26 / 26 Passed |
 | **Phase 2** | **Commerce Core (Cart, Variants, Inventory, Address, Order, Checkout)** | ✅ **COMPLETE** | 20 / 20 Passed |
 | **Phase 3** | **Storefront & Customer Shopping Experience (Cart Drawer, PDP Variants, Addresses, Orders, Wishlist, Checkout)** | ✅ **COMPLETE** | 6 / 6 Passed |
-| **Phase 4** | **Promotions, Coupons & Pricing Rules (Coupons, Percent/Fixed Caps, Usage Limits, Snapshots, Admin Panel)** | ✅ **COMPLETE** | 16 / 16 Passed (68/68 Total) |
-| **Phase 5** | **Payments & Logistics (PhonePe Gateway, Webhooks, Courier Tracking, Invoicing)** | ⏳ **PENDING (NEXT)** | - |
-| **Phase 6** | **Reviews, Marketing & Customer Loyalty Systems** | ⏳ **PENDING** | - |
+| **Phase 4** | **Promotions, Coupons & Pricing Rules (Coupons, Percent/Fixed Caps, Usage Limits, Snapshots, Admin Panel)** | ✅ **COMPLETE** | 16 / 16 Passed |
+| **Phase 5** | **PhonePe Test Mode Payment Integration (Standard Checkout SDK, Webhooks, Verification, Inventory TTL)** | ✅ **COMPLETE** | 13 / 13 Passed (81/81 Total) |
+| **Phase 6** | **Logistics & Invoicing (Courier Tracking, Automated Tax Invoices)** | ⏳ **PENDING (NEXT)** | - |
+| **Phase 7** | **Reviews, Marketing & Customer Loyalty Systems** | ⏳ **PENDING** | - |
 
 ---
 
@@ -91,7 +92,27 @@
 - **Frontend Experience:**
   - Storefront: Dynamic coupon promo code input, validation feedback, instant preview discount line item, and remove coupon capability in `/checkout`.
   - Admin Management: Dedicated `/admin/promotions` dashboard with live search, filters (active, inactive, coupons, auto), create/edit promotion modal, instant active toggle switches, and deletion controls.
-- **Verification:** `server/test/promotions_phase4.test.js` (16 tests) | **68 / 68 Total Tests Passing** | Clean Vite Client Build.
+- **Verification:** `server/test/promotions_phase4.test.js` (16 tests).
+
+### ✅ Phase 5: PhonePe Test Mode Payment Integration
+- **Payment Domain Architecture:**
+  - `Payment` model with `merchantOrderId` (UUID), `amount`, `currency`, `status` (PENDING, INITIATED, SUCCESS, FAILED, CANCELLED, EXPIRED, REFUNDED), `redirectUrl`, `providerPaymentId`, `providerResponseCode`, `rawResponse`, `expiresAt` (15-min TTL), `paidAt`.
+  - `PaymentTransaction` model recording granular gateway events (`INITIATE`, `STATUS_VERIFY`, `EXPIRE`).
+  - Foreign key associations between `Order` <-> `Payment` <-> `PaymentTransaction`.
+- **PhonePe SDK Adapter & Service Layer (`server/services/payment/`):**
+  - Configured with official `pg-sdk-node` (v2.0.2) targeting `Env.SANDBOX`.
+  - Server-authoritative amount validation: payment amount derived solely from `Order.grandTotal` in integer paise. Zero client-side trust.
+  - Server-to-server authoritative verification: `verifyAndProcessPhonePePayment` calls `client.getOrderStatus` to verify state and exact paid amount.
+- **Inventory Reservation & Expiry Protection:**
+  - Stock is reserved when order is placed (`CHECKOUT_RESERVATION`).
+  - 15-minute TTL per payment attempt. `expireStaleUnpaidOrders()` sweeps expired pending orders, marks payment as `EXPIRED`, cancels the order, and automatically restocks inventory via `releaseStockForCancelledOrder`.
+- **REST Callback & GraphQL APIs:**
+  - `GET/POST /api/payment/phonepe/callback`: receives PhonePe redirect, executes backend verification, updates payment/order atomically, and redirects browser to `/order/:orderNumber?payment=success` or `failed`.
+  - GraphQL `initiatePayment(orderNumber)` mutation & `getPaymentStatus(orderNumber)` query with strict IDOR customer ownership protection.
+- **Frontend Experience:**
+  - `/checkout`: Added PhonePe Online Gateway (UPI, Cards, NetBanking) option alongside Cash On Delivery.
+  - `/order/:orderNumber`: Displays verified payment status badge, PhonePe transaction ID, and clear "Retry Payment" workflow if a transaction fails.
+- **Verification:** `server/test/payment_phase5.test.js` (13 tests) | **81 / 81 Total Tests Passing** | Clean Vite Client Build.
 
 ---
 
@@ -106,7 +127,7 @@ client/src/
 │   ├── layout/                      # Header, Footer, Topbar, MainLayout
 │   ├── products/                    # ProductCard
 │   └── sections/                    # Hero, CategorySlider, FeaturedProducts
-├── graphql/                         # Apollo queries/mutations (auth, products, cart, address, orders, wishlist, promotions)
+├── graphql/                         # Apollo queries/mutations (auth, products, cart, address, orders, wishlist, promotions, payment)
 ├── hooks/                           # Custom hooks (useCart, useWishlist)
 ├── pages/                           # HomePage, ProductsPage, ProductDetailPage, CartPage, CheckoutPage, OrderDetailPage, WishlistPage, AboutPage, ContactPage
 │   ├── account/                     # AccountPage, AccountOrders, AccountAddresses
@@ -118,16 +139,24 @@ server/
 ├── config/
 │   └── db.js                        # Sequelize connection configuration
 ├── graphql/
-│   ├── typeDefs/                    # GraphQL schemas (user, category, product, variant, cart, address, order, wishlist, promotion)
-│   └── resolvers/                   # Resolvers (user, category, product, variant, cart, address, order, wishlist, promotion)
+│   ├── typeDefs/                    # GraphQL schemas (user, category, product, variant, cart, address, order, wishlist, promotion, payment)
+│   └── resolvers/                   # Resolvers (user, category, product, variant, cart, address, order, wishlist, promotion, payment)
 ├── helpers/                         # authHelper, authMiddleware, errorHelper, imageHelper, inventoryHelper, moneyHelper, orderStateMachine, promotionHelper, validationHelper
-├── models/                          # Sequelize models (User, Category, Product, ProductVariant, Cart, CartItem, Address, Order, OrderItem, InventoryMovement, WishlistItem, Promotion, PromotionUsage)
+├── models/                          # Sequelize models (User, Category, Product, ProductVariant, Cart, CartItem, Address, Order, OrderItem, InventoryMovement, WishlistItem, Promotion, PromotionUsage, Payment, PaymentTransaction)
+├── routes/                          # paymentRoutes.js (PhonePe callback/webhook)
+├── services/
+│   └── payment/
+│       ├── paymentService.js        # Master payment orchestrator, TTL, and status verification
+│       └── phonepe/
+│           ├── phonepeConfig.js     # PhonePe sandbox config
+│           └── phonepeService.js    # pg-sdk-node adapter
 ├── scripts/                         # initDb.js
 └── test/
     ├── security_and_regression.test.js  # Phase 1 test suite (26 tests)
     ├── commerce_phase2.test.js          # Phase 2 test suite (20 tests)
     ├── storefront_phase3.test.js        # Phase 3 test suite (6 tests)
-    └── promotions_phase4.test.js        # Phase 4 test suite (16 tests)
+    ├── promotions_phase4.test.js        # Phase 4 test suite (16 tests)
+    └── payment_phase5.test.js           # Phase 5 test suite (13 tests)
 ```
 
 ---
@@ -139,7 +168,7 @@ From the `server` directory:
 cd server
 npm test
 ```
-*(Runs Phase 1, Phase 2, Phase 3, and Phase 4 automated test suites — 68/68 passing).*
+*(Runs Phase 1, Phase 2, Phase 3, Phase 4, and Phase 5 automated test suites — 81/81 passing).*
 
 To build the client:
 ```bash

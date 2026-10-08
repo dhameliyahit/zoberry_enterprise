@@ -12,6 +12,7 @@
     "morgan": "^1.12.1",
     "multer": "^2.4.0",
     "mysql2": "^3.24.5",
+    "pg-sdk-node": "^2.0.2",
     "sequelize": "^6.37.8",
     "sharp": "^0.35.5"
   },
@@ -22,7 +23,7 @@
   "scripts": {
     "start": "node index.js",
     "dev": "nodemon index.js",
-    "test": "node test/security_and_regression.test.js && node test/commerce_phase2.test.js && node test/storefront_phase3.test.js && node test/promotions_phase4.test.js"
+    "test": "node test/security_and_regression.test.js && node test/commerce_phase2.test.js && node test/storefront_phase3.test.js && node test/promotions_phase4.test.js && node test/payment_phase5.test.js"
   },
   "keywords": [],
   "author": "",

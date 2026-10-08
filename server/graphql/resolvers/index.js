@@ -7,6 +7,7 @@ const addressResolvers = require('./address');
 const orderResolvers = require('./order');
 const wishlistResolvers = require('./wishlist');
 const promotionResolvers = require('./promotion');
+const paymentResolvers = require('./payment');
 
 // Combine all individual module resolvers into one master resolver object
 const rootResolvers = {
@@ -19,6 +20,7 @@ const rootResolvers = {
     ...orderResolvers.Query,
     ...wishlistResolvers.Query,
     ...promotionResolvers.Query,
+    ...paymentResolvers.Query,
   },
   Mutation: {
     ...userResolvers.Mutation,
@@ -30,6 +32,7 @@ const rootResolvers = {
     ...orderResolvers.Mutation,
     ...wishlistResolvers.Mutation,
     ...promotionResolvers.Mutation,
+    ...paymentResolvers.Mutation,
   },
   // Relational Field Resolvers
   Product: productResolvers.Product,

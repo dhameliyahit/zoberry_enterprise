@@ -11,6 +11,8 @@ const OrderItemModel = require('./orderItemModel');
 const WishlistItemModel = require('./wishlistItemModel');
 const PromotionModel = require('./promotionModel');
 const PromotionUsageModel = require('./promotionUsageModel');
+const PaymentModel = require('./paymentModel');
+const PaymentTransactionModel = require('./paymentTransactionModel');
 
 // ==========================================
 // Define Database Relationships / Associations
@@ -180,6 +182,28 @@ PromotionUsageModel.belongsTo(UserModel, {
   as: 'user',
 });
 
+// 13. Order <-> Payment
+OrderModel.hasMany(PaymentModel, {
+  foreignKey: 'orderId',
+  as: 'payments',
+  onDelete: 'CASCADE',
+});
+PaymentModel.belongsTo(OrderModel, {
+  foreignKey: 'orderId',
+  as: 'order',
+});
+
+// 14. Payment <-> PaymentTransaction
+PaymentModel.hasMany(PaymentTransactionModel, {
+  foreignKey: 'paymentId',
+  as: 'transactions',
+  onDelete: 'CASCADE',
+});
+PaymentTransactionModel.belongsTo(PaymentModel, {
+  foreignKey: 'paymentId',
+  as: 'payment',
+});
+
 module.exports = {
   UserModel,
   CategoryModel,
@@ -194,4 +218,6 @@ module.exports = {
   WishlistItemModel,
   PromotionModel,
   PromotionUsageModel,
+  PaymentModel,
+  PaymentTransactionModel,
 };
