@@ -1,4 +1,4 @@
-﻿import React, { useState } from 'react';
+import React, { useState } from 'react';
 import { gql, useQuery, useMutation } from '@apollo/client';
 import { FiPlus, FiTrash2, FiEdit2, FiCheck, FiImage, FiX, FiFolder } from 'react-icons/fi';
 import axios from 'axios';
@@ -122,10 +122,15 @@ const AdminCategories = () => {
       let uploadedImageUrl = formData.imageUrl;
 
       if (selectedFile) {
+        const token = localStorage.getItem('token');
         const formDataUpload = new FormData();
         formDataUpload.append('image', selectedFile);
         formDataUpload.append('folder', 'categories');
-        const uploadRes = await axios.post(`${API_URL}/api/upload`, formDataUpload);
+        const uploadRes = await axios.post(`${API_URL}/api/upload`, formDataUpload, {
+          headers: {
+            Authorization: token ? `Bearer ${token}` : '',
+          },
+        });
         uploadedImageUrl = uploadRes.data.imageUrl;
       }
 

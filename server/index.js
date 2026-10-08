@@ -2,12 +2,9 @@ const express = require('express');
 const { ApolloServer } = require('@apollo/server');
 const { expressMiddleware } = require('@as-integrations/express5');
 const cors = require('cors');
-const jwt = require('jsonwebtoken');
 const multer = require('multer');
 const path = require('path');
 const fs = require('fs');
-const { processAndSaveImage } = require('./helpers/imageHelper');
-const { generateSitemapXml, renderHtmlWithSSRMeta } = require('./helpers/ssrHelper');
 require('dotenv').config();
 
 // Load models and define relationships BEFORE syncing the database
@@ -15,6 +12,10 @@ require('./models');
 const { connectDB } = require('./config/db');
 const typeDefs = require('./graphql/typeDefs');
 const resolvers = require('./graphql/resolvers');
+const { processAndSaveImage, ALLOWED_MIME_TYPES, MAX_FILE_SIZE_BYTES } = require('./helpers/imageHelper');
+const { generateSitemapXml, renderHtmlWithSSRMeta } = require('./helpers/ssrHelper');
+const { getAuthUserFromReq, expressRequireAdmin } = require('./helpers/authMiddleware');
+const { formatGraphQLError } = require('./helpers/errorHelper');
 
 const app = express();
 const PORT = process.env.PORT || 9000;
@@ -22,28 +23,15 @@ const PORT = process.env.PORT || 9000;
 // Main function to initialize and start the server
 const initializeServer = async () => {
   try {
-    // 1. Connect to MySQL Database and synchronize models
+    // 1. Connect to MySQL Database safely
     await connectDB();
 
-    // 1.5 Seed Admin User
-    const bcrypt = require('bcryptjs');
-    const UserModel = require('./models/userModel');
-    const adminEmail = 'heet@admin.com';
-    const adminExists = await UserModel.findOne({ where: { email: adminEmail } });
-    if (!adminExists) {
-      const hashedPassword = await bcrypt.hash('123456', 10);
-      await UserModel.create({
-        email: adminEmail,
-        password: hashedPassword,
-        role: 'admin'
-      });
-      console.log('Admin user seeded: heet@admin.com / 123456');
-    }
-
-    // 2. Initialize the Apollo GraphQL Server
+    // 2. Initialize the Apollo GraphQL Server with custom error formatting
     const graphqlServer = new ApolloServer({
-      typeDefs: typeDefs,
-      resolvers: resolvers,
+      typeDefs,
+      resolvers,
+      formatError: formatGraphQLError,
+      includeStacktraceInErrorResponses: process.env.NODE_ENV !== 'production',
     });
 
     await graphqlServer.start();
@@ -69,25 +57,41 @@ const initializeServer = async () => {
       }
     });
 
-    // 5. Setup REST API route for image uploads
-    const upload = multer({ storage: multer.memoryStorage() });
-    
-    app.post('/api/upload', upload.single('image'), async (req, res) => {
+    // 5. Setup REST API route for image uploads (Protected: Admin Only with strict validation)
+    const upload = multer({
+      storage: multer.memoryStorage(),
+      limits: {
+        fileSize: MAX_FILE_SIZE_BYTES, // 5MB max
+        files: 20,
+      },
+      fileFilter: (req, file, cb) => {
+        if (ALLOWED_MIME_TYPES.includes(file.mimetype)) {
+          cb(null, true);
+        } else {
+          cb(new Error(`Unsupported file type: ${file.mimetype}. Allowed types: JPEG, PNG, WebP, AVIF, GIF`), false);
+        }
+      },
+    });
+
+    // Single Image Upload (Admin Only)
+    app.post('/api/upload', expressRequireAdmin, upload.single('image'), async (req, res) => {
       try {
         if (!req.file) {
           return res.status(400).json({ error: 'No image file provided' });
         }
-        
+
         const folder = req.body.folder || 'misc';
         const imageUrl = await processAndSaveImage(req.file.buffer, folder);
-        
+
         return res.status(200).json({ imageUrl });
       } catch (error) {
-        return res.status(500).json({ error: 'Image processing failed' });
+        console.error('Image upload error:', error.message);
+        return res.status(400).json({ error: error.message || 'Image processing failed' });
       }
     });
 
-    app.post('/api/upload-multiple', upload.array('images', 20), async (req, res) => {
+    // Multiple Image Upload (Admin Only)
+    app.post('/api/upload-multiple', expressRequireAdmin, upload.array('images', 20), async (req, res) => {
       try {
         if (!req.files || req.files.length === 0) {
           return res.status(400).json({ error: 'No image files provided' });
@@ -103,27 +107,15 @@ const initializeServer = async () => {
 
         return res.status(200).json({ imageUrls });
       } catch (error) {
-        console.error('Multiple image upload error:', error);
-        return res.status(500).json({ error: 'Multiple image processing failed' });
+        console.error('Multiple image upload error:', error.message);
+        return res.status(400).json({ error: error.message || 'Multiple image processing failed' });
       }
     });
 
     // 6. Setup GraphQL API route with Authentication Context
     app.use('/graphql', expressMiddleware(graphqlServer, {
       context: async ({ req }) => {
-        const authHeader = req.headers.authorization || '';
-        const token = authHeader.split(' ')[1];
-        
-        let authenticatedUser = null;
-        
-        if (token) {
-          try {
-            authenticatedUser = jwt.verify(token, process.env.JWT_SECRET);
-          } catch (error) {
-            console.error('Invalid or expired authentication token provided.');
-          }
-        }
-        
+        const authenticatedUser = await getAuthUserFromReq(req);
         return { user: authenticatedUser };
       },
     }));
@@ -131,7 +123,7 @@ const initializeServer = async () => {
     // 7. Serve static files from the built client (production)
     const clientDistPath = path.join(__dirname, '..', 'client', 'dist');
     const clientDevIndexPath = path.join(__dirname, '..', 'client', 'index.html');
-    
+
     if (fs.existsSync(clientDistPath)) {
       app.use(express.static(clientDistPath, { index: false }));
     }

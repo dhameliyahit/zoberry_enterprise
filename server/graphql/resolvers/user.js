@@ -1,147 +1,250 @@
 const bcrypt = require('bcryptjs');
-const jwt = require('jsonwebtoken');
+const { GraphQLError } = require('graphql');
+const { OAuth2Client } = require('google-auth-library');
 const UserModel = require('../../models/userModel');
 const { generateAuthToken } = require('../../helpers/authHelper');
-const { OAuth2Client } = require('google-auth-library');
+const { requireAuth, requireAdmin, requireOwnerOrAdmin } = require('../../helpers/authMiddleware');
+const { isValidEmail, isValidPassword } = require('../../helpers/validationHelper');
 require('dotenv').config();
 
 const googleClient = new OAuth2Client(process.env.GOOGLE_CLIENT_ID);
 
-
 const userResolvers = {
   Query: {
-    // Fetches the currently logged in user based on the context token
+    // Fetches the currently logged in user based on verified authentication context
     getCurrentUser: async (parent, args, context) => {
-      if (!context.user) {
-        throw new Error('Not authenticated');
-      }
-      return await UserModel.findByPk(context.user.id);
-    },
-    // Fetches a specific user by their ID
-    getUserById: async (parent, { id }) => {
-      return await UserModel.findByPk(id);
-    },
-    // Fetches all users (typically for admin use)
-    getAllUsers: async () => {
-      return await UserModel.findAll();
-    }
-  },
-  
-  Mutation: {
-    // Registers a new user with an email and an optional password
-    registerUser: async (parent, { email, password }) => {
-      try {
-        // Check if a user with this email already exists
-        const existingUser = await UserModel.findOne({ where: { email } });
-        if (existingUser) {
-          throw new Error('User already exists with this email');
-        }
-
-        let hashedPassword = null;
-        if (password) {
-          // Hash the password for secure storage
-          hashedPassword = await bcrypt.hash(password, 10);
-        }
-
-        // Create the new user in the database
-        const newUser = await UserModel.create({
-          email: email,
-          password: hashedPassword,
+      const authUser = requireAuth(context);
+      const user = await UserModel.findByPk(authUser.id);
+      if (!user) {
+        throw new GraphQLError('User not found', {
+          extensions: { code: 'NOT_FOUND' },
         });
-
-        // Return the generated token and user details
-        return {
-          token: generateAuthToken(newUser),
-          user: newUser,
-        };
-      } catch (error) {
-        throw new Error(error.message);
       }
+      return user;
     },
 
-    // Logs in an existing user using email and password
-    loginUser: async (parent, { email, password }) => {
-      const userRecord = await UserModel.findOne({ where: { email } });
-      if (!userRecord) {
-        throw new Error('Invalid email or password');
+    // Fetches a specific user by their ID - restricted to resource owner or admin
+    getUserById: async (parent, { id }, context) => {
+      requireOwnerOrAdmin(context, id);
+      const user = await UserModel.findByPk(id);
+      if (!user) {
+        throw new GraphQLError('User not found', {
+          extensions: { code: 'NOT_FOUND' },
+        });
       }
-      
-      // If a user was auto-registered as a guest or logged in with Google, they might not have a password
-      if (!userRecord.password) {
-        throw new Error('No password set. Please login with Google or reset your password.');
+      return user;
+    },
+
+    // Fetches all users - strictly restricted to administrators
+    getAllUsers: async (parent, args, context) => {
+      requireAdmin(context);
+      return await UserModel.findAll({
+        order: [['createdAt', 'DESC']],
+      });
+    },
+  },
+
+  Mutation: {
+    // Registers a new customer account with strict email and password validation
+    registerUser: async (parent, { email, password }) => {
+      if (!email || !isValidEmail(email)) {
+        throw new GraphQLError('Please provide a valid email address.', {
+          extensions: { code: 'BAD_USER_INPUT' },
+        });
       }
 
-      // Compare the provided password with the stored hashed password
-      const isPasswordMatch = await bcrypt.compare(password, userRecord.password);
-      if (!isPasswordMatch) {
-        throw new Error('Invalid email or password');
+      if (password !== undefined && password !== null) {
+        if (!isValidPassword(password)) {
+          throw new GraphQLError('Password must be at least 6 characters long and cannot be blank.', {
+            extensions: { code: 'BAD_USER_INPUT' },
+          });
+        }
       }
+
+      const normalizedEmail = email.trim().toLowerCase();
+
+      // Check if user already exists
+      const existingUser = await UserModel.findOne({ where: { email: normalizedEmail } });
+      if (existingUser) {
+        throw new GraphQLError('An account with this email address already exists.', {
+          extensions: { code: 'BAD_USER_INPUT' },
+        });
+      }
+
+      let hashedPassword = null;
+      if (password) {
+        hashedPassword = await bcrypt.hash(password, 12);
+      }
+
+      // Create new customer (explicitly enforce customer role to prevent privilege escalation)
+      const newUser = await UserModel.create({
+        email: normalizedEmail,
+        password: hashedPassword,
+        role: 'customer',
+        isGuestConverted: false,
+      });
+
+      // Reload without password field
+      const safeUser = await UserModel.findByPk(newUser.id);
 
       return {
-        token: generateAuthToken(userRecord),
-        user: userRecord,
+        token: generateAuthToken(newUser),
+        user: safeUser,
       };
     },
 
-    // Handles Google Login Securely via Token Verification
+    // Authenticates user with email and password
+    loginUser: async (parent, { email, password }) => {
+      if (!email || typeof email !== 'string' || !password || typeof password !== 'string') {
+        throw new GraphQLError('Email and password are required.', {
+          extensions: { code: 'BAD_USER_INPUT' },
+        });
+      }
+
+      const normalizedEmail = email.trim().toLowerCase();
+
+      // Load user including password for authentication check
+      const userRecord = await UserModel.scope('withPassword').findOne({
+        where: { email: normalizedEmail },
+      });
+
+      if (!userRecord) {
+        throw new GraphQLError('Invalid email or password.', {
+          extensions: { code: 'BAD_USER_INPUT' },
+        });
+      }
+
+      if (!userRecord.password) {
+        throw new GraphQLError('No password is set for this account. Please sign in with Google.', {
+          extensions: { code: 'BAD_USER_INPUT' },
+        });
+      }
+
+      const isPasswordMatch = await bcrypt.compare(password, userRecord.password);
+      if (!isPasswordMatch) {
+        throw new GraphQLError('Invalid email or password.', {
+          extensions: { code: 'BAD_USER_INPUT' },
+        });
+      }
+
+      // Safe user output without password
+      const safeUser = await UserModel.findByPk(userRecord.id);
+
+      return {
+        token: generateAuthToken(userRecord),
+        user: safeUser,
+      };
+    },
+
+    // Handles Google OAuth ID token verification securely
     googleLoginUser: async (parent, { token }) => {
+      if (!token || typeof token !== 'string') {
+        throw new GraphQLError('Google authentication token is required.', {
+          extensions: { code: 'BAD_USER_INPUT' },
+        });
+      }
+
       try {
-        // 1. Verify the token securely with Google's servers
         const ticket = await googleClient.verifyIdToken({
           idToken: token,
-          audience: process.env.GOOGLE_CLIENT_ID, 
+          audience: process.env.GOOGLE_CLIENT_ID,
         });
-        
-        // 2. Extract guaranteed user info from Google
-        const payload = ticket.getPayload();
-        const email = payload.email;
-        const googleId = payload.sub; // 'sub' is Google's unique ID for the user
 
-        // 3. Find or create the user in our database
-        let userRecord = await UserModel.findOne({ where: { email } });
+        const payload = ticket.getPayload();
+        if (!payload || !payload.email) {
+          throw new GraphQLError('Invalid Google token payload.', {
+            extensions: { code: 'UNAUTHENTICATED' },
+          });
+        }
+
+        const normalizedEmail = payload.email.trim().toLowerCase();
+        const googleId = payload.sub;
+
+        let userRecord = await UserModel.findOne({ where: { email: normalizedEmail } });
 
         if (!userRecord) {
-          // If the user does not exist, automatically register them
-          userRecord = await UserModel.create({ 
-            email: email, 
-            googleId: googleId 
+          userRecord = await UserModel.create({
+            email: normalizedEmail,
+            googleId: googleId,
+            role: 'customer',
           });
         } else if (!userRecord.googleId) {
-          // If the user exists but hasn't linked Google yet, link it now
           userRecord.googleId = googleId;
           await userRecord.save();
         }
 
+        const safeUser = await UserModel.findByPk(userRecord.id);
+
         return {
           token: generateAuthToken(userRecord),
-          user: userRecord,
+          user: safeUser,
         };
       } catch (error) {
-        throw new Error('Google Authentication Failed: ' + error.message);
+        throw new GraphQLError(error.message || 'Google authentication failed.', {
+          extensions: { code: 'UNAUTHENTICATED' },
+        });
       }
     },
 
-    // Updates a user's basic information
-    updateUser: async (parent, { id, email }) => {
-      const userRecord = await UserModel.findByPk(id);
+    // Updates user profile - restricted to resource owner or admin
+    updateUser: async (parent, { id, email }, context) => {
+      const authUser = requireAuth(context);
+      const targetId = id || authUser.id;
+
+      requireOwnerOrAdmin(context, targetId);
+
+      const userRecord = await UserModel.findByPk(targetId);
       if (!userRecord) {
-        throw new Error('User not found');
+        throw new GraphQLError('User not found.', {
+          extensions: { code: 'NOT_FOUND' },
+        });
       }
-      
-      if (email) {
-        userRecord.email = email;
+
+      if (email !== undefined) {
+        if (!isValidEmail(email)) {
+          throw new GraphQLError('Please provide a valid email address.', {
+            extensions: { code: 'BAD_USER_INPUT' },
+          });
+        }
+
+        const normalizedEmail = email.trim().toLowerCase();
+        if (normalizedEmail !== userRecord.email) {
+          const emailInUse = await UserModel.findOne({ where: { email: normalizedEmail } });
+          if (emailInUse) {
+            throw new GraphQLError('An account with this email address already exists.', {
+              extensions: { code: 'BAD_USER_INPUT' },
+            });
+          }
+          userRecord.email = normalizedEmail;
+        }
       }
-      
+
       await userRecord.save();
       return userRecord;
     },
 
-    // Deletes a user by ID
-    deleteUser: async (parent, { id }) => {
+    // Deletes user account - strictly restricted to administrators
+    deleteUser: async (parent, { id }, context) => {
+      requireAdmin(context);
+
+      const targetUser = await UserModel.findByPk(id);
+      if (!targetUser) {
+        throw new GraphQLError('User not found.', {
+          extensions: { code: 'NOT_FOUND' },
+        });
+      }
+
+      // Prevent accidental self-deletion of the acting admin
+      if (context.user.id === id) {
+        throw new GraphQLError('Administrators cannot delete their own account.', {
+          extensions: { code: 'BAD_USER_INPUT' },
+        });
+      }
+
       const deletedRowCount = await UserModel.destroy({ where: { id } });
       return deletedRowCount > 0;
-    }
-  }
+    },
+  },
 };
 
 module.exports = userResolvers;

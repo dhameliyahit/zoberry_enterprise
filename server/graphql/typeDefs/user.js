@@ -23,7 +23,7 @@ const userTypeDefs = `#graphql
     registerUser(email: String!, password: String): AuthPayload
     loginUser(email: String!, password: String!): AuthPayload
     googleLoginUser(token: String!): AuthPayload
-    updateUser(id: ID!, email: String): User
+    updateUser(id: ID, email: String): User
     deleteUser(id: ID!): Boolean
   }
 `;

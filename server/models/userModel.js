@@ -8,16 +8,26 @@ const UserModel = sequelize.define('User', {
     primaryKey: true,
   },
   email: {
-    type: DataTypes.STRING,
+    type: DataTypes.STRING(254),
     allowNull: false,
     unique: true,
+    set(val) {
+      if (val && typeof val === 'string') {
+        this.setDataValue('email', val.trim().toLowerCase());
+      }
+    },
     validate: {
-      isEmail: true, // Prevents fake/invalid email formats
+      isEmail: {
+        msg: 'Please provide a valid email address',
+      },
+      notEmpty: {
+        msg: 'Email address cannot be empty',
+      },
     },
   },
   password: {
     type: DataTypes.STRING,
-    allowNull: true, // Can be null if they login with Google or auto-register during checkout
+    allowNull: true, // Can be null if they login with Google
   },
   googleId: {
     type: DataTypes.STRING,
@@ -27,15 +37,39 @@ const UserModel = sequelize.define('User', {
   role: {
     type: DataTypes.ENUM('customer', 'admin'),
     defaultValue: 'customer',
+    allowNull: false,
   },
   isGuestConverted: {
     type: DataTypes.BOOLEAN,
     defaultValue: false,
     comment: 'True if the user was automatically registered during checkout',
   },
-  // Future fields (like address, phone) can be added here easily later
 }, {
   timestamps: true,
+  indexes: [
+    {
+      unique: true,
+      fields: ['email'],
+      name: 'users_email_unique',
+    },
+    {
+      unique: true,
+      fields: ['googleId'],
+      name: 'users_google_id_unique',
+    },
+    {
+      fields: ['role'],
+      name: 'users_role_index',
+    },
+  ],
+  defaultScope: {
+    attributes: { exclude: ['password'] },
+  },
+  scopes: {
+    withPassword: {
+      attributes: { include: ['password'] },
+    },
+  },
 });
 
 module.exports = UserModel;

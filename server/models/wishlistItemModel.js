@@ -17,6 +17,21 @@ const WishlistItemModel = sequelize.define('WishlistItem', {
   },
 }, {
   timestamps: true,
+  indexes: [
+    {
+      fields: ['userId'],
+      name: 'wishlist_items_user_id_index',
+    },
+    {
+      fields: ['productId'],
+      name: 'wishlist_items_product_id_index',
+    },
+    {
+      unique: true,
+      fields: ['userId', 'productId'],
+      name: 'wishlist_user_product_unique',
+    },
+  ],
 });
 
 module.exports = WishlistItemModel;

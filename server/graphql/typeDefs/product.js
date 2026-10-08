@@ -1,4 +1,6 @@
 const productTypeDefs = `#graphql
+  scalar JSON
+
   type Product {
     id: ID!
     categoryId: ID!
@@ -11,13 +13,43 @@ const productTypeDefs = `#graphql
     compareAtPrice: Float
     images: [String]
     stockQuantity: Int
+    hasVariants: Boolean
     optionsLabel: String
     productVideoUrl: String
     features: [String]
     isActive: Boolean
-    category: Category # Relational data
+    category: Category
+    variants: [ProductVariant]
     createdAt: String
     updatedAt: String
+  }
+
+  input ProductFilterInput {
+    categoryId: ID
+    categorySlug: String
+    search: String
+    isActive: Boolean
+    minPrice: Float
+    maxPrice: Float
+    inStock: Boolean
+  }
+
+  enum ProductSortBy {
+    FEATURED
+    PRICE_LOW
+    PRICE_HIGH
+    NEWEST
+    NAME_ASC
+    NAME_DESC
+  }
+
+  type PaginatedProducts {
+    items: [Product!]!
+    total: Int!
+    page: Int!
+    limit: Int!
+    totalPages: Int!
+    hasMore: Boolean!
   }
 
   # Extend Category so we can easily query all products inside a specific category
@@ -26,8 +58,10 @@ const productTypeDefs = `#graphql
   }
 
   extend type Query {
-    getAllProducts: [Product]
+    getProducts(filter: ProductFilterInput, page: Int, limit: Int, sortBy: ProductSortBy): PaginatedProducts!
+    getAllProducts(limit: Int, offset: Int): [Product]
     getProductBySlug(slug: String!): Product
+    getProductById(id: ID!): Product
     getProductsByCategory(categoryId: ID!): [Product]
     getProductsByIds(ids: [ID!]!): [Product]
   }
@@ -44,6 +78,7 @@ const productTypeDefs = `#graphql
       compareAtPrice: Float
       images: [String]
       stockQuantity: Int
+      hasVariants: Boolean
       optionsLabel: String
       productVideoUrl: String
       features: [String]
@@ -62,6 +97,7 @@ const productTypeDefs = `#graphql
       compareAtPrice: Float
       images: [String]
       stockQuantity: Int
+      hasVariants: Boolean
       optionsLabel: String
       productVideoUrl: String
       features: [String]

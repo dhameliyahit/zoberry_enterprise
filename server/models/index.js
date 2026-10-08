@@ -1,42 +1,160 @@
 const UserModel = require('./userModel');
 const CategoryModel = require('./categoryModel');
 const ProductModel = require('./productModel');
+const ProductVariantModel = require('./productVariantModel');
+const CartModel = require('./cartModel');
 const CartItemModel = require('./cartItemModel');
+const InventoryMovementModel = require('./inventoryMovementModel');
+const AddressModel = require('./addressModel');
+const OrderModel = require('./orderModel');
+const OrderItemModel = require('./orderItemModel');
 const WishlistItemModel = require('./wishlistItemModel');
 
 // ==========================================
 // Define Database Relationships / Associations
 // ==========================================
 
-// Category <-> Product Relationship (One-to-Many)
-// A Category can have many Products
+// 1. Category <-> Product
 CategoryModel.hasMany(ProductModel, {
   foreignKey: 'categoryId',
-  as: 'products', // This allows us to query `category.products`
-  onDelete: 'RESTRICT', // Prevents deleting a category if it still has products attached
+  as: 'products',
+  onDelete: 'RESTRICT',
 });
-
-// A Product belongs to exactly one Category
 ProductModel.belongsTo(CategoryModel, {
   foreignKey: 'categoryId',
-  as: 'category', 
+  as: 'category',
 });
 
-// User <-> Cart/Wishlist Relationships
-UserModel.hasMany(CartItemModel, { foreignKey: 'userId', as: 'cartItems', onDelete: 'CASCADE' });
-CartItemModel.belongsTo(UserModel, { foreignKey: 'userId', as: 'user' });
+// 2. Product <-> ProductVariant
+ProductModel.hasMany(ProductVariantModel, {
+  foreignKey: 'productId',
+  as: 'variants',
+  onDelete: 'CASCADE',
+});
+ProductVariantModel.belongsTo(ProductModel, {
+  foreignKey: 'productId',
+  as: 'product',
+});
 
-UserModel.hasMany(WishlistItemModel, { foreignKey: 'userId', as: 'wishlistItems', onDelete: 'CASCADE' });
-WishlistItemModel.belongsTo(UserModel, { foreignKey: 'userId', as: 'user' });
+// 3. User <-> Cart
+UserModel.hasMany(CartModel, {
+  foreignKey: 'userId',
+  as: 'carts',
+  onDelete: 'SET NULL',
+});
+CartModel.belongsTo(UserModel, {
+  foreignKey: 'userId',
+  as: 'user',
+});
 
-// Product <-> Cart/Wishlist Relationships
-CartItemModel.belongsTo(ProductModel, { foreignKey: 'productId', as: 'product' });
-WishlistItemModel.belongsTo(ProductModel, { foreignKey: 'productId', as: 'product' });
+// 4. Cart <-> CartItem
+CartModel.hasMany(CartItemModel, {
+  foreignKey: 'cartId',
+  as: 'items',
+  onDelete: 'CASCADE',
+});
+CartItemModel.belongsTo(CartModel, {
+  foreignKey: 'cartId',
+  as: 'cart',
+});
+
+CartItemModel.belongsTo(ProductModel, {
+  foreignKey: 'productId',
+  as: 'product',
+});
+CartItemModel.belongsTo(ProductVariantModel, {
+  foreignKey: 'variantId',
+  as: 'variant',
+});
+
+// 5. User <-> Address
+UserModel.hasMany(AddressModel, {
+  foreignKey: 'userId',
+  as: 'addresses',
+  onDelete: 'CASCADE',
+});
+AddressModel.belongsTo(UserModel, {
+  foreignKey: 'userId',
+  as: 'user',
+});
+
+// 6. User <-> Order
+UserModel.hasMany(OrderModel, {
+  foreignKey: 'userId',
+  as: 'orders',
+  onDelete: 'SET NULL',
+});
+OrderModel.belongsTo(UserModel, {
+  foreignKey: 'userId',
+  as: 'user',
+});
+
+// 7. Order <-> OrderItem
+OrderModel.hasMany(OrderItemModel, {
+  foreignKey: 'orderId',
+  as: 'items',
+  onDelete: 'CASCADE',
+});
+OrderItemModel.belongsTo(OrderModel, {
+  foreignKey: 'orderId',
+  as: 'order',
+});
+
+OrderItemModel.belongsTo(ProductModel, {
+  foreignKey: 'productId',
+  as: 'product',
+});
+OrderItemModel.belongsTo(ProductVariantModel, {
+  foreignKey: 'variantId',
+  as: 'variant',
+});
+
+// 8. Inventory Movements
+ProductModel.hasMany(InventoryMovementModel, {
+  foreignKey: 'productId',
+  as: 'inventoryMovements',
+  onDelete: 'CASCADE',
+});
+InventoryMovementModel.belongsTo(ProductModel, {
+  foreignKey: 'productId',
+  as: 'product',
+});
+
+ProductVariantModel.hasMany(InventoryMovementModel, {
+  foreignKey: 'variantId',
+  as: 'inventoryMovements',
+  onDelete: 'CASCADE',
+});
+InventoryMovementModel.belongsTo(ProductVariantModel, {
+  foreignKey: 'variantId',
+  as: 'variant',
+});
+
+// 9. User <-> Wishlist
+UserModel.hasMany(WishlistItemModel, {
+  foreignKey: 'userId',
+  as: 'wishlistItems',
+  onDelete: 'CASCADE',
+});
+WishlistItemModel.belongsTo(UserModel, {
+  foreignKey: 'userId',
+  as: 'user',
+});
+WishlistItemModel.belongsTo(ProductModel, {
+  foreignKey: 'productId',
+  as: 'product',
+});
 
 module.exports = {
   UserModel,
   CategoryModel,
   ProductModel,
+  ProductVariantModel,
+  CartModel,
   CartItemModel,
+  InventoryMovementModel,
+  AddressModel,
+  OrderModel,
+  OrderItemModel,
   WishlistItemModel,
 };

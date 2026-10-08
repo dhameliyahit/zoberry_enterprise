@@ -257,10 +257,15 @@ const AdminProducts = () => {
         if (item.isExisting) {
           finalImagePaths.push(item.rawPath);
         } else if (item.file) {
+          const token = localStorage.getItem('token');
           const formDataUpload = new FormData();
           formDataUpload.append('image', item.file);
           formDataUpload.append('folder', 'products');
-          const uploadRes = await axios.post(`${API_URL}/api/upload`, formDataUpload);
+          const uploadRes = await axios.post(`${API_URL}/api/upload`, formDataUpload, {
+            headers: {
+              Authorization: token ? `Bearer ${token}` : '',
+            },
+          });
           finalImagePaths.push(uploadRes.data.imageUrl);
         }
       }

@@ -11,6 +11,7 @@ const categoryTypeDefs = `#graphql
   extend type Query {
     getAllCategories: [Category]
     getCategoryBySlug(slug: String!): Category
+    getCategoryById(id: ID!): Category
   }
 
   extend type Mutation {

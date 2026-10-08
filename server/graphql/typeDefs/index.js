@@ -1,12 +1,20 @@
 const userTypeDefs = require('./user');
 const categoryTypeDefs = require('./category');
 const productTypeDefs = require('./product');
+const variantTypeDefs = require('./variant');
+const cartTypeDefs = require('./cart');
+const addressTypeDefs = require('./address');
+const orderTypeDefs = require('./order');
 
 // Combine all individual module type definitions into one master schema
 const rootTypeDefs = `#graphql
+  ${productTypeDefs}
   ${userTypeDefs}
   ${categoryTypeDefs}
-  ${productTypeDefs}
+  ${variantTypeDefs}
+  ${cartTypeDefs}
+  ${addressTypeDefs}
+  ${orderTypeDefs}
 `;
 
 module.exports = rootTypeDefs;
