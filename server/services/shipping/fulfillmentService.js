@@ -81,85 +81,113 @@ async function createShipmentForOrder(params = {}) {
     }
   }
 
-  return await sequelize.transaction(async (t) => {
-    // 2. Lock Order row and validate eligibility
-    const order = await OrderModel.findByPk(orderId, {
-      transaction: t,
-      lock: t.LOCK.UPDATE,
-    });
+  try {
+    return await sequelize.transaction(async (t) => {
+      // Check idempotency again within transaction
+      if (idempotencyKey && typeof idempotencyKey === 'string' && idempotencyKey.trim()) {
+        const cleanKey = idempotencyKey.trim();
+        const existing = await ShipmentModel.findOne({
+          where: { idempotencyKey: cleanKey },
+          include: [{ model: ShipmentTrackingEventModel, as: 'trackingEvents' }],
+          transaction: t,
+        });
+        if (existing) {
+          return existing;
+        }
+      }
 
-    validateOrderFulfillmentEligibility(order);
+      // 2. Lock Order row and validate eligibility
+      const order = await OrderModel.findByPk(orderId, {
+        transaction: t,
+        lock: t.LOCK.UPDATE,
+      });
 
-    // 3. Check for existing active shipment to prevent duplicate dispatch
-    const existingActiveShipment = await ShipmentModel.findOne({
-      where: {
+      validateOrderFulfillmentEligibility(order);
+
+      // 3. Check for existing active shipment to prevent duplicate dispatch
+      const existingActiveShipment = await ShipmentModel.findOne({
+        where: {
+          orderId: order.id,
+          status: [
+            SHIPMENT_STATUS.PENDING,
+            SHIPMENT_STATUS.READY_TO_SHIP,
+            SHIPMENT_STATUS.SHIPMENT_CREATED,
+            SHIPMENT_STATUS.PICKED_UP,
+            SHIPMENT_STATUS.IN_TRANSIT,
+            SHIPMENT_STATUS.OUT_FOR_DELIVERY,
+          ],
+        },
+        transaction: t,
+      });
+
+      if (existingActiveShipment && !idempotencyKey) {
+        throw new GraphQLError(
+          `Order already has an active shipment in progress (AWB: ${existingActiveShipment.awbNumber || 'Pending'}, Status: ${existingActiveShipment.status}).`,
+          { extensions: { code: 'BAD_USER_INPUT' } }
+        );
+      }
+
+      // 4. Call Shipping Provider Adapter
+      const providerAdapter = getShippingProvider(provider);
+      const providerResult = await providerAdapter.createShipment({
+        order: order.toJSON(),
+        packageDetails,
+        shippingAddress: order.shippingAddressSnapshot,
+      });
+
+      // 5. Create immutable Shipment record
+      const shipment = await ShipmentModel.create({
         orderId: order.id,
-        status: [
-          SHIPMENT_STATUS.PENDING,
-          SHIPMENT_STATUS.READY_TO_SHIP,
-          SHIPMENT_STATUS.SHIPMENT_CREATED,
-          SHIPMENT_STATUS.PICKED_UP,
-          SHIPMENT_STATUS.IN_TRANSIT,
-          SHIPMENT_STATUS.OUT_FOR_DELIVERY,
-        ],
-      },
-      transaction: t,
-    });
+        provider: providerResult.provider || provider,
+        providerShipmentId: providerResult.providerShipmentId || null,
+        awbNumber: providerResult.awbNumber || null,
+        trackingNumber: providerResult.trackingNumber || providerResult.awbNumber || null,
+        status: providerResult.status || SHIPMENT_STATUS.SHIPMENT_CREATED,
+        shippingMethodCode: order.shippingMethod || 'STANDARD',
+        shippingAddressSnapshot: order.shippingAddressSnapshot,
+        packageDetails: packageDetails || {},
+        estimatedDeliveryAt: providerResult.estimatedDeliveryAt || null,
+        notes: notes?.trim() || null,
+        idempotencyKey: idempotencyKey?.trim() || null,
+      }, { transaction: t });
 
-    if (existingActiveShipment && !idempotencyKey) {
-      throw new GraphQLError(
-        `Order already has an active shipment in progress (AWB: ${existingActiveShipment.awbNumber || 'Pending'}, Status: ${existingActiveShipment.status}).`,
-        { extensions: { code: 'BAD_USER_INPUT' } }
-      );
+      // 6. Record Initial Tracking Milestone
+      await ShipmentTrackingEventModel.create({
+        shipmentId: shipment.id,
+        status: shipment.status,
+        location: 'Fulfillment Hub',
+        description: `Shipment booked with ${shipment.provider}. AWB: ${shipment.awbNumber || 'Assigned'}`,
+        eventTime: new Date(),
+        source: adminUser ? 'ADMIN' : 'SYSTEM',
+        rawPayload: providerResult,
+      }, { transaction: t });
+
+      // 7. Synchronize Order state
+      order.fulfillmentStatus = FULFILLMENT_STATUS.PARTIALLY_FULFILLED;
+      if (order.status === ORDER_STATUS.CONFIRMED || order.status === ORDER_STATUS.PENDING) {
+        order.status = ORDER_STATUS.PROCESSING;
+      }
+      await order.save({ transaction: t });
+
+      return await ShipmentModel.findByPk(shipment.id, {
+        include: [{ model: ShipmentTrackingEventModel, as: 'trackingEvents' }],
+        transaction: t,
+      });
+    });
+  } catch (error) {
+    // If unique constraint collision occurs concurrently for idempotencyKey, return existing gracefully
+    if (idempotencyKey && (error.name === 'SequelizeUniqueConstraintError' || error.message?.includes('idempotencyKey') || error.message?.includes('idempotency_key'))) {
+      const cleanKey = typeof idempotencyKey === 'string' ? idempotencyKey.trim() : idempotencyKey;
+      const existing = await ShipmentModel.findOne({
+        where: { idempotencyKey: cleanKey },
+        include: [{ model: ShipmentTrackingEventModel, as: 'trackingEvents' }],
+      });
+      if (existing) {
+        return existing;
+      }
     }
-
-    // 4. Call Shipping Provider Adapter
-    const providerAdapter = getShippingProvider(provider);
-    const providerResult = await providerAdapter.createShipment({
-      order: order.toJSON(),
-      packageDetails,
-      shippingAddress: order.shippingAddressSnapshot,
-    });
-
-    // 5. Create immutable Shipment record
-    const shipment = await ShipmentModel.create({
-      orderId: order.id,
-      provider: providerResult.provider || provider,
-      providerShipmentId: providerResult.providerShipmentId || null,
-      awbNumber: providerResult.awbNumber || null,
-      trackingNumber: providerResult.trackingNumber || providerResult.awbNumber || null,
-      status: providerResult.status || SHIPMENT_STATUS.SHIPMENT_CREATED,
-      shippingMethodCode: order.shippingMethod || 'STANDARD',
-      shippingAddressSnapshot: order.shippingAddressSnapshot,
-      packageDetails: packageDetails || {},
-      estimatedDeliveryAt: providerResult.estimatedDeliveryAt || null,
-      notes: notes?.trim() || null,
-      idempotencyKey: idempotencyKey?.trim() || null,
-    }, { transaction: t });
-
-    // 6. Record Initial Tracking Milestone
-    await ShipmentTrackingEventModel.create({
-      shipmentId: shipment.id,
-      status: shipment.status,
-      location: 'Fulfillment Hub',
-      description: `Shipment booked with ${shipment.provider}. AWB: ${shipment.awbNumber || 'Assigned'}`,
-      eventTime: new Date(),
-      source: adminUser ? 'ADMIN' : 'SYSTEM',
-      rawPayload: providerResult,
-    }, { transaction: t });
-
-    // 7. Synchronize Order state
-    order.fulfillmentStatus = FULFILLMENT_STATUS.PARTIALLY_FULFILLED;
-    if (order.status === ORDER_STATUS.CONFIRMED || order.status === ORDER_STATUS.PENDING) {
-      order.status = ORDER_STATUS.PROCESSING;
-    }
-    await order.save({ transaction: t });
-
-    return await ShipmentModel.findByPk(shipment.id, {
-      include: [{ model: ShipmentTrackingEventModel, as: 'trackingEvents' }],
-      transaction: t,
-    });
-  });
+    throw error;
+  }
 }
 
 /**

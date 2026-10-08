@@ -1,8 +1,8 @@
 import React, { useState, useEffect } from 'react';
-import { useMutation, gql } from '@apollo/client';
+import { useMutation } from '@apollo/client';
 import { GoogleLogin } from '@react-oauth/google';
-import { FiMail, FiLock, FiAlertCircle } from 'react-icons/fi';
-import Modal from '../common/Modal';
+import { Mail, Lock, AlertCircle, ShieldCheck } from 'lucide-react';
+import { Modal, Button, Input } from '../ui';
 import { useUIStore } from '../../store/uiStore';
 import { useCart } from '../../hooks/useCart';
 import { LOGIN_USER, REGISTER_USER, GOOGLE_LOGIN } from '../../graphql/auth';
@@ -63,40 +63,49 @@ const AuthModal = () => {
   };
 
   return (
-    <Modal isOpen={isAuthModalOpen} onClose={closeAuthModal}>
-      <div className="flex flex-col md:flex-row w-full h-full min-h-[500px]">
-        {/* Left Side: Brand/Image */}
-        <div className="hidden md:flex md:w-5/12 bg-primary p-10 flex-col justify-between relative overflow-hidden">
-          <div className="absolute inset-0 bg-[url('https://images.unsplash.com/photo-1607082348824-0a96f2a4b9da?w=800&q=80')] bg-cover bg-center opacity-20 mix-blend-overlay"></div>
+    <Modal isOpen={isAuthModalOpen} onClose={closeAuthModal} size="lg">
+      <div className="flex flex-col md:flex-row -m-6 min-h-[460px]">
+        {/* Left Side: Brand Value Prop */}
+        <div className="hidden md:flex md:w-5/12 bg-slate-900 p-8 flex-col justify-between relative overflow-hidden rounded-l-xl">
           <div className="relative z-10">
-            <img src="/assets/zoberry_logo.png" alt="Zoberry" className="h-10 mb-8" />
-            <h2 className="text-3xl font-extrabold text-white leading-tight mb-4 tracking-tight">
-              Welcome to the Premium Experience.
+            <div className="flex items-center gap-2 mb-6">
+              <span className="font-extrabold text-white text-lg tracking-tight">ZOBERRY</span>
+              <span className="text-[10px] uppercase font-bold tracking-wider px-1.5 py-0.5 rounded bg-primary/20 text-primary border border-primary/30">
+                Enterprise
+              </span>
+            </div>
+            <h2 className="text-xl font-bold text-white leading-snug mb-3">
+              Fast, seamless & reliable shopping.
             </h2>
-            <p className="text-blue-100 text-sm leading-relaxed">
-              Log in to unlock exclusive deals, track your orders, and enjoy a seamless shopping experience with Zoberry Enterprise.
+            <p className="text-slate-400 text-xs leading-relaxed">
+              Sign in to save addresses, track live courier shipments, unlock special offers, and manage orders with 1-click.
             </p>
+          </div>
+
+          <div className="relative z-10 pt-6 border-t border-slate-800 text-[11px] text-slate-400 flex items-center gap-2">
+            <ShieldCheck className="w-4 h-4 text-emerald-400 shrink-0" />
+            <span>Encrypted & secure customer sessions</span>
           </div>
         </div>
 
         {/* Right Side: Form */}
-        <div className="w-full md:w-7/12 p-8 md:p-12 bg-white flex flex-col justify-center">
-          <h2 className="text-2xl font-extrabold text-secondary mb-2 tracking-tight">
-            {isLogin ? 'Sign In to Zoberry' : 'Create an Account'}
+        <div className="w-full md:w-7/12 p-6 sm:p-8 bg-white flex flex-col justify-center rounded-r-xl">
+          <h2 className="text-xl font-bold text-slate-900 tracking-tight">
+            {isLogin ? 'Sign In to Your Account' : 'Create an Account'}
           </h2>
-          <p className="text-gray-500 text-sm mb-8">
-            {isLogin ? 'Welcome back! Please enter your details.' : 'Join Zoberry Enterprise today.'}
+          <p className="text-slate-500 text-xs mt-1 mb-6">
+            {isLogin ? 'Welcome back! Enter your details to continue.' : 'Join Zoberry Enterprise today in seconds.'}
           </p>
 
           {errorMsg && (
-            <div className="mb-6 p-3 bg-red-50 border border-red-100 text-red-600 rounded flex items-start gap-2 text-sm font-medium">
-              <FiAlertCircle size={16} className="mt-0.5 flex-shrink-0" /> 
+            <div className="mb-4 p-3 bg-red-50 border border-red-200 text-red-700 rounded-lg flex items-start gap-2 text-xs font-medium">
+              <AlertCircle className="w-4 h-4 mt-0.5 shrink-0" /> 
               <span>{errorMsg.replace('GraphQL error: ', '')}</span>
             </div>
           )}
 
           {/* Google Login Button (Full Width) */}
-          <div className="mb-6 w-full flex justify-center [&>div]:w-full">
+          <div className="mb-4 w-full flex justify-center [&>div]:w-full">
             <GoogleLogin
               onSuccess={handleGoogleSuccess}
               onError={() => setErrorMsg('Google Login Failed')}
@@ -109,77 +118,56 @@ const AuthModal = () => {
           </div>
 
           {/* Divider */}
-          <div className="mb-6 relative">
+          <div className="mb-4 relative">
             <div className="absolute inset-0 flex items-center">
-              <div className="w-full border-t border-gray-200"></div>
+              <div className="w-full border-t border-slate-200" />
             </div>
-            <div className="relative flex justify-center text-[10px] uppercase tracking-widest font-bold">
-              <span className="px-4 bg-white text-gray-400">Or continue with email</span>
+            <div className="relative flex justify-center text-[10px] uppercase tracking-wider font-bold">
+              <span className="px-3 bg-white text-slate-400">Or with email</span>
             </div>
           </div>
 
-          <form onSubmit={handleSubmit} className="flex flex-col gap-4">
-            <div>
-              <label className="block text-[11px] font-bold text-gray-700 uppercase tracking-wide mb-2">Email Address</label>
-              <div className="relative">
-                <div className="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none">
-                  <FiMail className="text-gray-400" />
-                </div>
-                <input 
-                  type="email" 
-                  required
-                  value={email}
-                  onChange={(e) => setEmail(e.target.value)}
-                  className="w-full pl-10 pr-4 py-3 border border-gray-200 rounded focus:border-primary focus:ring-1 focus:ring-primary transition-colors text-sm outline-none"
-                  placeholder="hello@example.com"
-                />
-              </div>
-            </div>
+          <form onSubmit={handleSubmit} className="flex flex-col gap-3">
+            <Input
+              label="Email Address"
+              type="email"
+              required
+              value={email}
+              onChange={(e) => setEmail(e.target.value)}
+              placeholder="name@example.com"
+              leftIcon={<Mail className="w-4 h-4 text-slate-400" />}
+            />
 
-            <div>
-              <label className="block text-[11px] font-bold text-gray-700 uppercase tracking-wide mb-2">Password</label>
-              <div className="relative">
-                <div className="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none">
-                  <FiLock className="text-gray-400" />
-                </div>
-                <input 
-                  type="password" 
-                  required
-                  value={password}
-                  onChange={(e) => setPassword(e.target.value)}
-                  className="w-full pl-10 pr-4 py-3 border border-gray-200 rounded focus:border-primary focus:ring-1 focus:ring-primary transition-colors text-sm outline-none"
-                  placeholder="••••••••"
-                />
-              </div>
-            </div>
+            <Input
+              label="Password"
+              type="password"
+              required
+              value={password}
+              onChange={(e) => setPassword(e.target.value)}
+              placeholder="••••••••"
+              leftIcon={<Lock className="w-4 h-4 text-slate-400" />}
+            />
 
-            {isLogin && (
-              <div className="flex justify-end">
-                <button type="button" className="text-xs font-bold text-primary hover:text-primary-hover transition-colors">
-                  Forgot Password?
-                </button>
-              </div>
-            )}
-
-            <button 
-              type="submit" 
-              disabled={loginLoading || registerLoading}
-              className="btn-primary w-full mt-2"
+            <Button
+              type="submit"
+              variant="primary"
+              size="md"
+              loading={loginLoading || registerLoading}
+              className="w-full mt-2"
             >
-              {loginLoading || registerLoading ? 'Processing...' : (isLogin ? 'Sign In' : 'Create Account')}
-            </button>
+              {isLogin ? 'Sign In' : 'Create Account'}
+            </Button>
           </form>
 
-          <p className="mt-8 text-center text-sm text-gray-600">
+          <p className="mt-6 text-center text-xs text-slate-600">
             {isLogin ? "Don't have an account? " : "Already have an account? "}
             <button 
               onClick={() => { setIsLogin(!isLogin); setErrorMsg(''); }} 
-              className="font-bold text-primary hover:text-primary-hover transition-colors"
+              className="font-bold text-primary hover:underline transition-colors cursor-pointer"
             >
               {isLogin ? 'Sign up' : 'Log in'}
             </button>
           </p>
-
         </div>
       </div>
     </Modal>

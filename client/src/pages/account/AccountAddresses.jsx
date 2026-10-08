@@ -1,6 +1,6 @@
 import React, { useState } from 'react';
 import { useQuery, useMutation } from '@apollo/client';
-import { FiPlus, FiTrash2, FiEdit2, FiCheck, FiMapPin, FiPhone, FiUser } from 'react-icons/fi';
+import { Plus, Trash2, Edit2, Check, MapPin, Phone, User, Home, Building2 } from 'lucide-react';
 import {
   GET_MY_ADDRESSES,
   CREATE_ADDRESS,
@@ -8,8 +8,8 @@ import {
   DELETE_ADDRESS,
   SET_DEFAULT_SHIPPING_ADDRESS,
 } from '../../graphql/address';
-import Modal from '../../components/common/Modal';
 import { useUIStore } from '../../store/uiStore';
+import { Button, Input, Card, CardBody, Badge, Modal } from '../../components/ui';
 
 const AccountAddresses = () => {
   const { addToast } = useUIStore();
@@ -128,86 +128,96 @@ const AccountAddresses = () => {
     <div className="space-y-6">
       <div className="flex items-center justify-between">
         <div>
-          <h2 className="text-xl font-bold text-gray-900">Saved Addresses</h2>
-          <p className="text-gray-500 text-xs mt-1">Manage your delivery and billing locations</p>
+          <h2 className="text-lg font-bold text-slate-900">Saved Addresses</h2>
+          <p className="text-slate-500 text-xs mt-0.5">Manage your delivery and billing locations</p>
         </div>
-        <button onClick={handleOpenAdd} className="btn-primary py-2.5 px-4 text-xs">
-          <FiPlus size={14} /> Add New Address
-        </button>
+        <Button
+          variant="primary"
+          size="sm"
+          onClick={handleOpenAdd}
+          leftIcon={<Plus className="w-4 h-4" />}
+        >
+          Add New Address
+        </Button>
       </div>
 
       {loading ? (
-        <div className="py-12 text-center text-gray-400 text-sm">Loading addresses...</div>
-      ) : addresses.length === 0 ? (
-        <div className="bg-white rounded-lg border border-gray-200 p-8 text-center max-w-md mx-auto">
-          <FiMapPin className="text-gray-300 mx-auto mb-3" size={36} />
-          <h3 className="text-sm font-bold text-gray-800 mb-1">No Addresses Saved Yet</h3>
-          <p className="text-xs text-gray-500 mb-4">Add your shipping address for quicker checkouts.</p>
-          <button onClick={handleOpenAdd} className="btn-primary text-xs">
-            Add Your First Address
-          </button>
+        <div className="py-16 text-center">
+          <div className="w-8 h-8 border-3 border-primary border-t-transparent rounded-full animate-spin mx-auto mb-3" />
+          <p className="text-slate-400 text-xs font-medium">Loading addresses...</p>
         </div>
+      ) : addresses.length === 0 ? (
+        <Card className="p-8 text-center max-w-md mx-auto">
+          <div className="w-12 h-12 bg-primary/10 text-primary rounded-full flex items-center justify-center mx-auto mb-3">
+            <MapPin className="w-6 h-6" />
+          </div>
+          <h3 className="text-sm font-bold text-slate-900 mb-1">No Addresses Saved Yet</h3>
+          <p className="text-xs text-slate-500 mb-4">Add your shipping address for quicker checkouts.</p>
+          <Button variant="primary" size="sm" onClick={handleOpenAdd}>
+            Add Your First Address
+          </Button>
+        </Card>
       ) : (
         <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
           {addresses.map((addr) => (
-            <div
+            <Card
               key={addr.id}
-              className={`bg-white rounded-lg border p-5 relative flex flex-col justify-between transition-all ${
-                addr.isDefaultShipping ? 'border-primary shadow-xs ring-1 ring-primary/20' : 'border-gray-200'
+              className={`p-5 relative flex flex-col justify-between transition-all ${
+                addr.isDefaultShipping ? 'border-primary shadow-xs ring-1 ring-primary/20' : ''
               }`}
             >
               <div>
                 <div className="flex items-center justify-between mb-3">
                   <div className="flex items-center gap-2">
-                    <span className="text-xs font-bold px-2 py-0.5 bg-gray-100 text-gray-700 rounded uppercase">
+                    <Badge variant={addr.addressType === 'HOME' ? 'blue' : 'gray'} size="sm">
                       {addr.addressType}
-                    </span>
+                    </Badge>
                     {addr.isDefaultShipping && (
-                      <span className="text-[10px] font-bold px-2 py-0.5 bg-blue-50 text-primary border border-blue-200 rounded uppercase">
-                        Default Shipping
-                      </span>
+                      <Badge variant="green" size="sm">
+                        Default
+                      </Badge>
                     )}
                   </div>
                   <div className="flex items-center gap-1">
                     <button
                       onClick={() => handleOpenEdit(addr)}
-                      className="p-1.5 text-gray-400 hover:text-primary transition-colors"
+                      className="p-1.5 text-slate-400 hover:text-primary transition-colors"
                       title="Edit address"
                     >
-                      <FiEdit2 size={14} />
+                      <Edit2 className="w-3.5 h-3.5" />
                     </button>
                     <button
                       onClick={() => deleteAddress({ variables: { id: addr.id } })}
-                      className="p-1.5 text-gray-400 hover:text-red-500 transition-colors"
+                      className="p-1.5 text-slate-400 hover:text-red-500 transition-colors"
                       title="Delete address"
                     >
-                      <FiTrash2 size={14} />
+                      <Trash2 className="w-3.5 h-3.5" />
                     </button>
                   </div>
                 </div>
 
-                <div className="text-sm font-bold text-gray-900 flex items-center gap-2">
-                  <FiUser size={14} className="text-gray-400" />
+                <div className="text-sm font-bold text-slate-900 flex items-center gap-2">
+                  <User className="w-3.5 h-3.5 text-slate-400" />
                   {addr.fullName}
                 </div>
-                <div className="text-xs text-gray-600 mt-1 flex items-center gap-2">
-                  <FiPhone size={13} className="text-gray-400" />
+                <div className="text-xs text-slate-600 mt-1 flex items-center gap-2">
+                  <Phone className="w-3.5 h-3.5 text-slate-400" />
                   {addr.phone}
                 </div>
 
-                <div className="text-xs text-gray-600 mt-3 leading-relaxed border-t border-gray-100 pt-3">
+                <div className="text-xs text-slate-600 mt-3 leading-relaxed border-t border-slate-100 pt-3">
                   <div>{addr.addressLine1}</div>
                   {addr.addressLine2 && <div>{addr.addressLine2}</div>}
                   {addr.landmark && <div>Landmark: {addr.landmark}</div>}
                   <div>
                     {addr.city}, {addr.state} - {addr.postalCode}
                   </div>
-                  <div className="text-gray-400 text-[11px] mt-0.5">{addr.country}</div>
+                  <div className="text-slate-400 text-[11px] mt-0.5">{addr.country}</div>
                 </div>
               </div>
 
               {!addr.isDefaultShipping && (
-                <div className="mt-4 pt-3 border-t border-gray-100">
+                <div className="mt-4 pt-3 border-t border-slate-100">
                   <button
                     onClick={() => setDefaultShipping({ variables: { id: addr.id } })}
                     className="text-xs font-bold text-primary hover:underline"
@@ -216,174 +226,127 @@ const AccountAddresses = () => {
                   </button>
                 </div>
               )}
-            </div>
+            </Card>
           ))}
         </div>
       )}
 
       {/* Address Form Modal */}
-      <Modal isOpen={isModalOpen} onClose={() => setIsModalOpen(false)}>
-        <div className="p-6 max-w-lg w-full bg-white rounded">
-          <h3 className="text-lg font-bold text-secondary mb-4 pb-2 border-b border-gray-100">
-            {editingId ? 'Edit Address' : 'Add New Address'}
-          </h3>
+      <Modal
+        isOpen={isModalOpen}
+        onClose={() => setIsModalOpen(false)}
+        title={editingId ? 'Edit Address' : 'Add New Address'}
+      >
+        <form onSubmit={handleSubmit} className="space-y-3.5">
+          <div className="grid grid-cols-1 sm:grid-cols-2 gap-3.5">
+            <Input
+              label="Full Name *"
+              required
+              value={formData.fullName}
+              onChange={(e) => setFormData({ ...formData, fullName: e.target.value })}
+              placeholder="e.g. Rahul Sharma"
+            />
+            <Input
+              label="Phone Number *"
+              type="tel"
+              required
+              value={formData.phone}
+              onChange={(e) => setFormData({ ...formData, phone: e.target.value })}
+              placeholder="10-digit mobile"
+            />
+          </div>
 
-          <form onSubmit={handleSubmit} className="space-y-4">
-            <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
-              <div>
-                <label className="block text-[11px] font-bold text-gray-700 uppercase mb-1">
-                  Full Name *
-                </label>
-                <input
-                  type="text"
-                  required
-                  value={formData.fullName}
-                  onChange={(e) => setFormData({ ...formData, fullName: e.target.value })}
-                  placeholder="e.g. Rahul Sharma"
-                  className="w-full px-3 py-2 border border-gray-200 rounded text-xs outline-none focus:border-primary"
-                />
-              </div>
-              <div>
-                <label className="block text-[11px] font-bold text-gray-700 uppercase mb-1">
-                  Phone Number *
-                </label>
-                <input
-                  type="tel"
-                  required
-                  value={formData.phone}
-                  onChange={(e) => setFormData({ ...formData, phone: e.target.value })}
-                  placeholder="10-digit mobile"
-                  className="w-full px-3 py-2 border border-gray-200 rounded text-xs outline-none focus:border-primary"
-                />
-              </div>
-            </div>
+          <Input
+            label="Address Line 1 *"
+            required
+            value={formData.addressLine1}
+            onChange={(e) => setFormData({ ...formData, addressLine1: e.target.value })}
+            placeholder="Flat / House / Building No, Street"
+          />
 
-            <div>
-              <label className="block text-[11px] font-bold text-gray-700 uppercase mb-1">
-                Address Line 1 *
-              </label>
+          <div className="grid grid-cols-1 sm:grid-cols-2 gap-3.5">
+            <Input
+              label="Address Line 2 (Optional)"
+              value={formData.addressLine2}
+              onChange={(e) => setFormData({ ...formData, addressLine2: e.target.value })}
+              placeholder="Area / Sector"
+            />
+            <Input
+              label="Landmark (Optional)"
+              value={formData.landmark}
+              onChange={(e) => setFormData({ ...formData, landmark: e.target.value })}
+              placeholder="Near landmark"
+            />
+          </div>
+
+          <div className="grid grid-cols-3 gap-3.5">
+            <Input
+              label="City *"
+              required
+              value={formData.city}
+              onChange={(e) => setFormData({ ...formData, city: e.target.value })}
+              placeholder="City"
+            />
+            <Input
+              label="State *"
+              required
+              value={formData.state}
+              onChange={(e) => setFormData({ ...formData, state: e.target.value })}
+              placeholder="State"
+            />
+            <Input
+              label="Pincode *"
+              required
+              value={formData.postalCode}
+              onChange={(e) => setFormData({ ...formData, postalCode: e.target.value })}
+              placeholder="Pincode"
+            />
+          </div>
+
+          <div className="flex items-center gap-6 pt-2">
+            <label className="flex items-center gap-2 text-xs font-semibold text-slate-700 cursor-pointer">
               <input
-                type="text"
-                required
-                value={formData.addressLine1}
-                onChange={(e) => setFormData({ ...formData, addressLine1: e.target.value })}
-                placeholder="Flat / House / Building No, Street"
-                className="w-full px-3 py-2 border border-gray-200 rounded text-xs outline-none focus:border-primary"
+                type="radio"
+                name="addressType"
+                value="HOME"
+                checked={formData.addressType === 'HOME'}
+                onChange={() => setFormData({ ...formData, addressType: 'HOME' })}
+                className="accent-primary"
               />
-            </div>
+              Home
+            </label>
+            <label className="flex items-center gap-2 text-xs font-semibold text-slate-700 cursor-pointer">
+              <input
+                type="radio"
+                name="addressType"
+                value="WORK"
+                checked={formData.addressType === 'WORK'}
+                onChange={() => setFormData({ ...formData, addressType: 'WORK' })}
+                className="accent-primary"
+              />
+              Work / Office
+            </label>
+          </div>
 
-            <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
-              <div>
-                <label className="block text-[11px] font-bold text-gray-700 uppercase mb-1">
-                  Address Line 2 (Optional)
-                </label>
-                <input
-                  type="text"
-                  value={formData.addressLine2}
-                  onChange={(e) => setFormData({ ...formData, addressLine2: e.target.value })}
-                  placeholder="Area / Sector"
-                  className="w-full px-3 py-2 border border-gray-200 rounded text-xs outline-none focus:border-primary"
-                />
-              </div>
-              <div>
-                <label className="block text-[11px] font-bold text-gray-700 uppercase mb-1">
-                  Landmark (Optional)
-                </label>
-                <input
-                  type="text"
-                  value={formData.landmark}
-                  onChange={(e) => setFormData({ ...formData, landmark: e.target.value })}
-                  placeholder="Near temple/school"
-                  className="w-full px-3 py-2 border border-gray-200 rounded text-xs outline-none focus:border-primary"
-                />
-              </div>
-            </div>
-
-            <div className="grid grid-cols-3 gap-3">
-              <div>
-                <label className="block text-[11px] font-bold text-gray-700 uppercase mb-1">
-                  City *
-                </label>
-                <input
-                  type="text"
-                  required
-                  value={formData.city}
-                  onChange={(e) => setFormData({ ...formData, city: e.target.value })}
-                  placeholder="City"
-                  className="w-full px-3 py-2 border border-gray-200 rounded text-xs outline-none focus:border-primary"
-                />
-              </div>
-              <div>
-                <label className="block text-[11px] font-bold text-gray-700 uppercase mb-1">
-                  State *
-                </label>
-                <input
-                  type="text"
-                  required
-                  value={formData.state}
-                  onChange={(e) => setFormData({ ...formData, state: e.target.value })}
-                  placeholder="State"
-                  className="w-full px-3 py-2 border border-gray-200 rounded text-xs outline-none focus:border-primary"
-                />
-              </div>
-              <div>
-                <label className="block text-[11px] font-bold text-gray-700 uppercase mb-1">
-                  Postal Code *
-                </label>
-                <input
-                  type="text"
-                  required
-                  value={formData.postalCode}
-                  onChange={(e) => setFormData({ ...formData, postalCode: e.target.value })}
-                  placeholder="Pincode"
-                  className="w-full px-3 py-2 border border-gray-200 rounded text-xs outline-none focus:border-primary"
-                />
-              </div>
-            </div>
-
-            <div className="flex items-center gap-6 pt-2">
-              <label className="flex items-center gap-2 text-xs font-semibold text-gray-700 cursor-pointer">
-                <input
-                  type="radio"
-                  name="addressType"
-                  value="HOME"
-                  checked={formData.addressType === 'HOME'}
-                  onChange={() => setFormData({ ...formData, addressType: 'HOME' })}
-                  className="accent-primary"
-                />
-                Home
-              </label>
-              <label className="flex items-center gap-2 text-xs font-semibold text-gray-700 cursor-pointer">
-                <input
-                  type="radio"
-                  name="addressType"
-                  value="WORK"
-                  checked={formData.addressType === 'WORK'}
-                  onChange={() => setFormData({ ...formData, addressType: 'WORK' })}
-                  className="accent-primary"
-                />
-                Work / Office
-              </label>
-            </div>
-
-            <div className="pt-4 border-t border-gray-100 flex justify-end gap-3">
-              <button
-                type="button"
-                onClick={() => setIsModalOpen(false)}
-                className="px-4 py-2 text-xs font-semibold text-gray-600 hover:text-gray-800"
-              >
-                Cancel
-              </button>
-              <button
-                type="submit"
-                disabled={creating || updating}
-                className="btn-primary py-2 px-5 text-xs"
-              >
-                {creating || updating ? 'Saving...' : editingId ? 'Update Address' : 'Save Address'}
-              </button>
-            </div>
-          </form>
-        </div>
+          <div className="pt-4 border-t border-slate-100 flex justify-end gap-2.5">
+            <Button
+              type="button"
+              variant="outline"
+              size="sm"
+              onClick={() => setIsModalOpen(false)}
+            >
+              Cancel
+            </Button>
+            <Button
+              type="submit"
+              variant="primary"
+              size="sm"
+              loading={creating || updating}
+            >
+              {editingId ? 'Update Address' : 'Save Address'}
+            </Button>
+          </div>
+        </form>
       </Modal>
     </div>
   );

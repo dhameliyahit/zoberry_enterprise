@@ -1,27 +1,38 @@
-import React, { useState, useEffect, useRef } from 'react';
+import React, { useState, useEffect } from 'react';
 import { useParams, Link, useNavigate } from 'react-router-dom';
 import { useQuery } from '@apollo/client';
 import {
-  FiShoppingCart, FiZap, FiTruck, FiShield, FiRefreshCw,
-  FiCheckCircle, FiPlay, FiImage, FiShare2, FiHeart, FiChevronRight,
-  FiAlertCircle, FiMinus, FiPlus,
-} from 'react-icons/fi';
-import SEO from '../components/common/SEO';
+  ShoppingBag,
+  Zap,
+  Truck,
+  ShieldCheck,
+  RefreshCw,
+  CheckCircle2,
+  Play,
+  Share2,
+  Heart,
+  ChevronRight,
+  AlertCircle,
+  PackageCheck,
+} from 'lucide-react';
+import { SEO } from '../components/common/SEO';
+import { Button } from '../components/ui/Button';
+import { Badge } from '../components/ui/Badge';
+import { QuantitySelector } from '../components/ui/QuantitySelector';
 import { useCart } from '../hooks/useCart';
 import { useWishlist } from '../hooks/useWishlist';
 import { useUIStore } from '../store/uiStore';
 import { GET_PRODUCT_BY_SLUG } from '../graphql/products';
+import { getImageUrl } from '../utils/imageUrl';
 
-const API_URL = import.meta.env.VITE_API_URL || 'http://localhost:9000';
-
-const ProductDetailPage = () => {
+export function ProductDetailPage() {
   const { slug } = useParams();
   const navigate = useNavigate();
   const [selectedMedia, setSelectedMedia] = useState('image-0');
   const [selectedVariant, setSelectedVariant] = useState(null);
   const [quantity, setQuantity] = useState(1);
   const [copied, setCopied] = useState(false);
-  
+
   const { addToCart, loading: cartLoading } = useCart();
   const { isSaved, toggleWishlist } = useWishlist();
   const { openCart, addToast } = useUIStore();
@@ -54,10 +65,10 @@ const ProductDetailPage = () => {
 
   if (loading) {
     return (
-      <div className="min-h-[60vh] flex items-center justify-center bg-gray-50">
-        <div className="text-center">
-          <div className="w-10 h-10 border-4 border-primary border-t-transparent rounded-full animate-spin mx-auto mb-3"></div>
-          <p className="text-gray-500 font-medium text-sm">Loading product details...</p>
+      <div className="min-h-[60vh] flex items-center justify-center bg-slate-50">
+        <div className="text-center space-y-3">
+          <div className="w-10 h-10 border-3 border-primary border-t-transparent rounded-full animate-spin mx-auto"></div>
+          <p className="text-slate-500 font-medium text-sm">Loading product details...</p>
         </div>
       </div>
     );
@@ -65,14 +76,16 @@ const ProductDetailPage = () => {
 
   if (error || !product) {
     return (
-      <div className="min-h-[60vh] flex items-center justify-center bg-gray-50 px-4">
-        <div className="text-center max-w-md bg-white p-8 rounded border border-gray-200">
-          <h2 className="text-xl font-bold text-gray-800 mb-2">Product Not Found</h2>
-          <p className="text-gray-500 text-sm mb-6">
+      <div className="min-h-[60vh] flex items-center justify-center bg-slate-50 px-4">
+        <div className="text-center max-w-md bg-white p-8 rounded-xl border border-slate-200 shadow-sm">
+          <h2 className="text-lg font-bold text-slate-900 mb-2">Product Not Found</h2>
+          <p className="text-slate-500 text-sm mb-6">
             The product you are looking for might have been moved or is currently unavailable.
           </p>
-          <Link to="/products" className="btn-primary inline-flex items-center gap-2">
-            Browse All Products <FiChevronRight />
+          <Link to="/products">
+            <Button variant="primary" size="md">
+              Browse All Products
+            </Button>
           </Link>
         </div>
       </div>
@@ -84,7 +97,7 @@ const ProductDetailPage = () => {
     name,
     shortDescription,
     description,
-    price: basePrice,
+    price: basePrice = 0,
     compareAtPrice: baseComparePrice,
     images = [],
     stockQuantity: baseStock,
@@ -105,19 +118,15 @@ const ProductDetailPage = () => {
   const isOutOfStock = currentStock !== null && currentStock !== undefined && currentStock <= 0;
   const isLowStock = currentStock > 0 && currentStock <= 5;
 
-  const formattedImages = images.map((img) =>
-    img.startsWith('http') ? img : `${API_URL}${img}`
-  );
+  const formattedImages = images.map((img) => getImageUrl(img));
   if (formattedImages.length === 0) {
-    formattedImages.push('https://placehold.co/600x600?text=No+Image');
+    formattedImages.push(getImageUrl(null));
   }
 
-  let discountPercentage = 0;
-  if (currentComparePrice && currentComparePrice > currentPrice) {
-    discountPercentage = Math.round(
-      ((currentComparePrice - currentPrice) / currentComparePrice) * 100
-    );
-  }
+  const hasDiscount = currentComparePrice && currentComparePrice > currentPrice;
+  const discountPercentage = hasDiscount
+    ? Math.round(((currentComparePrice - currentPrice) / currentComparePrice) * 100)
+    : 0;
 
   const handleShare = () => {
     navigator.clipboard.writeText(window.location.href);
@@ -131,8 +140,8 @@ const ProductDetailPage = () => {
     try {
       await addToCart(id, selectedVariant ? selectedVariant.id : null, quantity);
       openCart();
-    } catch (err) {
-      // Toast already handled by useCart
+    } catch {
+      // Handled in store
     }
   };
 
@@ -141,15 +150,15 @@ const ProductDetailPage = () => {
     try {
       await addToCart(id, selectedVariant ? selectedVariant.id : null, quantity);
       navigate('/checkout');
-    } catch (err) {
-      // Toast handled
+    } catch {
+      // Handled
     }
   };
 
   const inWishlist = isSaved(id);
 
   return (
-    <div className="bg-[#f8fafc] min-h-screen py-6 md:py-10">
+    <div className="bg-slate-50 min-h-screen py-6 sm:py-10">
       <SEO
         title={`${name} | Zoberry Enterprise`}
         description={shortDescription || `${name} - Shop online at Zoberry Enterprise.`}
@@ -157,35 +166,41 @@ const ProductDetailPage = () => {
         url={`/product/${slug}`}
       />
 
-      <div className="container mx-auto px-4 md:px-8 max-w-6xl">
+      <div className="container mx-auto px-4 lg:px-8 max-w-6xl">
         {/* Breadcrumb Navigation */}
-        <nav className="flex items-center text-xs text-gray-500 mb-6 gap-2 overflow-x-auto whitespace-nowrap">
-          <Link to="/" className="hover:text-primary transition-colors">Home</Link>
-          <FiChevronRight size={12} className="text-gray-400" />
-          <Link to="/products" className="hover:text-primary transition-colors">Products</Link>
+        <nav className="flex items-center text-xs text-slate-500 mb-6 gap-1.5 overflow-x-auto whitespace-nowrap">
+          <Link to="/" className="hover:text-primary transition-colors">
+            Home
+          </Link>
+          <ChevronRight className="w-3 h-3 text-slate-400" />
+          <Link to="/products" className="hover:text-primary transition-colors">
+            Products
+          </Link>
           {category && (
             <>
-              <FiChevronRight size={12} className="text-gray-400" />
-              <Link to={`/products?category=${category.slug}`} className="hover:text-primary transition-colors">
+              <ChevronRight className="w-3 h-3 text-slate-400" />
+              <Link
+                to={`/category/${category.slug}`}
+                className="hover:text-primary transition-colors"
+              >
                 {category.name}
               </Link>
             </>
           )}
-          <FiChevronRight size={12} className="text-gray-400" />
-          <span className="text-gray-800 font-semibold truncate max-w-xs">{name}</span>
+          <ChevronRight className="w-3 h-3 text-slate-400" />
+          <span className="text-slate-800 font-semibold truncate max-w-xs">{name}</span>
         </nav>
 
-        {/* Product Main Container */}
-        <div className="grid grid-cols-1 lg:grid-cols-12 gap-8 lg:gap-10 bg-white p-5 md:p-8 rounded-lg border border-gray-200 shadow-xs">
-          
+        {/* Main Product Container */}
+        <div className="grid grid-cols-1 lg:grid-cols-12 gap-8 lg:gap-10 bg-white p-5 sm:p-8 rounded-2xl border border-slate-200 shadow-sm">
           {/* Left Column: Media Gallery (6 cols) */}
           <div className="lg:col-span-6 flex flex-col gap-4">
             {/* Main Stage */}
-            <div className="relative w-full aspect-square bg-gray-50 rounded border border-gray-100 overflow-hidden flex items-center justify-center">
+            <div className="relative w-full aspect-square bg-slate-50 rounded-xl border border-slate-200 overflow-hidden flex items-center justify-center">
               {selectedMedia === 'video' && productVideoUrl ? (
                 <div className="w-full h-full bg-black flex items-center justify-center">
                   <iframe
-                    src={productVideoUrl.includes('embed') ? productVideoUrl : productVideoUrl}
+                    src={productVideoUrl}
                     title={name}
                     className="w-full h-full"
                     allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture"
@@ -200,40 +215,46 @@ const ProductDetailPage = () => {
                     ]
                   }
                   alt={name}
-                  className="w-full h-full object-contain p-2"
+                  className="w-full h-full object-cover object-center"
                 />
               )}
 
               {/* Discount Tag */}
               {discountPercentage > 0 && (
-                <div className="absolute top-4 left-4 bg-emerald-600 text-white text-[11px] font-bold px-2.5 py-1 rounded uppercase tracking-wide">
-                  {discountPercentage}% OFF
+                <div className="absolute top-4 left-4 z-10">
+                  <Badge variant="success" size="md">
+                    {discountPercentage}% OFF
+                  </Badge>
                 </div>
               )}
             </div>
 
             {/* Thumbnail Strip */}
-            <div className="flex items-center gap-3 overflow-x-auto pb-2">
+            <div className="flex items-center gap-2.5 overflow-x-auto pb-2">
               {productVideoUrl && (
                 <button
+                  type="button"
                   onClick={() => setSelectedMedia('video')}
-                  className={`w-16 h-16 rounded border flex flex-col items-center justify-center gap-1 shrink-0 bg-gray-900 text-white text-[10px] font-bold transition-all ${
+                  aria-label="View product video"
+                  className={`w-16 h-16 rounded-lg border flex flex-col items-center justify-center gap-1 shrink-0 bg-slate-900 text-white text-[10px] font-bold transition-all ${
                     selectedMedia === 'video'
                       ? 'border-primary ring-2 ring-primary/20'
-                      : 'border-gray-200 opacity-80'
+                      : 'border-slate-200 opacity-80'
                   }`}
                 >
-                  <FiPlay size={16} /> Video
+                  <Play className="w-4 h-4" /> Video
                 </button>
               )}
               {formattedImages.map((img, idx) => (
                 <button
                   key={idx}
+                  type="button"
                   onClick={() => setSelectedMedia(`image-${idx}`)}
-                  className={`w-16 h-16 rounded border overflow-hidden shrink-0 bg-gray-50 transition-all ${
+                  aria-label={`View image ${idx + 1}`}
+                  className={`w-16 h-16 rounded-lg border overflow-hidden shrink-0 bg-slate-50 transition-all ${
                     selectedMedia === `image-${idx}`
                       ? 'border-primary ring-2 ring-primary/20'
-                      : 'border-gray-200 hover:border-gray-300'
+                      : 'border-slate-200 hover:border-slate-300'
                   }`}
                 >
                   <img src={img} alt={`Thumb ${idx}`} className="w-full h-full object-cover" />
@@ -244,77 +265,84 @@ const ProductDetailPage = () => {
 
           {/* Right Column: Product Info & Purchase Actions (6 cols) */}
           <div className="lg:col-span-6 flex flex-col">
-            {/* Category / Badge */}
+            {/* Category / Actions Header */}
             <div className="flex items-center justify-between gap-2 mb-2">
               <span className="text-xs font-bold text-primary uppercase tracking-wider">
-                {category?.name || 'General Utility'}
+                {category?.name || 'Smart Living Utility'}
               </span>
-              <div className="flex items-center gap-2">
+              <div className="flex items-center gap-1">
                 <button
+                  type="button"
                   onClick={handleShare}
-                  className="text-gray-400 hover:text-gray-700 p-1.5 rounded transition-colors"
-                  title="Share product"
+                  className="text-slate-400 hover:text-slate-700 p-2 rounded-md transition-colors"
+                  title="Share product link"
+                  aria-label="Share product"
                 >
-                  <FiShare2 size={16} />
+                  <Share2 className="w-4 h-4" />
                 </button>
                 <button
+                  type="button"
                   onClick={() => toggleWishlist(product)}
-                  className={`p-1.5 rounded transition-colors ${
-                    inWishlist ? 'text-red-500 bg-red-50' : 'text-gray-400 hover:text-red-500'
+                  className={`p-2 rounded-md transition-colors ${
+                    inWishlist ? 'text-red-600 bg-red-50' : 'text-slate-400 hover:text-red-600'
                   }`}
                   title={inWishlist ? 'Remove from Wishlist' : 'Add to Wishlist'}
+                  aria-label="Toggle wishlist"
                 >
-                  <FiHeart size={16} className={inWishlist ? 'fill-current' : ''} />
+                  <Heart className={`w-4 h-4 ${inWishlist ? 'fill-current' : ''}`} />
                 </button>
               </div>
             </div>
 
             {/* Product Title */}
-            <h1 className="text-xl md:text-2xl lg:text-3xl font-extrabold text-secondary tracking-tight mb-2 leading-tight">
+            <h1 className="text-xl sm:text-2xl lg:text-3xl font-extrabold text-slate-900 tracking-tight mb-2 leading-tight">
               {name}
             </h1>
 
             {/* SKU & Stock Availability */}
-            <div className="flex items-center gap-4 text-xs text-gray-500 mb-4 pb-4 border-b border-gray-100">
-              <span>SKU: <span className="font-semibold text-gray-700">{currentSku}</span></span>
+            <div className="flex items-center gap-3 text-xs text-slate-500 mb-4 pb-4 border-b border-slate-100">
+              <span>
+                SKU: <span className="font-semibold text-slate-800">{currentSku}</span>
+              </span>
               <span>•</span>
               {isOutOfStock ? (
-                <span className="text-red-600 font-bold flex items-center gap-1">
-                  <FiAlertCircle size={13} /> Out of Stock
+                <span className="text-red-600 font-semibold flex items-center gap-1">
+                  <AlertCircle className="w-3.5 h-3.5" /> Out of Stock
                 </span>
               ) : isLowStock ? (
-                <span className="text-amber-600 font-bold">
+                <span className="text-amber-600 font-semibold">
                   Only {currentStock} left in stock!
                 </span>
               ) : (
-                <span className="text-emerald-600 font-bold flex items-center gap-1">
-                  <FiCheckCircle size={13} /> In Stock
+                <span className="text-emerald-600 font-semibold flex items-center gap-1">
+                  <CheckCircle2 className="w-3.5 h-3.5" /> In Stock
                 </span>
               )}
             </div>
 
-            {/* Pricing Area */}
-            <div className="flex items-baseline gap-3 mb-6 bg-gray-50/70 p-4 rounded border border-gray-100">
-              <span className="text-2xl md:text-3xl font-extrabold text-secondary">
-                Rs. {currentPrice.toLocaleString()}
+            {/* Pricing Block */}
+            <div className="flex items-baseline gap-3 mb-6 bg-slate-50 p-4 rounded-xl border border-slate-200">
+              <span className="text-2xl sm:text-3xl font-extrabold text-slate-900">
+                ₹{Number(currentPrice).toLocaleString('en-IN')}
               </span>
-              {currentComparePrice > currentPrice && (
+              {hasDiscount && (
                 <>
-                  <span className="text-base text-gray-400 line-through">
-                    Rs. {currentComparePrice.toLocaleString()}
+                  <span className="text-base text-slate-400 line-through">
+                    ₹{Number(currentComparePrice).toLocaleString('en-IN')}
                   </span>
-                  <span className="bg-emerald-50 text-emerald-700 border border-emerald-200 text-xs font-bold px-2 py-0.5 rounded uppercase">
-                    Save Rs. {(currentComparePrice - currentPrice).toLocaleString()}
-                  </span>
+                  <Badge variant="success" size="md">
+                    Save ₹{Number(currentComparePrice - currentPrice).toLocaleString('en-IN')}
+                  </Badge>
                 </>
               )}
             </div>
 
             {/* Variant Selector (if available) */}
             {hasVariants && variants && variants.length > 0 && (
-              <div className="mb-6 space-y-2">
-                <label className="block text-xs font-bold text-gray-700 uppercase tracking-wide">
-                  {optionsLabel || 'Select Option'}: <span className="text-primary font-normal">{selectedVariant?.title}</span>
+              <div className="mb-6 space-y-2.5">
+                <label className="block text-xs font-bold text-slate-700 uppercase tracking-wide">
+                  {optionsLabel || 'Select Option'}:{' '}
+                  <span className="text-primary font-semibold">{selectedVariant?.title}</span>
                 </label>
                 <div className="flex flex-wrap gap-2">
                   {variants.map((v) => {
@@ -324,20 +352,21 @@ const ProductDetailPage = () => {
                     return (
                       <button
                         key={v.id}
+                        type="button"
                         onClick={() => setSelectedVariant(v)}
                         disabled={isVariantOut}
-                        className={`px-3.5 py-2 rounded text-xs font-bold border transition-all ${
+                        className={`px-3.5 py-2 rounded-lg text-xs font-semibold border transition-all ${
                           isSelected
                             ? 'border-primary bg-primary text-white shadow-xs'
                             : isVariantOut
-                            ? 'border-gray-200 bg-gray-100 text-gray-400 line-through cursor-not-allowed'
-                            : 'border-gray-200 bg-white text-gray-700 hover:border-gray-400'
+                            ? 'border-slate-200 bg-slate-100 text-slate-400 line-through cursor-not-allowed'
+                            : 'border-slate-200 bg-white text-slate-700 hover:border-slate-400'
                         }`}
                       >
                         {v.title}
                         {v.price !== basePrice && (
-                          <span className="ml-1 text-[10px] font-normal opacity-90">
-                            (Rs. {v.price})
+                          <span className="ml-1 text-[11px] opacity-90">
+                            (₹{Number(v.price).toLocaleString('en-IN')})
                           </span>
                         )}
                       </button>
@@ -347,76 +376,70 @@ const ProductDetailPage = () => {
               </div>
             )}
 
-            {/* Quantity Picker & Actions */}
+            {/* Quantity Selector & Purchase Action Buttons */}
             <div className="space-y-4 mb-8">
               <div className="flex items-center gap-4">
-                <label className="text-xs font-bold text-gray-700 uppercase tracking-wide">Quantity:</label>
-                <div className="flex items-center border border-gray-200 rounded bg-white">
-                  <button
-                    onClick={() => setQuantity(Math.max(1, quantity - 1))}
-                    disabled={quantity <= 1 || isOutOfStock}
-                    className="p-2 text-gray-500 hover:text-gray-800 disabled:opacity-40"
-                  >
-                    <FiMinus size={13} />
-                  </button>
-                  <span className="px-4 text-xs font-bold text-gray-800 min-w-10 text-center">
-                    {quantity}
-                  </span>
-                  <button
-                    onClick={() => setQuantity(quantity + 1)}
-                    disabled={isOutOfStock || (currentStock && quantity >= currentStock)}
-                    className="p-2 text-gray-500 hover:text-gray-800 disabled:opacity-40"
-                  >
-                    <FiPlus size={13} />
-                  </button>
-                </div>
+                <label className="text-xs font-bold text-slate-700 uppercase tracking-wide">
+                  Quantity:
+                </label>
+                <QuantitySelector
+                  value={quantity}
+                  onChange={setQuantity}
+                  min={1}
+                  max={currentStock || 99}
+                  disabled={isOutOfStock}
+                />
               </div>
 
               {/* Action Buttons */}
               <div className="grid grid-cols-1 sm:grid-cols-2 gap-3 pt-2">
-                <button
+                <Button
                   onClick={handleAddToCart}
                   disabled={isOutOfStock || cartLoading}
-                  className="btn-outline py-3.5 text-xs tracking-wider"
+                  variant="outline"
+                  size="lg"
+                  leftIcon={<ShoppingBag className="w-4 h-4" />}
                 >
-                  <FiShoppingCart size={15} />
                   {isOutOfStock ? 'Out of Stock' : 'Add to Cart'}
-                </button>
-                <button
+                </Button>
+                <Button
                   onClick={handleBuyNow}
                   disabled={isOutOfStock || cartLoading}
-                  className="btn-primary py-3.5 text-xs tracking-wider bg-primary hover:bg-primary-hover"
+                  variant="primary"
+                  size="lg"
+                  leftIcon={<Zap className="w-4 h-4" />}
                 >
-                  <FiZap size={15} />
                   Buy It Now
-                </button>
+                </Button>
               </div>
             </div>
 
             {/* Trust Highlights */}
-            <div className="grid grid-cols-3 gap-3 p-4 bg-gray-50 rounded border border-gray-100 text-center text-xs text-gray-600 mb-6">
+            <div className="grid grid-cols-3 gap-3 p-3.5 bg-slate-50/75 rounded-xl border border-slate-200 text-center text-xs text-slate-600 mb-6">
               <div className="flex flex-col items-center gap-1">
-                <FiTruck className="text-primary" size={18} />
-                <span className="font-semibold text-[11px]">Free Shipping</span>
+                <Truck className="w-4 h-4 text-primary" />
+                <span className="font-semibold text-[11px] text-slate-800">Fast Dispatch</span>
               </div>
               <div className="flex flex-col items-center gap-1">
-                <FiShield className="text-primary" size={18} />
-                <span className="font-semibold text-[11px]">Secure Order</span>
+                <ShieldCheck className="w-4 h-4 text-primary" />
+                <span className="font-semibold text-[11px] text-slate-800">PhonePe Verified</span>
               </div>
               <div className="flex flex-col items-center gap-1">
-                <FiRefreshCw className="text-primary" size={18} />
-                <span className="font-semibold text-[11px]">Easy Replacement</span>
+                <PackageCheck className="w-4 h-4 text-primary" />
+                <span className="font-semibold text-[11px] text-slate-800">Quality Checked</span>
               </div>
             </div>
 
-            {/* Product Features List */}
+            {/* Key Features / Highlights */}
             {features && features.length > 0 && (
               <div className="mb-6">
-                <h3 className="text-xs font-bold text-gray-800 uppercase tracking-wide mb-3">Key Highlights</h3>
-                <ul className="space-y-2 text-xs text-gray-600">
+                <h3 className="text-xs font-bold text-slate-800 uppercase tracking-wide mb-2.5">
+                  Product Highlights
+                </h3>
+                <ul className="space-y-2 text-xs sm:text-sm text-slate-600">
                   {features.map((feat, i) => (
                     <li key={i} className="flex items-start gap-2">
-                      <FiCheckCircle className="text-emerald-500 mt-0.5 shrink-0" size={14} />
+                      <CheckCircle2 className="w-4 h-4 text-emerald-500 mt-0.5 shrink-0" />
                       <span>{feat}</span>
                     </li>
                   ))}
@@ -426,20 +449,21 @@ const ProductDetailPage = () => {
 
             {/* Product Description */}
             {description && (
-              <div className="pt-6 border-t border-gray-100">
-                <h3 className="text-xs font-bold text-gray-800 uppercase tracking-wide mb-3">Product Description</h3>
+              <div className="pt-6 border-t border-slate-100">
+                <h3 className="text-xs font-bold text-slate-800 uppercase tracking-wide mb-2.5">
+                  Product Description
+                </h3>
                 <div
-                  className="text-xs md:text-sm text-gray-600 leading-relaxed prose prose-sm max-w-none"
+                  className="text-xs sm:text-sm text-slate-600 leading-relaxed prose prose-sm max-w-none"
                   dangerouslySetInnerHTML={{ __html: description }}
                 />
               </div>
             )}
-
           </div>
         </div>
       </div>
     </div>
   );
-};
+}
 
 export default ProductDetailPage;

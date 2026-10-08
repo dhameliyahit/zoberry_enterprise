@@ -52,7 +52,25 @@ const shipmentResolvers = {
         });
       }
 
-      return shipment;
+      // Public response is strictly limited to safe tracking milestones and delivery data
+      // Strips out customer email, phone, full address snapshot, order ID, internal user IDs, notes, and raw webhooks
+      return {
+        provider: shipment.provider,
+        awbNumber: shipment.awbNumber,
+        trackingNumber: shipment.trackingNumber,
+        status: shipment.status,
+        shippingMethodCode: shipment.shippingMethodCode,
+        estimatedDeliveryAt: shipment.estimatedDeliveryAt ? new Date(shipment.estimatedDeliveryAt).toISOString() : null,
+        shippedAt: shipment.shippedAt ? new Date(shipment.shippedAt).toISOString() : null,
+        deliveredAt: shipment.deliveredAt ? new Date(shipment.deliveredAt).toISOString() : null,
+        trackingEvents: (shipment.trackingEvents || []).map((evt) => ({
+          id: evt.id,
+          status: evt.status,
+          location: evt.location,
+          description: evt.description,
+          eventTime: evt.eventTime ? new Date(evt.eventTime).toISOString() : new Date().toISOString(),
+        })),
+      };
     },
 
     checkPostalServiceability: async (parent, { postalCode, shippingMethodCode }) => {

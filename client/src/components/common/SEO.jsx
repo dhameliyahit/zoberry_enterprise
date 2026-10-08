@@ -1,4 +1,4 @@
-﻿import React, { useEffect } from 'react';
+import React, { useEffect } from 'react';
 
 const SEO = ({
   title,
@@ -73,4 +73,5 @@ const SEO = ({
   return null;
 };
 
+export { SEO };
 export default SEO;

@@ -74,9 +74,29 @@ const shipmentTypeDefs = `#graphql
     description: String
   }
 
+  type PublicTrackingEvent {
+    id: ID!
+    status: String!
+    location: String
+    description: String
+    eventTime: String!
+  }
+
+  type PublicShipmentTracking {
+    provider: String!
+    awbNumber: String!
+    trackingNumber: String
+    status: String!
+    shippingMethodCode: String
+    estimatedDeliveryAt: String
+    shippedAt: String
+    deliveredAt: String
+    trackingEvents: [PublicTrackingEvent!]!
+  }
+
   extend type Query {
     getMyOrderShipments(orderId: ID!): [Shipment!]!
-    getShipmentTracking(awbNumber: String!): Shipment
+    getShipmentTracking(awbNumber: String!): PublicShipmentTracking
     checkPostalServiceability(postalCode: String!, shippingMethodCode: String): ServiceabilityResult!
     adminGetOrderShipments(orderId: ID!): [Shipment!]!
     adminGetShipmentById(id: ID!): Shipment

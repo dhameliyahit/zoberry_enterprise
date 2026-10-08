@@ -35,8 +35,6 @@ export const GET_MY_ORDER_SHIPMENTS = gql`
 export const GET_SHIPMENT_TRACKING = gql`
   query GetShipmentTracking($awbNumber: String!) {
     getShipmentTracking(awbNumber: $awbNumber) {
-      id
-      orderId
       provider
       awbNumber
       trackingNumber
@@ -51,7 +49,6 @@ export const GET_SHIPMENT_TRACKING = gql`
         location
         description
         eventTime
-        source
       }
     }
   }

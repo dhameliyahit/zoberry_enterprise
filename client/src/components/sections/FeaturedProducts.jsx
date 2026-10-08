@@ -1,59 +1,61 @@
 import React from 'react';
 import { Link } from 'react-router-dom';
 import { useQuery } from '@apollo/client';
-import ProductCard from '../products/ProductCard';
+import { ArrowRight } from 'lucide-react';
+import { ProductCard } from '../products/ProductCard';
+import { ProductCardSkeleton } from '../ui/Skeleton';
 import { GET_ALL_PRODUCTS } from '../../graphql/products';
 
-const FeaturedProducts = () => {
+export function FeaturedProducts() {
   const { data, loading } = useQuery(GET_ALL_PRODUCTS, {
     variables: { limit: 8 },
   });
 
   const products = (data?.getAllProducts || []).filter((p) => p.isActive !== false).slice(0, 8);
 
-  if (loading) {
-    return (
-      <section className="py-12 bg-[#f8fafc]">
-        <div className="container mx-auto px-4 md:px-8 text-center">
-          <div className="w-8 h-8 border-4 border-primary border-t-transparent rounded-full animate-spin mx-auto mb-2"></div>
-          <p className="text-gray-400 text-xs">Loading featured products...</p>
-        </div>
-      </section>
-    );
-  }
-
-  if (products.length === 0) return null;
-
   return (
-    <section className="pt-6 pb-16 md:pb-20 bg-[#f8fafc]">
-      <div className="container mx-auto px-4 md:px-8">
-        {/* Header */}
-        <div className="flex items-end justify-between mb-8 pb-3 border-b border-gray-200">
+    <section className="py-10 sm:py-16 bg-slate-50">
+      <div className="container mx-auto px-4 lg:px-8">
+        {/* Section Header */}
+        <div className="flex items-end justify-between mb-8 pb-4 border-b border-slate-200">
           <div>
-            <span className="text-primary font-bold text-xs uppercase tracking-wider mb-1 block">
+            <span className="text-[11px] font-bold uppercase tracking-wider text-primary mb-1 block">
               Handpicked Essentials
             </span>
-            <h2 className="text-2xl md:text-3xl font-extrabold text-secondary tracking-tight">
+            <h2 className="text-xl sm:text-2xl lg:text-3xl font-bold text-slate-900 tracking-tight">
               Featured Products
             </h2>
           </div>
           <Link
             to="/products"
-            className="text-gray-600 hover:text-primary font-bold text-xs tracking-wider uppercase transition-colors"
+            className="inline-flex items-center gap-1.5 text-xs sm:text-sm font-semibold text-primary hover:text-primary-hover hover:underline"
           >
-            View All ({products.length})
+            <span>View All</span>
+            <ArrowRight className="w-4 h-4" />
           </Link>
         </div>
 
-        {/* Product Grid */}
-        <div className="grid grid-cols-2 lg:grid-cols-4 gap-4 md:gap-6">
-          {products.map((product) => (
-            <ProductCard key={product.id} product={product} />
-          ))}
-        </div>
+        {/* Loading Skeletons */}
+        {loading ? (
+          <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-4 gap-4 sm:gap-6">
+            {[1, 2, 3, 4, 5, 6, 7, 8].map((n) => (
+              <ProductCardSkeleton key={n} />
+            ))}
+          </div>
+        ) : products.length === 0 ? (
+          <div className="text-center py-12 text-slate-500 text-sm">
+            No featured products available at this time.
+          </div>
+        ) : (
+          <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-4 gap-4 sm:gap-6">
+            {products.map((product) => (
+              <ProductCard key={product.id} product={product} />
+            ))}
+          </div>
+        )}
       </div>
     </section>
   );
-};
+}
 
 export default FeaturedProducts;
