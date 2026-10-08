@@ -12,9 +12,9 @@
 | :--- | :--- | :--- | :--- |
 | **Phase 1** | **Production Foundation & Security** | ✅ **COMPLETE** | 26 / 26 Passed |
 | **Phase 2** | **Commerce Core (Cart, Variants, Inventory, Address, Order, Checkout)** | ✅ **COMPLETE** | 20 / 20 Passed |
-| **Phase 3** | **Payments & Logistics (PhonePe, Shipping Providers, Webhooks, Notifications)** | ⏳ **PENDING** | - |
-| **Phase 4** | **Frontend Commerce Experience & UI Polish (Cart drawer, Checkout flow, User Orders, Admin Order Ops)** | ⏳ **PENDING** | - |
-| **Phase 5** | **Customer Engagement (Coupons/Discounts, Reviews/Ratings, Wishlist Sync)** | ⏳ **PENDING** | - |
+| **Phase 3** | **Storefront & Customer Shopping Experience (Cart Drawer, PDP Variants, Addresses, Orders, Wishlist, Checkout)** | ✅ **COMPLETE** | 6 / 6 Passed (52/52 Total) |
+| **Phase 4** | **Payments & Logistics (PhonePe Gateway, Webhooks, Courier Tracking, Invoicing)** | ⏳ **PENDING (NEXT)** | - |
+| **Phase 5** | **Coupons, Discounts, Reviews & Marketing Systems** | ⏳ **PENDING** | - |
 
 ---
 
@@ -50,96 +50,94 @@
   - Idempotent `createOrderFromCart` mutation with stock verification, price locking, snapshotting items, and transactional integrity.
 - **Verification:** `server/test/commerce_phase2.test.js` (20 tests).
 
+### ✅ Phase 3: Storefront & Customer Shopping Experience
+- **Information Architecture & Navigation:** 
+  - Clean, classic header with logo, sticky nav, live search, cart item count badge, wishlist badge, customer profile dropdown, and mobile drawer menu.
+  - Classic footer with store links, policies, customer service info, and newsletter subscription.
+- **Homepage:** 
+  - Hero showcase with real backend product queries, clean CTAs, category slider, and featured products grid with zero fake reviews or fake countdowns.
+- **Product Catalog & Search:** 
+  - `/products`, `/categories`, `/category/:slug`, `/search` with category filtering, live keyword search, price/newest sorting, and in-stock toggles.
+- **Product Details & Variant Selector (`/product/:slug`):** 
+  - Dynamic media gallery with video support, real `ProductVariant` selection with live price and stock updates, quantity selector bounded to inventory, "Add to Cart", "Buy Now", and wishlist toggling.
+- **Persistent Cart Experience:** 
+  - Live Cart Drawer + dedicated `/cart` page with server-authoritative calculations, quantity controls, out-of-stock badges, guest session persistence via `zoberry_guest_token`, and auto-merge on login.
+- **Customer Authentication:** 
+  - Modal and page-level authentication (Email/Password + Google OAuth) with automatic guest cart merging and token session persistence.
+- **Customer Account Management (`/account`):** 
+  - Protected customer portal with tabbed views for profile details, order history with status tracking, and address CRUD with default shipping flags.
+- **Checkout Flow (`/checkout`):** 
+  - Multi-step checkout with server checkout preview (`previewCheckout`), stock validation, address selection/guest form, and idempotent order placement (`createOrderFromCart`).
+- **Order Confirmation & Tracking (`/order/:orderNumber`):** 
+  - Dedicated order confirmation view with status indicators, address snapshot, itemized receipts, and order summary.
+- **Wishlist (`/wishlist`):** 
+  - Customer wishlist domain with toggle buttons, grid display, and "Move to Cart" action.
+- **Verification:** `server/test/storefront_phase3.test.js` (6 tests) | 52 / 52 Total Tests Passing | Clean Vite Client Build.
+
 ---
 
 ## 📂 Key Architecture & File Map
 
 ```
+client/src/
+├── components/
+│   ├── auth/                        # AuthModal, ProtectedRoute
+│   ├── cart/                        # CartDrawer
+│   ├── common/                      # Drawer, Modal, SEO, ToastContainer
+│   ├── layout/                      # Header, Footer, Topbar, MainLayout
+│   ├── products/                    # ProductCard
+│   └── sections/                    # Hero, CategorySlider, FeaturedProducts
+├── graphql/                         # Apollo queries/mutations (auth, products, cart, address, orders, wishlist)
+├── hooks/                           # Custom hooks (useCart, useWishlist)
+├── pages/                           # HomePage, ProductsPage, ProductDetailPage, CartPage, CheckoutPage, OrderDetailPage, WishlistPage, AboutPage, ContactPage
+│   ├── account/                     # AccountPage, AccountOrders, AccountAddresses
+│   └── admin/                       # AdminDashboard, AdminCategories, AdminProducts
+├── store/                           # uiStore (cart count, wishlist IDs, auth state, toasts)
+└── utils/                           # guestToken, imageUrl
+
 server/
 ├── config/
 │   └── db.js                        # Sequelize connection configuration
 ├── graphql/
-│   ├── typeDefs/
-│   │   ├── index.js                 # Schema merger
-│   │   ├── user.js                  # Auth & customer schemas
-│   │   ├── category.js              # Category schemas
-│   │   ├── product.js               # Product schemas (paginated)
-│   │   ├── variant.js               # Product variant schemas
-│   │   ├── cart.js                  # Cart & item schemas
-│   │   ├── address.js               # Customer addresses
-│   │   └── order.js                 # Orders, checkout & status schemas
-│   └── resolvers/
-│       ├── index.js                 # Resolvers merger
-│       ├── user.js                  # User authentication & profile
-│       ├── category.js              # Category management
-│       ├── product.js               # Product listings & admin operations
-│       ├── variant.js               # Variant mutations & queries
-│       ├── cart.js                  # Persistent cart management
-│       ├── address.js               # Address CRUD
-│       └── order.js                 # Checkout, order placement & admin ops
-├── helpers/
-│   ├── authHelper.js                # JWT & password helpers
-│   ├── authMiddleware.js            # GraphQL context auth & role gates
-│   ├── errorHelper.js               # Sanitized error formatter & custom errors
-│   ├── imageHelper.js               # Image upload processing & validations
-│   ├── inventoryHelper.js           # Stock reservation & movement tracking
-│   ├── moneyHelper.js               # Exact monetary math in paise
-│   ├── orderStateMachine.js         # Order number generator & status transitions
-│   └── validationHelper.js          # String, email, slug & numeric validators
-├── models/
-│   ├── index.js                     # Sequelize model relationships & exports
-│   ├── userModel.js                 # Users & roles
-│   ├── categoryModel.js             # Categories
-│   ├── productModel.js              # Products
-│   ├── productVariantModel.js       # Variants
-│   ├── cartModel.js                 # Guest & user cart sessions
-│   ├── cartItemModel.js             # Cart line items
-│   ├── addressModel.js              # Customer addresses
-│   ├── orderModel.js                # Orders with financial totals & snapshots
-│   ├── orderItemModel.js            # Order line items with price snapshots
-│   ├── inventoryMovementModel.js    # Stock audit logs
-│   └── wishlistItemModel.js         # Wishlist items
-├── scripts/
-│   └── initDb.js                    # Safe database initializer
+│   ├── typeDefs/                    # GraphQL schemas (user, category, product, variant, cart, address, order, wishlist)
+│   └── resolvers/                   # Resolvers (user, category, product, variant, cart, address, order, wishlist)
+├── helpers/                         # authHelper, authMiddleware, errorHelper, imageHelper, inventoryHelper, moneyHelper, orderStateMachine, validationHelper
+├── models/                          # Sequelize models (User, Category, Product, ProductVariant, Cart, CartItem, Address, Order, OrderItem, InventoryMovement, WishlistItem)
+├── scripts/                         # initDb.js
 └── test/
-    ├── security_and_regression.test.js  # Phase 1 test suite
-    └── commerce_phase2.test.js          # Phase 2 test suite
+    ├── security_and_regression.test.js  # Phase 1 test suite (26 tests)
+    ├── commerce_phase2.test.js          # Phase 2 test suite (20 tests)
+    └── storefront_phase3.test.js        # Phase 3 test suite (6 tests)
 ```
 
 ---
 
-## 🧪 How to Run Tests
+## 🧪 How to Run Tests & Build
 
 From the `server` directory:
-
 ```bash
 cd server
 npm test
 ```
-
-This runs both Phase 1 and Phase 2 test suites.
+*(Runs Phase 1, Phase 2, and Phase 3 automated test suites — 52/52 passing).*
 
 To build the client:
 ```bash
 cd client
 npm run build
 ```
+*(Runs Vite client production build).*
 
 ---
 
-## 🚀 Immediate Next Steps (Phase 3 Preparation)
+## 🚀 Phase 4 Scope (Payments & Logistics — Next Up)
 
-1. **Payment Integration (PhonePe / Gateway):**
-   - Implement payment initiation endpoint/mutation.
-   - Secure webhook receiver with payload signature verification and idempotent order state transition to `PAID`.
-   - Implement refund handling hook.
-
-2. **Shipping & Courier Integration:**
-   - Shipping rate calculation by pincode / weight.
-   - Courier webhook status sync (AWB generation, tracking updates).
-
-3. **Frontend Integration:**
-   - Connect client cart state to GraphQL persistent cart mutations (guest token in `localStorage` + customer sync).
-   - Checkout multi-step flow (Address selection → Payment selection → Review → Place Order).
-   - Customer Order History page & Order tracking page.
-   - Admin Order Management dashboard (Update statuses, View inventory movements).
+1. **PhonePe Payment Gateway Integration:**
+   - Payment initiation API / mutation
+   - Webhook receiver with cryptographic signature verification
+   - Idempotent order state transition (`PENDING` → `PAID`)
+2. **Shipping & Courier Logistics Integration:**
+   - Pincode serviceability & real-time shipping rate calculation
+   - Courier webhook status sync (AWB generation, tracking events)
+3. **Invoicing & PDF Receipts:**
+   - Automated order tax invoice generation.

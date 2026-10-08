@@ -54,6 +54,32 @@ const orderResolvers = {
       return order;
     },
 
+    getOrderByNumber: async (parent, { orderNumber }, context) => {
+      if (!orderNumber || typeof orderNumber !== 'string') {
+        throw new GraphQLError('Valid order number is required.', {
+          extensions: { code: 'BAD_USER_INPUT' },
+        });
+      }
+
+      const order = await OrderModel.findOne({
+        where: { orderNumber: orderNumber.trim() },
+        include: [{ model: OrderItemModel, as: 'items' }],
+      });
+
+      if (!order) {
+        throw new GraphQLError('Order not found.', {
+          extensions: { code: 'NOT_FOUND' },
+        });
+      }
+
+      // If registered customer order, enforce ownership
+      if (order.userId && context?.user) {
+        requireOwnerOrAdmin(context, order.userId);
+      }
+
+      return order;
+    },
+
     previewCheckout: async (parent, { guestSessionToken }, context) => {
       const cartInstance = await getOrCreateCartInstance(context, guestSessionToken);
       const cart = await formatCartResponse(cartInstance.id);

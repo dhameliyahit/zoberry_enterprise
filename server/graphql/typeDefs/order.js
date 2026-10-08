@@ -80,6 +80,7 @@ const orderTypeDefs = `#graphql
   extend type Query {
     getMyOrders: [Order!]!
     getMyOrder(id: ID!): Order
+    getOrderByNumber(orderNumber: String!): Order
     previewCheckout(guestSessionToken: String): CheckoutPreview!
     adminGetAllOrders(status: String, page: Int, limit: Int): [Order!]!
     adminGetOrderById(id: ID!): Order

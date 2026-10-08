@@ -1,74 +1,49 @@
 import React, { useState, useEffect, useRef } from 'react';
-import { useParams, Link } from 'react-router-dom';
-import { gql, useQuery } from '@apollo/client';
-import { 
-  FiShoppingCart, FiZap, FiTruck, FiShield, FiRefreshCw, 
-  FiCheckCircle, FiPlay, FiImage, FiShare2, FiStar, FiChevronRight, 
-  FiMessageCircle, FiVolume2, FiVolumeX 
+import { useParams, Link, useNavigate } from 'react-router-dom';
+import { useQuery } from '@apollo/client';
+import {
+  FiShoppingCart, FiZap, FiTruck, FiShield, FiRefreshCw,
+  FiCheckCircle, FiPlay, FiImage, FiShare2, FiHeart, FiChevronRight,
+  FiAlertCircle, FiMinus, FiPlus,
 } from 'react-icons/fi';
 import SEO from '../components/common/SEO';
+import { useCart } from '../hooks/useCart';
+import { useWishlist } from '../hooks/useWishlist';
 import { useUIStore } from '../store/uiStore';
-
-const GET_PRODUCT_BY_SLUG = gql`
-  query GetProductBySlug($slug: String!) {
-    getProductBySlug(slug: $slug) {
-      id
-      name
-      slug
-      shortDescription
-      description
-      price
-      compareAtPrice
-      images
-      stockQuantity
-      optionsLabel
-      productVideoUrl
-      features
-      isActive
-      category {
-        id
-        name
-        slug
-      }
-    }
-  }
-`;
-
-const GET_RELATED_PRODUCTS = gql`
-  query GetAllProducts {
-    getAllProducts {
-      id
-      name
-      slug
-      price
-      compareAtPrice
-      images
-      optionsLabel
-    }
-  }
-`;
+import { GET_PRODUCT_BY_SLUG } from '../graphql/products';
 
 const API_URL = import.meta.env.VITE_API_URL || 'http://localhost:9000';
 
 const ProductDetailPage = () => {
   const { slug } = useParams();
+  const navigate = useNavigate();
   const [selectedMedia, setSelectedMedia] = useState('image-0');
+  const [selectedVariant, setSelectedVariant] = useState(null);
   const [quantity, setQuantity] = useState(1);
   const [copied, setCopied] = useState(false);
-  const [isMuted, setIsMuted] = useState(true);
-  const videoRef = useRef(null);
-  const { openCart } = useUIStore();
+  
+  const { addToCart, loading: cartLoading } = useCart();
+  const { isSaved, toggleWishlist } = useWishlist();
+  const { openCart, addToast } = useUIStore();
 
   const { data, loading, error } = useQuery(GET_PRODUCT_BY_SLUG, {
     variables: { slug },
-    skip: !slug
+    skip: !slug,
   });
-
-  const { data: relatedData } = useQuery(GET_RELATED_PRODUCTS);
 
   const product = data?.getProductBySlug;
 
-  // Set default media: If product has a video URL, show video FIRST by default!
+  // Auto-select first active variant if product has variants
+  useEffect(() => {
+    if (product?.variants && product.variants.length > 0) {
+      const firstActive = product.variants.find((v) => v.isActive !== false) || product.variants[0];
+      setSelectedVariant(firstActive);
+    } else {
+      setSelectedVariant(null);
+    }
+  }, [product]);
+
+  // Set default media
   useEffect(() => {
     if (product?.productVideoUrl) {
       setSelectedMedia('video');
@@ -81,8 +56,8 @@ const ProductDetailPage = () => {
     return (
       <div className="min-h-[60vh] flex items-center justify-center bg-gray-50">
         <div className="text-center">
-          <div className="w-12 h-12 border-4 border-primary border-t-transparent rounded-full animate-spin mx-auto mb-4"></div>
-          <p className="text-gray-500 font-medium">Loading product details...</p>
+          <div className="w-10 h-10 border-4 border-primary border-t-transparent rounded-full animate-spin mx-auto mb-3"></div>
+          <p className="text-gray-500 font-medium text-sm">Loading product details...</p>
         </div>
       </div>
     );
@@ -91,9 +66,11 @@ const ProductDetailPage = () => {
   if (error || !product) {
     return (
       <div className="min-h-[60vh] flex items-center justify-center bg-gray-50 px-4">
-        <div className="text-center max-w-md bg-white p-8 rounded-xl shadow-sm border border-gray-100">
-          <h2 className="text-2xl font-bold text-gray-800 mb-2">Product Not Found</h2>
-          <p className="text-gray-500 text-sm mb-6">The product you are looking for might have been moved or is currently unavailable.</p>
+        <div className="text-center max-w-md bg-white p-8 rounded border border-gray-200">
+          <h2 className="text-xl font-bold text-gray-800 mb-2">Product Not Found</h2>
+          <p className="text-gray-500 text-sm mb-6">
+            The product you are looking for might have been moved or is currently unavailable.
+          </p>
           <Link to="/products" className="btn-primary inline-flex items-center gap-2">
             Browse All Products <FiChevronRight />
           </Link>
@@ -103,372 +80,362 @@ const ProductDetailPage = () => {
   }
 
   const {
+    id,
     name,
     shortDescription,
     description,
-    price,
-    compareAtPrice,
+    price: basePrice,
+    compareAtPrice: baseComparePrice,
     images = [],
-    stockQuantity,
-    optionsLabel,
+    stockQuantity: baseStock,
+    hasVariants,
+    variants = [],
     productVideoUrl,
     features = [],
-    category
+    category,
+    optionsLabel,
   } = product;
 
-  // Format images
-  const formattedImages = images.map(img => 
+  // Dynamic pricing and stock based on variant selection
+  const currentPrice = selectedVariant ? selectedVariant.price : basePrice;
+  const currentComparePrice = selectedVariant?.compareAtPrice || baseComparePrice;
+  const currentStock = selectedVariant ? selectedVariant.stockQuantity : baseStock;
+  const currentSku = selectedVariant?.sku || `ZB-${id.substring(0, 6).toUpperCase()}`;
+
+  const isOutOfStock = currentStock !== null && currentStock !== undefined && currentStock <= 0;
+  const isLowStock = currentStock > 0 && currentStock <= 5;
+
+  const formattedImages = images.map((img) =>
     img.startsWith('http') ? img : `${API_URL}${img}`
   );
   if (formattedImages.length === 0) {
     formattedImages.push('https://placehold.co/600x600?text=No+Image');
   }
 
-  // Calculate discount
   let discountPercentage = 0;
-  if (compareAtPrice && compareAtPrice > price) {
-    discountPercentage = Math.round(((compareAtPrice - price) / compareAtPrice) * 100);
+  if (currentComparePrice && currentComparePrice > currentPrice) {
+    discountPercentage = Math.round(
+      ((currentComparePrice - currentPrice) / currentComparePrice) * 100
+    );
   }
 
   const handleShare = () => {
     navigator.clipboard.writeText(window.location.href);
     setCopied(true);
     setTimeout(() => setCopied(false), 2000);
+    addToast('Product link copied to clipboard!', 'info');
   };
 
-  const handleWhatsAppOrder = () => {
-    const text = encodeURIComponent(`Hi Zoberry Enterprise! I want to order: ${name} (Price: Rs. ${price}, Qty: ${quantity}) - Link: ${window.location.href}`);
-    window.open(`https://wa.me/919638601192?text=${text}`, '_blank');
-  };
-
-  // Helper for YouTube / Vimeo embed (Ensures MUTED + AUTOPLAY by default)
-  const getEmbedUrl = (url) => {
-    if (!url) return null;
-    if (url.includes('youtube.com/watch?v=' || url.includes('youtu.be/'))) {
-      const videoId = url.includes('v=') ? url.split('v=')[1]?.split('&')[0] : url.split('youtu.be/')[1]?.split('?')[0];
-      return `https://www.youtube.com/embed/${videoId}?autoplay=1&mute=1&loop=1&playlist=${videoId}&playsinline=1&rel=0`;
-    }
-    if (url.includes('youtube.com/shorts/')) {
-      const videoId = url.split('/shorts/')[1]?.split('?')[0];
-      return `https://www.youtube.com/embed/${videoId}?autoplay=1&mute=1&loop=1&playlist=${videoId}&playsinline=1&rel=0`;
-    }
-    if (url.includes('vimeo.com/')) {
-      const videoId = url.split('vimeo.com/')[1]?.split('?')[0];
-      return `https://player.vimeo.com/video/${videoId}?autoplay=1&muted=1&loop=1`;
-    }
-    return url;
-  };
-
-  const isEmbedVideo = productVideoUrl && (productVideoUrl.includes('youtube') || productVideoUrl.includes('youtu.be') || productVideoUrl.includes('vimeo'));
-
-  // Toggle video mute for HTML5 videos
-  const toggleMute = () => {
-    if (videoRef.current) {
-      videoRef.current.muted = !videoRef.current.muted;
-      setIsMuted(videoRef.current.muted);
+  const handleAddToCart = async () => {
+    if (isOutOfStock) return;
+    try {
+      await addToCart(id, selectedVariant ? selectedVariant.id : null, quantity);
+      openCart();
+    } catch (err) {
+      // Toast already handled by useCart
     }
   };
 
-  // Rich Schema.org Product JSON-LD
-  const productSchema = {
-    "@context": "https://schema.org/",
-    "@type": "Product",
-    "name": name,
-    "image": formattedImages,
-    "description": description || shortDescription || `${name} - Smart home and kitchen utility item by Zoberry Enterprise`,
-    "sku": `ZB-${product.id.slice(0, 8)}`,
-    "brand": {
-      "@type": "Brand",
-      "name": "Zoberry Enterprise"
-    },
-    "offers": {
-      "@type": "Offer",
-      "url": `https://www.zoberryenterprise.shop/product/${slug}`,
-      "priceCurrency": "INR",
-      "price": price,
-      "priceValidUntil": "2028-12-31",
-      "itemCondition": "https://schema.org/NewCondition",
-      "availability": stockQuantity > 0 ? "https://schema.org/InStock" : "https://schema.org/OutOfStock",
-      "seller": {
-        "@type": "Organization",
-        "name": "Zoberry Enterprise"
-      }
-    },
-    "aggregateRating": {
-      "@type": "AggregateRating",
-      "ratingValue": "4.9",
-      "reviewCount": "28"
+  const handleBuyNow = async () => {
+    if (isOutOfStock) return;
+    try {
+      await addToCart(id, selectedVariant ? selectedVariant.id : null, quantity);
+      navigate('/checkout');
+    } catch (err) {
+      // Toast handled
     }
   };
+
+  const inWishlist = isSaved(id);
 
   return (
-    <div className="bg-[#f8fafc] min-h-screen pb-16">
+    <div className="bg-[#f8fafc] min-h-screen py-6 md:py-10">
       <SEO
-        title={name}
-        description={shortDescription || description || `Buy ${name} online at best price on Zoberry Enterprise. High quality home and kitchen utility essentials.`}
-        keywords={`${name}, home utility products, kitchen tools, buy ${name} online, easy home decor, daily essentials india, zoberry enterprise`}
+        title={`${name} | Zoberry Enterprise`}
+        description={shortDescription || `${name} - Shop online at Zoberry Enterprise.`}
         image={formattedImages[0]}
         url={`/product/${slug}`}
-        productSchema={productSchema}
       />
 
-      {/* Breadcrumbs */}
-      <div className="bg-white border-b border-gray-200 py-3">
-        <div className="container mx-auto px-4 md:px-8 text-xs text-gray-500 flex items-center gap-1.5 overflow-x-auto whitespace-nowrap">
-          <Link to="/" className="hover:text-primary">Home</Link>
-          <FiChevronRight size={12} />
-          <Link to="/products" className="hover:text-primary">Products</Link>
+      <div className="container mx-auto px-4 md:px-8 max-w-6xl">
+        {/* Breadcrumb Navigation */}
+        <nav className="flex items-center text-xs text-gray-500 mb-6 gap-2 overflow-x-auto whitespace-nowrap">
+          <Link to="/" className="hover:text-primary transition-colors">Home</Link>
+          <FiChevronRight size={12} className="text-gray-400" />
+          <Link to="/products" className="hover:text-primary transition-colors">Products</Link>
           {category && (
             <>
-              <FiChevronRight size={12} />
-              <Link to={`/products?category=${category.slug}`} className="hover:text-primary">{category.name}</Link>
+              <FiChevronRight size={12} className="text-gray-400" />
+              <Link to={`/products?category=${category.slug}`} className="hover:text-primary transition-colors">
+                {category.name}
+              </Link>
             </>
           )}
-          <FiChevronRight size={12} />
-          <span className="text-gray-800 font-medium truncate max-w-xs">{name}</span>
-        </div>
-      </div>
+          <FiChevronRight size={12} className="text-gray-400" />
+          <span className="text-gray-800 font-semibold truncate max-w-xs">{name}</span>
+        </nav>
 
-      <div className="container mx-auto px-4 md:px-8 pt-6">
-        <div className="bg-white rounded-xl shadow-xs border border-gray-200 overflow-hidden p-4 md:p-8">
-          <div className="grid grid-cols-1 lg:grid-cols-12 gap-8 lg:gap-12">
-            
-            {/* Left: Gallery & Video (5 cols) */}
-            <div className="lg:col-span-6 flex flex-col gap-4">
-              
-              {/* Main Media Display Box */}
-              <div className="relative aspect-square w-full rounded-xl bg-gray-50 border border-gray-100 overflow-hidden flex items-center justify-center">
-                {selectedMedia === 'video' && productVideoUrl ? (
-                  isEmbedVideo ? (
-                    <iframe
-                      src={getEmbedUrl(productVideoUrl)}
-                      title={name}
-                      className="w-full h-full border-0"
-                      allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture"
-                      allowFullScreen
-                    />
-                  ) : (
-                    <div className="relative w-full h-full flex items-center justify-center bg-black">
-                      <video
-                        ref={videoRef}
-                        src={productVideoUrl}
-                        controls
-                        autoPlay
-                        muted
-                        loop
-                        playsInline
-                        className="w-full h-full object-contain"
-                      />
-                      {/* Unmute / Mute quick button */}
-                      <button
-                        type="button"
-                        onClick={toggleMute}
-                        className="absolute bottom-4 right-4 bg-black/70 hover:bg-black text-white p-2 rounded-full shadow-md z-20 cursor-pointer"
-                        title={isMuted ? "Unmute Video" : "Mute Video"}
-                      >
-                        {isMuted ? <FiVolumeX size={16} /> : <FiVolume2 size={16} />}
-                      </button>
-                    </div>
-                  )
-                ) : (
-                  <img
-                    src={formattedImages[parseInt(selectedMedia.replace('image-', ''), 10) || 0]}
-                    alt={name}
-                    className="w-full h-full object-contain p-2 hover:scale-105 transition-transform duration-300"
+        {/* Product Main Container */}
+        <div className="grid grid-cols-1 lg:grid-cols-12 gap-8 lg:gap-10 bg-white p-5 md:p-8 rounded-lg border border-gray-200 shadow-xs">
+          
+          {/* Left Column: Media Gallery (6 cols) */}
+          <div className="lg:col-span-6 flex flex-col gap-4">
+            {/* Main Stage */}
+            <div className="relative w-full aspect-square bg-gray-50 rounded border border-gray-100 overflow-hidden flex items-center justify-center">
+              {selectedMedia === 'video' && productVideoUrl ? (
+                <div className="w-full h-full bg-black flex items-center justify-center">
+                  <iframe
+                    src={productVideoUrl.includes('embed') ? productVideoUrl : productVideoUrl}
+                    title={name}
+                    className="w-full h-full"
+                    allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture"
+                    allowFullScreen
                   />
-                )}
+                </div>
+              ) : (
+                <img
+                  src={
+                    formattedImages[
+                      parseInt(selectedMedia.replace('image-', ''), 10) || 0
+                    ]
+                  }
+                  alt={name}
+                  className="w-full h-full object-contain p-2"
+                />
+              )}
 
-                {/* Discount Badge */}
-                {discountPercentage > 0 && (
-                  <span className="absolute top-4 left-4 bg-emerald-600 text-white font-extrabold text-xs px-2.5 py-1 rounded-md shadow-sm z-10">
-                    {discountPercentage}% OFF
-                  </span>
-                )}
-
-                {/* Options Badge */}
-                {optionsLabel && (
-                  <span className="absolute top-4 right-4 bg-gray-900/80 backdrop-blur-xs text-white text-[11px] font-semibold px-2.5 py-1 rounded-md uppercase tracking-wider z-10">
-                    {optionsLabel}
-                  </span>
-                )}
-              </div>
-
-              {/* Thumbnails row (Video first if available, then all images) */}
-              <div className="flex items-center gap-3 overflow-x-auto pb-2">
-                
-                {/* Video Thumbnail Button (Shows First if Video exists) */}
-                {productVideoUrl && (
-                  <button
-                    onClick={() => setSelectedMedia('video')}
-                    className={`relative w-18 h-18 rounded-lg overflow-hidden border-2 flex-shrink-0 flex flex-col items-center justify-center bg-purple-50 text-purple-700 font-bold transition-all cursor-pointer ${selectedMedia === 'video' ? 'border-purple-600 ring-2 ring-purple-200 scale-105 shadow-xs' : 'border-purple-200 hover:border-purple-400 opacity-80 hover:opacity-100'}`}
-                  >
-                    <FiPlay size={22} className="text-purple-600 mb-0.5" />
-                    <span className="text-[10px] uppercase tracking-wider font-extrabold">Video</span>
-                  </button>
-                )}
-
-                {/* Multiple Images Thumbnails */}
-                {formattedImages.map((img, idx) => (
-                  <button
-                    key={idx}
-                    onClick={() => setSelectedMedia(`image-${idx}`)}
-                    className={`relative w-18 h-18 rounded-lg overflow-hidden border-2 flex-shrink-0 bg-gray-50 transition-all cursor-pointer ${selectedMedia === `image-${idx}` ? 'border-primary shadow-xs scale-105 ring-2 ring-blue-100' : 'border-gray-200 hover:border-gray-300 opacity-70 hover:opacity-100'}`}
-                  >
-                    <img src={img} alt={`${name} thumb ${idx}`} className="w-full h-full object-cover" />
-                  </button>
-                ))}
-
-              </div>
+              {/* Discount Tag */}
+              {discountPercentage > 0 && (
+                <div className="absolute top-4 left-4 bg-emerald-600 text-white text-[11px] font-bold px-2.5 py-1 rounded uppercase tracking-wide">
+                  {discountPercentage}% OFF
+                </div>
+              )}
             </div>
 
-            {/* Right: Product Buy Box & Details (6 cols) */}
-            <div className="lg:col-span-6 flex flex-col">
-              
-              {/* Category & Share */}
-              <div className="flex items-center justify-between mb-2">
-                <span className="text-xs font-bold text-primary uppercase tracking-wider">
-                  {category?.name || 'Home & Kitchen Utility'}
-                </span>
+            {/* Thumbnail Strip */}
+            <div className="flex items-center gap-3 overflow-x-auto pb-2">
+              {productVideoUrl && (
                 <button
-                  onClick={handleShare}
-                  className="text-xs text-gray-500 hover:text-gray-800 flex items-center gap-1 bg-gray-100 hover:bg-gray-200 px-2.5 py-1 rounded-md transition-colors cursor-pointer"
-                  title="Copy Product Link"
+                  onClick={() => setSelectedMedia('video')}
+                  className={`w-16 h-16 rounded border flex flex-col items-center justify-center gap-1 shrink-0 bg-gray-900 text-white text-[10px] font-bold transition-all ${
+                    selectedMedia === 'video'
+                      ? 'border-primary ring-2 ring-primary/20'
+                      : 'border-gray-200 opacity-80'
+                  }`}
                 >
-                  <FiShare2 size={13} />
-                  {copied ? 'Link Copied!' : 'Share'}
+                  <FiPlay size={16} /> Video
                 </button>
-              </div>
-
-              {/* Title */}
-              <h1 className="text-2xl md:text-3xl font-extrabold text-gray-900 leading-tight mb-3">
-                {name}
-              </h1>
-
-              {/* Rating stars */}
-              <div className="flex items-center gap-2 mb-4">
-                <div className="flex text-amber-400">
-                  {[1, 2, 3, 4, 5].map((s) => (
-                    <FiStar key={s} size={15} fill="currentColor" />
-                  ))}
-                </div>
-                <span className="text-xs font-bold text-gray-700">4.9 / 5</span>
-                <span className="text-xs text-gray-400 font-medium">(28 Verified Customer Reviews)</span>
-              </div>
-
-              {/* Price Row */}
-              <div className="bg-gray-50 p-4 rounded-xl border border-gray-100 mb-6 flex items-baseline gap-3">
-                <span className="text-3xl font-black text-gray-900">
-                  Rs. {price.toLocaleString()}
-                </span>
-                {compareAtPrice > price && (
-                  <span className="text-base text-gray-400 line-through">
-                    Rs. {compareAtPrice.toLocaleString()}
-                  </span>
-                )}
-                {discountPercentage > 0 && (
-                  <span className="text-xs font-extrabold text-emerald-700 bg-emerald-100 px-2 py-0.5 rounded uppercase">
-                    Save {discountPercentage}%
-                  </span>
-                )}
-              </div>
-
-              {/* Short Description */}
-              {shortDescription && (
-                <p className="text-gray-600 text-sm leading-relaxed mb-6">
-                  {shortDescription}
-                </p>
               )}
-
-              {/* Quantity & Buy Actions */}
-              <div className="space-y-3 mb-6">
-                <div className="flex items-center gap-3">
-                  <span className="text-xs font-semibold text-gray-700 uppercase">Quantity:</span>
-                  <div className="flex items-center border border-gray-300 rounded-lg bg-white overflow-hidden">
-                    <button
-                      onClick={() => setQuantity(Math.max(1, quantity - 1))}
-                      className="px-3 py-1.5 text-gray-600 hover:bg-gray-100 font-bold cursor-pointer"
-                    >
-                      -
-                    </button>
-                    <span className="px-4 py-1.5 font-bold text-sm text-gray-800">{quantity}</span>
-                    <button
-                      onClick={() => setQuantity(quantity + 1)}
-                      className="px-3 py-1.5 text-gray-600 hover:bg-gray-100 font-bold cursor-pointer"
-                    >
-                      +
-                    </button>
-                  </div>
-                  <span className={`text-xs font-medium ${stockQuantity > 0 ? 'text-emerald-600' : 'text-rose-600'}`}>
-                    {stockQuantity > 0 ? `✓ In Stock (${stockQuantity} available)` : 'Out of Stock'}
-                  </span>
-                </div>
-
-                <div className="grid grid-cols-1 sm:grid-cols-2 gap-3 pt-2">
-                  <button
-                    onClick={openCart}
-                    className="w-full bg-[#0f4c81] hover:bg-[#0c3c66] text-white font-bold py-3.5 px-6 rounded-lg flex items-center justify-center gap-2 transition-all shadow-sm active:scale-98 cursor-pointer"
-                  >
-                    <FiShoppingCart size={18} />
-                    Add to Cart
-                  </button>
-                  <button
-                    onClick={handleWhatsAppOrder}
-                    className="w-full bg-[#25D366] hover:bg-[#20b858] text-white font-bold py-3.5 px-6 rounded-lg flex items-center justify-center gap-2 transition-all shadow-sm active:scale-98 cursor-pointer"
-                  >
-                    <FiMessageCircle size={18} />
-                    Order via WhatsApp
-                  </button>
-                </div>
-              </div>
-
-              {/* Trust Badges */}
-              <div className="grid grid-cols-2 sm:grid-cols-3 gap-3 py-4 border-t border-b border-gray-100 text-xs text-gray-600">
-                <div className="flex items-center gap-2">
-                  <FiTruck className="text-primary flex-shrink-0" size={18} />
-                  <span>Fast Free Delivery</span>
-                </div>
-                <div className="flex items-center gap-2">
-                  <FiRefreshCw className="text-primary flex-shrink-0" size={18} />
-                  <span>7 Days Return</span>
-                </div>
-                <div className="flex items-center gap-2">
-                  <FiShield className="text-primary flex-shrink-0" size={18} />
-                  <span>100% Quality Checked</span>
-                </div>
-              </div>
-
-              {/* Highlights / Features List */}
-              {features && features.length > 0 && (
-                <div className="mt-6">
-                  <h3 className="text-sm font-bold text-gray-900 uppercase tracking-wider mb-3">
-                    Key Highlights:
-                  </h3>
-                  <ul className="space-y-2">
-                    {features.map((feat, idx) => (
-                      <li key={idx} className="flex items-start gap-2 text-sm text-gray-700">
-                        <FiCheckCircle className="text-emerald-500 mt-0.5 flex-shrink-0" size={16} />
-                        <span>{feat}</span>
-                      </li>
-                    ))}
-                  </ul>
-                </div>
-              )}
-
+              {formattedImages.map((img, idx) => (
+                <button
+                  key={idx}
+                  onClick={() => setSelectedMedia(`image-${idx}`)}
+                  className={`w-16 h-16 rounded border overflow-hidden shrink-0 bg-gray-50 transition-all ${
+                    selectedMedia === `image-${idx}`
+                      ? 'border-primary ring-2 ring-primary/20'
+                      : 'border-gray-200 hover:border-gray-300'
+                  }`}
+                >
+                  <img src={img} alt={`Thumb ${idx}`} className="w-full h-full object-cover" />
+                </button>
+              ))}
             </div>
           </div>
 
-          {/* Full Description & Specs Section */}
-          {description && (
-            <div className="mt-12 pt-8 border-t border-gray-200">
-              <h2 className="text-xl font-bold text-gray-900 mb-4">
-                Product Description & Usage Guide
-              </h2>
-              <div className="prose max-w-none text-gray-700 text-sm md:text-base leading-relaxed whitespace-pre-line">
-                {description}
+          {/* Right Column: Product Info & Purchase Actions (6 cols) */}
+          <div className="lg:col-span-6 flex flex-col">
+            {/* Category / Badge */}
+            <div className="flex items-center justify-between gap-2 mb-2">
+              <span className="text-xs font-bold text-primary uppercase tracking-wider">
+                {category?.name || 'General Utility'}
+              </span>
+              <div className="flex items-center gap-2">
+                <button
+                  onClick={handleShare}
+                  className="text-gray-400 hover:text-gray-700 p-1.5 rounded transition-colors"
+                  title="Share product"
+                >
+                  <FiShare2 size={16} />
+                </button>
+                <button
+                  onClick={() => toggleWishlist(product)}
+                  className={`p-1.5 rounded transition-colors ${
+                    inWishlist ? 'text-red-500 bg-red-50' : 'text-gray-400 hover:text-red-500'
+                  }`}
+                  title={inWishlist ? 'Remove from Wishlist' : 'Add to Wishlist'}
+                >
+                  <FiHeart size={16} className={inWishlist ? 'fill-current' : ''} />
+                </button>
               </div>
             </div>
-          )}
 
+            {/* Product Title */}
+            <h1 className="text-xl md:text-2xl lg:text-3xl font-extrabold text-secondary tracking-tight mb-2 leading-tight">
+              {name}
+            </h1>
+
+            {/* SKU & Stock Availability */}
+            <div className="flex items-center gap-4 text-xs text-gray-500 mb-4 pb-4 border-b border-gray-100">
+              <span>SKU: <span className="font-semibold text-gray-700">{currentSku}</span></span>
+              <span>•</span>
+              {isOutOfStock ? (
+                <span className="text-red-600 font-bold flex items-center gap-1">
+                  <FiAlertCircle size={13} /> Out of Stock
+                </span>
+              ) : isLowStock ? (
+                <span className="text-amber-600 font-bold">
+                  Only {currentStock} left in stock!
+                </span>
+              ) : (
+                <span className="text-emerald-600 font-bold flex items-center gap-1">
+                  <FiCheckCircle size={13} /> In Stock
+                </span>
+              )}
+            </div>
+
+            {/* Pricing Area */}
+            <div className="flex items-baseline gap-3 mb-6 bg-gray-50/70 p-4 rounded border border-gray-100">
+              <span className="text-2xl md:text-3xl font-extrabold text-secondary">
+                Rs. {currentPrice.toLocaleString()}
+              </span>
+              {currentComparePrice > currentPrice && (
+                <>
+                  <span className="text-base text-gray-400 line-through">
+                    Rs. {currentComparePrice.toLocaleString()}
+                  </span>
+                  <span className="bg-emerald-50 text-emerald-700 border border-emerald-200 text-xs font-bold px-2 py-0.5 rounded uppercase">
+                    Save Rs. {(currentComparePrice - currentPrice).toLocaleString()}
+                  </span>
+                </>
+              )}
+            </div>
+
+            {/* Variant Selector (if available) */}
+            {hasVariants && variants && variants.length > 0 && (
+              <div className="mb-6 space-y-2">
+                <label className="block text-xs font-bold text-gray-700 uppercase tracking-wide">
+                  {optionsLabel || 'Select Option'}: <span className="text-primary font-normal">{selectedVariant?.title}</span>
+                </label>
+                <div className="flex flex-wrap gap-2">
+                  {variants.map((v) => {
+                    const isSelected = selectedVariant?.id === v.id;
+                    const isVariantOut = v.stockQuantity <= 0;
+
+                    return (
+                      <button
+                        key={v.id}
+                        onClick={() => setSelectedVariant(v)}
+                        disabled={isVariantOut}
+                        className={`px-3.5 py-2 rounded text-xs font-bold border transition-all ${
+                          isSelected
+                            ? 'border-primary bg-primary text-white shadow-xs'
+                            : isVariantOut
+                            ? 'border-gray-200 bg-gray-100 text-gray-400 line-through cursor-not-allowed'
+                            : 'border-gray-200 bg-white text-gray-700 hover:border-gray-400'
+                        }`}
+                      >
+                        {v.title}
+                        {v.price !== basePrice && (
+                          <span className="ml-1 text-[10px] font-normal opacity-90">
+                            (Rs. {v.price})
+                          </span>
+                        )}
+                      </button>
+                    );
+                  })}
+                </div>
+              </div>
+            )}
+
+            {/* Quantity Picker & Actions */}
+            <div className="space-y-4 mb-8">
+              <div className="flex items-center gap-4">
+                <label className="text-xs font-bold text-gray-700 uppercase tracking-wide">Quantity:</label>
+                <div className="flex items-center border border-gray-200 rounded bg-white">
+                  <button
+                    onClick={() => setQuantity(Math.max(1, quantity - 1))}
+                    disabled={quantity <= 1 || isOutOfStock}
+                    className="p-2 text-gray-500 hover:text-gray-800 disabled:opacity-40"
+                  >
+                    <FiMinus size={13} />
+                  </button>
+                  <span className="px-4 text-xs font-bold text-gray-800 min-w-10 text-center">
+                    {quantity}
+                  </span>
+                  <button
+                    onClick={() => setQuantity(quantity + 1)}
+                    disabled={isOutOfStock || (currentStock && quantity >= currentStock)}
+                    className="p-2 text-gray-500 hover:text-gray-800 disabled:opacity-40"
+                  >
+                    <FiPlus size={13} />
+                  </button>
+                </div>
+              </div>
+
+              {/* Action Buttons */}
+              <div className="grid grid-cols-1 sm:grid-cols-2 gap-3 pt-2">
+                <button
+                  onClick={handleAddToCart}
+                  disabled={isOutOfStock || cartLoading}
+                  className="btn-outline py-3.5 text-xs tracking-wider"
+                >
+                  <FiShoppingCart size={15} />
+                  {isOutOfStock ? 'Out of Stock' : 'Add to Cart'}
+                </button>
+                <button
+                  onClick={handleBuyNow}
+                  disabled={isOutOfStock || cartLoading}
+                  className="btn-primary py-3.5 text-xs tracking-wider bg-primary hover:bg-primary-hover"
+                >
+                  <FiZap size={15} />
+                  Buy It Now
+                </button>
+              </div>
+            </div>
+
+            {/* Trust Highlights */}
+            <div className="grid grid-cols-3 gap-3 p-4 bg-gray-50 rounded border border-gray-100 text-center text-xs text-gray-600 mb-6">
+              <div className="flex flex-col items-center gap-1">
+                <FiTruck className="text-primary" size={18} />
+                <span className="font-semibold text-[11px]">Free Shipping</span>
+              </div>
+              <div className="flex flex-col items-center gap-1">
+                <FiShield className="text-primary" size={18} />
+                <span className="font-semibold text-[11px]">Secure Order</span>
+              </div>
+              <div className="flex flex-col items-center gap-1">
+                <FiRefreshCw className="text-primary" size={18} />
+                <span className="font-semibold text-[11px]">Easy Replacement</span>
+              </div>
+            </div>
+
+            {/* Product Features List */}
+            {features && features.length > 0 && (
+              <div className="mb-6">
+                <h3 className="text-xs font-bold text-gray-800 uppercase tracking-wide mb-3">Key Highlights</h3>
+                <ul className="space-y-2 text-xs text-gray-600">
+                  {features.map((feat, i) => (
+                    <li key={i} className="flex items-start gap-2">
+                      <FiCheckCircle className="text-emerald-500 mt-0.5 shrink-0" size={14} />
+                      <span>{feat}</span>
+                    </li>
+                  ))}
+                </ul>
+              </div>
+            )}
+
+            {/* Product Description */}
+            {description && (
+              <div className="pt-6 border-t border-gray-100">
+                <h3 className="text-xs font-bold text-gray-800 uppercase tracking-wide mb-3">Product Description</h3>
+                <div
+                  className="text-xs md:text-sm text-gray-600 leading-relaxed prose prose-sm max-w-none"
+                  dangerouslySetInnerHTML={{ __html: description }}
+                />
+              </div>
+            )}
+
+          </div>
         </div>
       </div>
     </div>

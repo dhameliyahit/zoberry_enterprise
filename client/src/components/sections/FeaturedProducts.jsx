@@ -1,53 +1,56 @@
 import React from 'react';
-import { gql, useQuery } from '@apollo/client';
+import { Link } from 'react-router-dom';
+import { useQuery } from '@apollo/client';
 import ProductCard from '../products/ProductCard';
-
-const GET_FEATURED_PRODUCTS = gql`
-  query GetAllProducts {
-    getAllProducts {
-      id name slug price compareAtPrice images optionsLabel
-    }
-  }
-`;
+import { GET_ALL_PRODUCTS } from '../../graphql/products';
 
 const FeaturedProducts = () => {
-  const { data, loading } = useQuery(GET_FEATURED_PRODUCTS);
-  const products = data?.getAllProducts?.slice(0, 8) || [];
+  const { data, loading } = useQuery(GET_ALL_PRODUCTS, {
+    variables: { limit: 8 },
+  });
 
-  if (loading) return null; // or a spinner
+  const products = (data?.getAllProducts || []).filter((p) => p.isActive !== false).slice(0, 8);
+
+  if (loading) {
+    return (
+      <section className="py-12 bg-[#f8fafc]">
+        <div className="container mx-auto px-4 md:px-8 text-center">
+          <div className="w-8 h-8 border-4 border-primary border-t-transparent rounded-full animate-spin mx-auto mb-2"></div>
+          <p className="text-gray-400 text-xs">Loading featured products...</p>
+        </div>
+      </section>
+    );
+  }
+
+  if (products.length === 0) return null;
 
   return (
-    <section className="pt-8 pb-16 md:pt-10 md:pb-20 bg-[#f8fafc]">
+    <section className="pt-6 pb-16 md:pb-20 bg-[#f8fafc]">
       <div className="container mx-auto px-4 md:px-8">
-        
         {/* Header */}
-        <div className="flex flex-col md:flex-row md:items-end justify-between mb-10 gap-4">
+        <div className="flex items-end justify-between mb-8 pb-3 border-b border-gray-200">
           <div>
-            <span className="text-primary font-bold text-xs uppercase tracking-wider mb-2 block">
-              Handpicked for you
+            <span className="text-primary font-bold text-xs uppercase tracking-wider mb-1 block">
+              Handpicked Essentials
             </span>
-            <h2 className="text-3xl md:text-4xl font-extrabold text-secondary tracking-tight">
-              Trending Now
+            <h2 className="text-2xl md:text-3xl font-extrabold text-secondary tracking-tight">
+              Featured Products
             </h2>
           </div>
-          <button className="text-gray-500 hover:text-primary font-bold text-sm tracking-wide uppercase transition-colors border-b-2 border-transparent hover:border-primary pb-1">
-            View Collection
-          </button>
+          <Link
+            to="/products"
+            className="text-gray-600 hover:text-primary font-bold text-xs tracking-wider uppercase transition-colors"
+          >
+            View All ({products.length})
+          </Link>
         </div>
 
-        {/* Grid */}
-        <div className="grid grid-cols-2 lg:grid-cols-4 gap-4 md:gap-6 lg:gap-8">
-          {products.map(product => (
+        {/* Product Grid */}
+        <div className="grid grid-cols-2 lg:grid-cols-4 gap-4 md:gap-6">
+          {products.map((product) => (
             <ProductCard key={product.id} product={product} />
           ))}
         </div>
-        
-        {products.length === 0 && (
-          <div className="text-center text-gray-500 py-10">
-            No products available yet. Add some from the admin panel!
-          </div>
-        )}
-        
       </div>
     </section>
   );

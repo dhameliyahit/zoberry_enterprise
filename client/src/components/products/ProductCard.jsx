@@ -1,140 +1,213 @@
 import React, { useState } from 'react';
-import { Link } from 'react-router-dom';
+import { Link, useNavigate } from 'react-router-dom';
 import { FiShoppingCart, FiHeart, FiEye, FiCheck } from 'react-icons/fi';
 import Modal from '../common/Modal';
+import { useCart } from '../../hooks/useCart';
+import { useWishlist } from '../../hooks/useWishlist';
 
 const API_URL = import.meta.env.VITE_API_URL || 'http://localhost:9000';
 
 const ProductCard = ({ product }) => {
   const [isQuickViewOpen, setIsQuickViewOpen] = useState(false);
-  const { name, slug, price, compareAtPrice, images, optionsLabel } = product;
-  
+  const { addToCart, loading: cartLoading } = useCart();
+  const { isSaved, toggleWishlist } = useWishlist();
+  const navigate = useNavigate();
+
+  const { id, name, slug, price, compareAtPrice, images, optionsLabel, stockQuantity, hasVariants, variants } = product;
+
   const rawImage = images && images.length > 0 ? images[0] : null;
-  const mainImage = rawImage 
-    ? (rawImage.startsWith('http') ? rawImage : `${API_URL}${rawImage}`) 
+  const mainImage = rawImage
+    ? (rawImage.startsWith('http') ? rawImage : `${API_URL}${rawImage}`)
     : 'https://placehold.co/400x500?text=No+Image';
-  
+
   // Calculate discount percentage
   let discount = 0;
   if (compareAtPrice && compareAtPrice > price) {
     discount = Math.round(((compareAtPrice - price) / compareAtPrice) * 100);
   }
 
+  const isOutOfStock = stockQuantity !== null && stockQuantity !== undefined && stockQuantity <= 0;
+  const inWishlist = isSaved(id);
+
+  const handleQuickAdd = async (e) => {
+    e.preventDefault();
+    e.stopPropagation();
+
+    // If product has variants, navigate to detail page to pick variant accurately
+    if (hasVariants && variants && variants.length > 0) {
+      navigate(`/product/${slug}`);
+      return;
+    }
+
+    if (isOutOfStock) return;
+
+    try {
+      await addToCart(id, null, 1);
+    } catch (err) {
+      // Toast handled by useCart
+    }
+  };
+
+  const handleWishlistClick = (e) => {
+    e.preventDefault();
+    e.stopPropagation();
+    toggleWishlist(product);
+  };
+
   return (
     <>
       <div className="group flex flex-col bg-white rounded border border-gray-100 hover:shadow-[0_8px_30px_rgba(0,0,0,0.06)] hover:border-gray-200 transition-all duration-300 overflow-hidden relative">
         
-        {/* Discount Badge */}
-        {discount > 0 && (
-          <div className="absolute top-3 left-3 z-10 bg-green-50 text-green-600 border border-green-200 text-[10px] font-bold px-2 py-0.5 rounded-sm uppercase tracking-wide">
-            {discount}% OFF
-          </div>
-        )}
+        {/* Badges */}
+        <div className="absolute top-3 left-3 z-10 flex flex-col gap-1">
+          {discount > 0 && (
+            <div className="bg-emerald-50 text-emerald-700 border border-emerald-200 text-[10px] font-bold px-2 py-0.5 rounded-sm uppercase tracking-wide">
+              {discount}% OFF
+            </div>
+          )}
+          {isOutOfStock && (
+            <div className="bg-gray-900 text-white text-[10px] font-bold px-2 py-0.5 rounded-sm uppercase tracking-wide">
+              Sold Out
+            </div>
+          )}
+        </div>
 
-        {/* Right Side Hover Buttons (Wishlist & Quick View) */}
-        <div className="absolute top-3 right-3 z-10 flex flex-col gap-2 opacity-0 group-hover:opacity-100 transition-all transform translate-x-4 group-hover:translate-x-0">
-          <button className="w-8 h-8 bg-white rounded-full flex items-center justify-center text-gray-400 hover:text-red-500 hover:shadow-md transition-all shadow-sm" title="Add to Wishlist">
-            <FiHeart size={16} />
+        {/* Right Side Action Buttons (Wishlist & Quick View) */}
+        <div className="absolute top-3 right-3 z-10 flex flex-col gap-1.5 opacity-90 sm:opacity-0 group-hover:opacity-100 transition-all transform sm:translate-x-2 group-hover:translate-x-0">
+          <button
+            onClick={handleWishlistClick}
+            className={`w-8 h-8 rounded-full flex items-center justify-center transition-all shadow-sm ${
+              inWishlist
+                ? 'bg-red-50 text-red-500 border border-red-200'
+                : 'bg-white text-gray-400 hover:text-red-500 hover:shadow-md'
+            }`}
+            title={inWishlist ? 'Remove from Wishlist' : 'Add to Wishlist'}
+          >
+            <FiHeart size={15} className={inWishlist ? 'fill-current' : ''} />
           </button>
-          
-          <button 
-            onClick={() => setIsQuickViewOpen(true)}
-            className="w-8 h-8 bg-white rounded-full flex items-center justify-center text-gray-400 hover:text-primary hover:shadow-md transition-all shadow-sm" 
+
+          <button
+            onClick={(e) => {
+              e.preventDefault();
+              e.stopPropagation();
+              setIsQuickViewOpen(true);
+            }}
+            className="w-8 h-8 bg-white rounded-full flex items-center justify-center text-gray-400 hover:text-primary hover:shadow-md transition-all shadow-sm"
             title="Quick View"
           >
-            <FiEye size={16} />
+            <FiEye size={15} />
           </button>
         </div>
 
         {/* Image Container */}
         <Link to={`/product/${slug}`} className="block relative w-full aspect-[4/5] bg-gray-50 overflow-hidden">
-          <img 
-            src={mainImage} 
-            alt={name} 
-            className="w-full h-full object-cover transition-transform duration-700 group-hover:scale-110"
+          <img
+            src={mainImage}
+            alt={name}
+            loading="lazy"
+            className="w-full h-full object-cover transition-transform duration-500 group-hover:scale-105"
           />
-          
-          {/* Quick Add overlay */}
-          <div className="absolute inset-x-0 bottom-0 p-4 translate-y-full group-hover:translate-y-0 transition-transform duration-300">
-             <button 
-               onClick={(e) => { e.preventDefault(); /* Add to cart logic */ }}
-               className="w-full bg-white/95 backdrop-blur-sm hover:bg-primary text-secondary hover:text-white font-bold py-2.5 rounded-sm shadow-sm flex items-center justify-center gap-2 transition-colors text-xs uppercase tracking-wide border border-gray-200 hover:border-primary"
-             >
-               <FiShoppingCart size={14} /> Quick Add
-             </button>
+
+          {/* Quick Add Overlay */}
+          <div className="absolute inset-x-0 bottom-0 p-3 translate-y-full group-hover:translate-y-0 transition-transform duration-200 hidden sm:block">
+            <button
+              onClick={handleQuickAdd}
+              disabled={isOutOfStock || cartLoading}
+              className={`w-full font-bold py-2.5 rounded-sm shadow-sm flex items-center justify-center gap-2 transition-colors text-xs uppercase tracking-wide ${
+                isOutOfStock
+                  ? 'bg-gray-200 text-gray-400 cursor-not-allowed'
+                  : 'bg-white/95 backdrop-blur-sm hover:bg-primary text-secondary hover:text-white border border-gray-200 hover:border-primary'
+              }`}
+            >
+              <FiShoppingCart size={14} />
+              {hasVariants ? 'Select Option' : isOutOfStock ? 'Sold Out' : 'Quick Add'}
+            </button>
           </div>
         </Link>
 
         {/* Content Container */}
-        <div className="p-4 md:p-5 flex flex-col flex-grow">
-          
+        <div className="p-3.5 md:p-4 flex flex-col flex-grow">
           {/* Options / Category Label */}
-          <span className="text-[11px] text-gray-500 font-medium uppercase tracking-wider mb-1.5 block">
-            {optionsLabel || 'Trending'}
+          <span className="text-[10px] md:text-[11px] text-gray-400 font-semibold uppercase tracking-wider mb-1 block">
+            {optionsLabel || (hasVariants ? 'Multiple Options' : 'Utility Item')}
           </span>
 
           {/* Product Name */}
-          <Link to={`/product/${slug}`} className="text-secondary font-bold text-sm md:text-base leading-snug mb-2 hover:text-primary transition-colors line-clamp-2">
+          <Link
+            to={`/product/${slug}`}
+            className="text-secondary font-bold text-xs md:text-sm leading-snug mb-2 hover:text-primary transition-colors line-clamp-2"
+          >
             {name}
           </Link>
 
           {/* Pricing */}
-          <div className="mt-auto flex items-end gap-2 pt-2">
-            <span className="text-lg md:text-xl font-extrabold text-secondary leading-none">Rs. {price.toLocaleString()}</span>
+          <div className="mt-auto flex items-baseline gap-2 pt-2 border-t border-gray-50">
+            <span className="text-sm md:text-base font-extrabold text-secondary">
+              Rs. {price.toLocaleString()}
+            </span>
             {compareAtPrice > price && (
-              <span className="text-xs md:text-sm text-gray-400 line-through mb-0.5">Rs. {compareAtPrice.toLocaleString()}</span>
+              <span className="text-xs text-gray-400 line-through">
+                Rs. {compareAtPrice.toLocaleString()}
+              </span>
             )}
           </div>
         </div>
-
       </div>
 
       {/* Quick View Modal */}
       <Modal isOpen={isQuickViewOpen} onClose={() => setIsQuickViewOpen(false)}>
-        <div className="flex flex-col md:flex-row h-full">
+        <div className="flex flex-col md:flex-row h-full max-w-2xl bg-white rounded overflow-hidden">
           {/* Left: Image */}
-          <div className="w-full md:w-1/2 bg-gray-50 relative min-h-[300px]">
-             <img src={mainImage} alt={name} className="absolute inset-0 w-full h-full object-cover" />
+          <div className="w-full md:w-1/2 bg-gray-50 relative min-h-[250px] md:min-h-[350px]">
+            <img src={mainImage} alt={name} className="absolute inset-0 w-full h-full object-cover" />
           </div>
-          
-          {/* Right: Details */}
-          <div className="w-full md:w-1/2 p-6 md:p-10 flex flex-col bg-white">
-            <span className="inline-block px-2 py-1 bg-gray-100 text-gray-600 text-[10px] font-bold uppercase tracking-wider rounded-sm w-max mb-4">
-              {optionsLabel || 'Trending Product'}
-            </span>
-            
-            <h2 className="text-2xl md:text-3xl font-extrabold text-secondary mb-4 leading-tight uppercase tracking-tight">
-              {name}
-            </h2>
-            
-            <div className="flex items-end gap-3 mb-6">
-              <span className="text-3xl font-extrabold text-secondary leading-none">Rs. {price.toLocaleString()}</span>
-              {compareAtPrice > price && (
-                <>
-                  <span className="text-lg text-gray-400 line-through mb-0.5">Rs. {compareAtPrice.toLocaleString()}</span>
-                  <span className="bg-green-50 text-green-600 border border-green-200 text-xs font-bold px-2 py-1 rounded-sm mb-1 uppercase">
-                    {discount}% OFF
-                  </span>
-                </>
-              )}
-            </div>
-            
-            <p className="text-gray-500 text-sm leading-relaxed mb-8 border-b border-gray-100 pb-8">
-              Experience premium quality and exceptional design with this featured product. It's built to elevate your everyday lifestyle with perfect functionality.
-            </p>
 
-            <ul className="space-y-3 mb-8">
-               <li className="flex items-center gap-3 text-sm text-gray-600"><FiCheck className="text-green-500" /> In stock and ready to ship</li>
-               <li className="flex items-center gap-3 text-sm text-gray-600"><FiCheck className="text-green-500" /> Free Express Delivery over Rs. 1500</li>
-            </ul>
-            
-            <div className="mt-auto">
-               <button className="w-full btn-primary py-4 text-sm">
-                 <FiShoppingCart size={18} /> Add to Cart
-               </button>
-               <Link to={`/product/${slug}`} className="block w-full text-center mt-4 text-sm font-bold text-gray-500 hover:text-primary transition-colors underline underline-offset-4">
-                 View Full Details
-               </Link>
+          {/* Right: Details */}
+          <div className="w-full md:w-1/2 p-6 md:p-8 flex flex-col bg-white justify-between">
+            <div>
+              <span className="inline-block px-2 py-0.5 bg-gray-100 text-gray-600 text-[10px] font-bold uppercase tracking-wider rounded-sm mb-3">
+                {optionsLabel || 'Utility'}
+              </span>
+
+              <h2 className="text-xl md:text-2xl font-bold text-secondary mb-3 leading-tight">
+                {name}
+              </h2>
+
+              <div className="flex items-baseline gap-3 mb-4">
+                <span className="text-2xl font-extrabold text-secondary">
+                  Rs. {price.toLocaleString()}
+                </span>
+                {compareAtPrice > price && (
+                  <span className="text-sm text-gray-400 line-through">
+                    Rs. {compareAtPrice.toLocaleString()}
+                  </span>
+                )}
+              </div>
+
+              <p className="text-gray-500 text-xs md:text-sm leading-relaxed mb-6">
+                Premium quality item designed for daily convenience and smart utility.
+              </p>
+            </div>
+
+            <div className="space-y-3 pt-4 border-t border-gray-100">
+              <button
+                onClick={(e) => {
+                  handleQuickAdd(e);
+                  setIsQuickViewOpen(false);
+                }}
+                disabled={isOutOfStock}
+                className="w-full btn-primary py-3 text-xs"
+              >
+                <FiShoppingCart size={15} />
+                {hasVariants ? 'View Options' : isOutOfStock ? 'Sold Out' : 'Add to Cart'}
+              </button>
+              <Link
+                to={`/product/${slug}`}
+                onClick={() => setIsQuickViewOpen(false)}
+                className="block w-full text-center text-xs font-bold text-gray-500 hover:text-primary transition-colors underline underline-offset-4"
+              >
+                View Full Product Details
+              </Link>
             </div>
           </div>
         </div>

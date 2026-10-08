@@ -5,6 +5,7 @@ const variantResolvers = require('./variant');
 const { cartResolvers } = require('./cart');
 const addressResolvers = require('./address');
 const orderResolvers = require('./order');
+const wishlistResolvers = require('./wishlist');
 
 // Combine all individual module resolvers into one master resolver object
 const rootResolvers = {
@@ -15,6 +16,7 @@ const rootResolvers = {
     ...cartResolvers.Query,
     ...addressResolvers.Query,
     ...orderResolvers.Query,
+    ...wishlistResolvers.Query,
   },
   Mutation: {
     ...userResolvers.Mutation,
@@ -24,6 +26,7 @@ const rootResolvers = {
     ...cartResolvers.Mutation,
     ...addressResolvers.Mutation,
     ...orderResolvers.Mutation,
+    ...wishlistResolvers.Mutation,
   },
   // Relational Field Resolvers
   Product: productResolvers.Product,

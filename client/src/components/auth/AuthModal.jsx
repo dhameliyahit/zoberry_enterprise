@@ -1,61 +1,29 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { useMutation, gql } from '@apollo/client';
 import { GoogleLogin } from '@react-oauth/google';
 import { FiMail, FiLock, FiAlertCircle } from 'react-icons/fi';
 import Modal from '../common/Modal';
 import { useUIStore } from '../../store/uiStore';
-
-const LOGIN_USER = gql`
-  mutation LoginUser($email: String!, $password: String!) {
-    loginUser(email: $email, password: $password) {
-      token
-      user {
-        id
-        email
-        role
-      }
-    }
-  }
-`;
-
-const REGISTER_USER = gql`
-  mutation RegisterUser($email: String!, $password: String!) {
-    registerUser(email: $email, password: $password) {
-      token
-      user {
-        id
-        email
-        role
-      }
-    }
-  }
-`;
-
-const GOOGLE_LOGIN = gql`
-  mutation GoogleLoginUser($token: String!) {
-    googleLoginUser(token: $token) {
-      token
-      user {
-        id
-        email
-        role
-      }
-    }
-  }
-`;
+import { useCart } from '../../hooks/useCart';
+import { LOGIN_USER, REGISTER_USER, GOOGLE_LOGIN } from '../../graphql/auth';
 
 const AuthModal = () => {
-  const { isAuthModalOpen, closeAuthModal, setUser } = useUIStore();
+  const { isAuthModalOpen, closeAuthModal, setUser, authModalMode, addToast } = useUIStore();
   const [isLogin, setIsLogin] = useState(true);
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
   const [errorMsg, setErrorMsg] = useState('');
+  const { mergeCart } = useCart();
+
+  useEffect(() => {
+    setIsLogin(authModalMode === 'login');
+  }, [authModalMode, isAuthModalOpen]);
 
   const [loginUser, { loading: loginLoading }] = useMutation(LOGIN_USER);
   const [registerUser, { loading: registerLoading }] = useMutation(REGISTER_USER);
   const [googleLogin, { loading: googleLoading }] = useMutation(GOOGLE_LOGIN);
 
-  const handleAuthSuccess = (data, type) => {
+  const handleAuthSuccess = async (data, type) => {
     const authData = data[type];
     localStorage.setItem('token', authData.token);
     setUser(authData.user);
@@ -63,6 +31,10 @@ const AuthModal = () => {
     setEmail('');
     setPassword('');
     setErrorMsg('');
+    addToast(isLogin ? `Welcome back, ${authData.user.email}!` : 'Account created successfully!', 'success');
+    
+    // Merge guest cart items into authenticated user cart
+    await mergeCart();
   };
 
   const handleSubmit = async (e) => {
@@ -71,22 +43,22 @@ const AuthModal = () => {
     try {
       if (isLogin) {
         const { data } = await loginUser({ variables: { email, password } });
-        handleAuthSuccess(data, 'loginUser');
+        await handleAuthSuccess(data, 'loginUser');
       } else {
         const { data } = await registerUser({ variables: { email, password } });
-        handleAuthSuccess(data, 'registerUser');
+        await handleAuthSuccess(data, 'registerUser');
       }
     } catch (err) {
-      setErrorMsg(err.message);
+      setErrorMsg(err.message?.replace('GraphQL error: ', ''));
     }
   };
 
   const handleGoogleSuccess = async (credentialResponse) => {
     try {
       const { data } = await googleLogin({ variables: { token: credentialResponse.credential } });
-      handleAuthSuccess(data, 'googleLoginUser');
+      await handleAuthSuccess(data, 'googleLoginUser');
     } catch (err) {
-      setErrorMsg(err.message);
+      setErrorMsg(err.message?.replace('GraphQL error: ', ''));
     }
   };
 
