@@ -8,9 +8,10 @@ const {
   AddressModel,
   ProductModel,
   ProductVariantModel,
+  PromotionModel,
 } = require('../../models');
 const { requireAuth, requireAdmin, requireOwnerOrAdmin } = require('../../helpers/authMiddleware');
-const { calculateTotals, calculateLineTotal } = require('../../helpers/moneyHelper');
+const { calculateTotals, calculateLineTotal, toPaise, fromPaise } = require('../../helpers/moneyHelper');
 const {
   checkItemStockAndDetails,
   reserveStockForOrder,
@@ -23,6 +24,13 @@ const {
   isValidPaymentStatusTransition,
   generateOrderNumber,
 } = require('../../helpers/orderStateMachine');
+const {
+  normalizeCouponCode,
+  validatePromotionEligibility,
+  calculatePromotionDiscount,
+  createDiscountSnapshot,
+  recordPromotionUsage,
+} = require('../../helpers/promotionHelper');
 const { getOrCreateCartInstance, formatCartResponse } = require('./cart');
 
 const orderResolvers = {
@@ -80,7 +88,7 @@ const orderResolvers = {
       return order;
     },
 
-    previewCheckout: async (parent, { guestSessionToken }, context) => {
+    previewCheckout: async (parent, { guestSessionToken, couponCode }, context) => {
       const cartInstance = await getOrCreateCartInstance(context, guestSessionToken);
       const cart = await formatCartResponse(cartInstance.id);
 
@@ -97,14 +105,61 @@ const orderResolvers = {
         }
       }
 
+      let discountAmount = 0;
+      let appliedCoupon = null;
+      let cleanCouponCode = null;
+
+      if (couponCode && typeof couponCode === 'string' && couponCode.trim()) {
+        cleanCouponCode = normalizeCouponCode(couponCode);
+        const promotion = await PromotionModel.findOne({
+          where: { code: cleanCouponCode },
+        });
+
+        if (!promotion) {
+          validationErrors.push(`Coupon "${cleanCouponCode}" is invalid.`);
+        } else {
+          const subtotalPaise = toPaise(cart.subtotal);
+          const eligibility = await validatePromotionEligibility(promotion, {
+            cartItems: cart.items,
+            subtotalPaise,
+            user: context?.user,
+          });
+
+          if (!eligibility.isValid) {
+            validationErrors.push(eligibility.error || 'Coupon cannot be applied.');
+          } else {
+            const result = calculatePromotionDiscount(
+              promotion,
+              eligibility.eligibleSubtotalPaise,
+              subtotalPaise
+            );
+            discountAmount = result.discountAmount;
+            appliedCoupon = {
+              promotionId: promotion.id,
+              code: promotion.code,
+              name: promotion.name,
+              type: promotion.type,
+              discountType: promotion.discountType,
+              discountValue: promotion.discountValue,
+              maximumDiscount: promotion.maximumDiscount,
+              actualDiscountAmount: discountAmount,
+            };
+          }
+        }
+      }
+
+      const totals = calculateTotals(cart.items, { discountAmount });
+
       return {
         items: cart.items,
         itemCount: cart.itemCount,
-        subtotal: cart.subtotal,
-        discountAmount: cart.discountAmount,
-        shippingAmount: cart.shippingAmount,
-        taxAmount: cart.taxAmount,
-        grandTotal: cart.grandTotal,
+        subtotal: totals.subtotal,
+        discountAmount: totals.discountAmount,
+        couponCode: cleanCouponCode,
+        appliedCoupon,
+        shippingAmount: totals.shippingAmount,
+        taxAmount: totals.taxAmount,
+        grandTotal: totals.grandTotal,
         isReadyForCheckout: validationErrors.length === 0 && cart.items.length > 0,
         validationErrors,
       };
@@ -154,6 +209,7 @@ const orderResolvers = {
         guestEmail,
         guestPhone,
         guestSessionToken,
+        couponCode,
         idempotencyKey,
         notes,
       } = input;
@@ -246,7 +302,7 @@ const orderResolvers = {
         };
       }
 
-      // 4. Atomic Transaction: Validate stock, reserve inventory, create immutable order & order items
+      // 4. Atomic Transaction: Validate stock, validate promotion, reserve inventory, create immutable order
       return await sequelize.transaction(async (t) => {
         // Double-check idempotency key inside the transaction lock
         const lockedExisting = await OrderModel.findOne({
@@ -294,10 +350,55 @@ const orderResolvers = {
           });
         }
 
-        const totals = calculateTotals(calculationItems);
+        let baseTotals = calculateTotals(calculationItems);
+        let appliedDiscountAmount = 0;
+        let appliedPromotion = null;
+        let appliedCouponCode = null;
+        let discountSnapshot = null;
+
+        // Process Coupon / Promotion if provided
+        if (couponCode && typeof couponCode === 'string' && couponCode.trim()) {
+          appliedCouponCode = normalizeCouponCode(couponCode);
+          appliedPromotion = await PromotionModel.findOne({
+            where: { code: appliedCouponCode },
+            transaction: t,
+            lock: t.LOCK.UPDATE,
+          });
+
+          if (!appliedPromotion) {
+            throw new GraphQLError(`Coupon "${appliedCouponCode}" is invalid.`, {
+              extensions: { code: 'BAD_USER_INPUT' },
+            });
+          }
+
+          const eligibility = await validatePromotionEligibility(appliedPromotion, {
+            cartItems: cartWithItems.items,
+            subtotalPaise: baseTotals._raw.subtotalPaise,
+            user: context?.user,
+            guestEmail: guestEmail?.trim() || null,
+            transaction: t,
+          });
+
+          if (!eligibility.isValid) {
+            throw new GraphQLError(eligibility.error || 'Coupon cannot be applied.', {
+              extensions: { code: 'BAD_USER_INPUT' },
+            });
+          }
+
+          const result = calculatePromotionDiscount(
+            appliedPromotion,
+            eligibility.eligibleSubtotalPaise,
+            baseTotals._raw.subtotalPaise
+          );
+
+          appliedDiscountAmount = result.discountAmount;
+          discountSnapshot = createDiscountSnapshot(appliedPromotion, appliedDiscountAmount);
+        }
+
+        const totals = calculateTotals(calculationItems, { discountAmount: appliedDiscountAmount });
         const orderNumber = generateOrderNumber();
 
-        // Create the Order record
+        // Create the Order record with authoritative financial snapshot
         const createdOrder = await OrderModel.create({
           orderNumber,
           userId: isAuthUser ? context.user.id : null,
@@ -308,6 +409,8 @@ const orderResolvers = {
           currency: 'INR',
           subtotal: totals.subtotal,
           discountAmount: totals.discountAmount,
+          couponCode: appliedCouponCode,
+          discountSnapshot,
           shippingAmount: totals.shippingAmount,
           taxAmount: totals.taxAmount,
           grandTotal: totals.grandTotal,
@@ -315,6 +418,17 @@ const orderResolvers = {
           idempotencyKey: cleanIdempotencyKey,
           notes: notes?.trim() || null,
         }, { transaction: t });
+
+        // Record promotion usage atomically
+        if (appliedPromotion) {
+          await recordPromotionUsage(appliedPromotion, {
+            userId: isAuthUser ? context.user.id : null,
+            guestEmail: guestEmail?.trim() || null,
+            orderId: createdOrder.id,
+            discountAmount: totals.discountAmount,
+            transaction: t,
+          });
+        }
 
         // Reserve stock and persist OrderItems
         for (const orderItem of orderItemsToCreate) {

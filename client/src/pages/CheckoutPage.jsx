@@ -1,11 +1,12 @@
 import React, { useState, useEffect } from 'react';
 import { useNavigate, Link } from 'react-router-dom';
-import { useQuery, useMutation } from '@apollo/client';
+import { useQuery, useMutation, useLazyQuery } from '@apollo/client';
 import {
   FiCheckCircle, FiAlertCircle, FiLock, FiTruck, FiMapPin,
-  FiShoppingBag, FiArrowRight, FiUser, FiCreditCard
+  FiShoppingBag, FiArrowRight, FiUser, FiCreditCard, FiTag, FiX
 } from 'react-icons/fi';
 import { PREVIEW_CHECKOUT, CREATE_ORDER_FROM_CART } from '../graphql/orders';
+import { VALIDATE_COUPON } from '../graphql/promotions';
 import { GET_MY_ADDRESSES } from '../graphql/address';
 import { getGuestSessionToken, clearGuestSessionToken } from '../utils/guestToken';
 import { useUIStore } from '../store/uiStore';
@@ -38,14 +39,26 @@ const CheckoutPage = () => {
   const [submitting, setSubmitting] = useState(false);
   const [formError, setFormError] = useState('');
 
-  // 1. Fetch server-authoritative checkout preview
+  // Coupon State
+  const [couponInput, setCouponInput] = useState('');
+  const [appliedCouponCode, setAppliedCouponCode] = useState('');
+  const [couponError, setCouponError] = useState('');
+
+  // 1. Fetch server-authoritative checkout preview with couponCode
   const {
     data: previewData,
     loading: previewLoading,
     error: previewError,
     refetch: refetchPreview,
   } = useQuery(PREVIEW_CHECKOUT, {
-    variables: { guestSessionToken },
+    variables: {
+      guestSessionToken,
+      couponCode: appliedCouponCode || undefined,
+    },
+    fetchPolicy: 'network-only',
+  });
+
+  const [validateCouponQuery, { loading: couponValidating }] = useLazyQuery(VALIDATE_COUPON, {
     fetchPolicy: 'network-only',
   });
 
@@ -71,6 +84,39 @@ const CheckoutPage = () => {
 
   // 3. Create Order Mutation
   const [createOrderMutation] = useMutation(CREATE_ORDER_FROM_CART);
+
+  const handleApplyCoupon = async (e) => {
+    e?.preventDefault();
+    if (!couponInput.trim()) {
+      setCouponError('Please enter a coupon code.');
+      return;
+    }
+    setCouponError('');
+    try {
+      const res = await validateCouponQuery({
+        variables: {
+          code: couponInput.trim(),
+          guestSessionToken: user ? undefined : guestSessionToken,
+        },
+      });
+      const data = res.data?.validateCoupon;
+      if (data?.isValid) {
+        setAppliedCouponCode(data.code);
+        addToast(`Coupon "${data.code}" applied: Saved Rs. ${data.discountAmount}!`, 'success');
+      } else {
+        setCouponError(data?.message || 'Invalid or ineligible coupon code.');
+      }
+    } catch (err) {
+      setCouponError(err.message?.replace('GraphQL error: ', '') || 'Failed to validate coupon.');
+    }
+  };
+
+  const handleRemoveCoupon = () => {
+    setAppliedCouponCode('');
+    setCouponInput('');
+    setCouponError('');
+    addToast('Coupon removed.', 'info');
+  };
 
   const handlePlaceOrder = async (e) => {
     e.preventDefault();
@@ -117,6 +163,7 @@ const CheckoutPage = () => {
         idempotencyKey,
         notes: orderNotes.trim() || undefined,
         guestSessionToken: user ? undefined : guestSessionToken,
+        couponCode: appliedCouponCode || undefined,
       };
 
       if (user) {
@@ -542,12 +589,77 @@ const CheckoutPage = () => {
                 })}
               </div>
 
+              {/* Promo / Coupon Code Section */}
+              <div className="pt-3 border-t border-gray-100">
+                <label className="block text-[11px] font-bold text-gray-700 uppercase mb-1.5 flex items-center gap-1.5">
+                  <FiTag className="text-primary" /> Promo / Coupon Code
+                </label>
+                {appliedCouponCode ? (
+                  <div className="flex items-center justify-between bg-emerald-50 border border-emerald-200 text-emerald-800 px-3 py-2 rounded text-xs">
+                    <div className="flex items-center gap-2">
+                      <span className="font-bold tracking-wider">{appliedCouponCode}</span>
+                      <span className="text-[11px] text-emerald-600">
+                        {preview?.discountAmount > 0 ? `(-Rs. ${preview.discountAmount})` : 'Applied'}
+                      </span>
+                    </div>
+                    <button
+                      type="button"
+                      onClick={handleRemoveCoupon}
+                      className="text-gray-400 hover:text-red-500 transition-colors p-1"
+                      title="Remove coupon"
+                    >
+                      <FiX size={14} />
+                    </button>
+                  </div>
+                ) : (
+                  <div className="space-y-1.5">
+                    <div className="flex gap-2">
+                      <input
+                        type="text"
+                        value={couponInput}
+                        onChange={(e) => {
+                          setCouponInput(e.target.value.toUpperCase());
+                          if (couponError) setCouponError('');
+                        }}
+                        placeholder="e.g. WELCOME10"
+                        className="flex-1 px-3 py-2 border border-gray-200 rounded text-xs font-mono tracking-wider uppercase outline-none focus:border-primary"
+                        onKeyDown={(e) => {
+                          if (e.key === 'Enter') {
+                            e.preventDefault();
+                            handleApplyCoupon();
+                          }
+                        }}
+                      />
+                      <button
+                        type="button"
+                        onClick={handleApplyCoupon}
+                        disabled={couponValidating || !couponInput.trim()}
+                        className="px-4 py-2 bg-gray-900 hover:bg-black disabled:bg-gray-300 text-white rounded text-xs font-bold transition-colors shrink-0"
+                      >
+                        {couponValidating ? 'Checking...' : 'Apply'}
+                      </button>
+                    </div>
+                    {couponError && (
+                      <p className="text-[11px] text-red-500 font-medium">{couponError}</p>
+                    )}
+                  </div>
+                )}
+              </div>
+
               {/* Server-authoritative Totals */}
               <div className="pt-3 border-t border-gray-100 space-y-2 text-xs">
                 <div className="flex justify-between text-gray-600">
                   <span>Subtotal</span>
                   <span className="font-semibold text-gray-900">Rs. {preview?.subtotal?.toLocaleString()}</span>
                 </div>
+                {preview?.discountAmount > 0 && (
+                  <div className="flex justify-between text-emerald-600 font-semibold">
+                    <span className="flex items-center gap-1">
+                      <FiTag size={12} /> Coupon Discount ({preview?.couponCode || appliedCouponCode})
+                    </span>
+                    <span>- Rs. {preview?.discountAmount?.toLocaleString()}</span>
+                  </div>
+                )}
                 <div className="flex justify-between text-gray-600">
                   <span>Shipping</span>
                   <span className="font-semibold text-emerald-600">

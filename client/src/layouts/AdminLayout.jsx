@@ -12,7 +12,8 @@ import {
   FiLogOut,
   FiMenu,
   FiX,
-  FiUser
+  FiUser,
+  FiTag
 } from 'react-icons/fi';
 
 const AdminLayout = () => {
@@ -35,6 +36,7 @@ const AdminLayout = () => {
     { name: 'Dashboard', path: '/admin', icon: <FiGrid size={20} />, exact: true },
     { name: 'Products', path: '/admin/products', icon: <FiBox size={20} /> },
     { name: 'Categories', path: '/admin/categories', icon: <FiList size={20} /> },
+    { name: 'Promotions', path: '/admin/promotions', icon: <FiTag size={20} /> },
   ];
 
   // Dynamically get the current page title based on the route

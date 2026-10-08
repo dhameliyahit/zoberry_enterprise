@@ -114,6 +114,16 @@ const OrderModel = sequelize.define('Order', {
     type: DataTypes.JSON,
     allowNull: true,
   },
+  couponCode: {
+    type: DataTypes.STRING(64),
+    allowNull: true,
+    comment: 'Coupon code used for this order, if any',
+  },
+  discountSnapshot: {
+    type: DataTypes.JSON,
+    allowNull: true,
+    comment: 'Immutable snapshot of applied promotion/discount rules and calculations',
+  },
   idempotencyKey: {
     type: DataTypes.STRING(128),
     allowNull: true,

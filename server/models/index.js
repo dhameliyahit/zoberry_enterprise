@@ -9,6 +9,8 @@ const AddressModel = require('./addressModel');
 const OrderModel = require('./orderModel');
 const OrderItemModel = require('./orderItemModel');
 const WishlistItemModel = require('./wishlistItemModel');
+const PromotionModel = require('./promotionModel');
+const PromotionUsageModel = require('./promotionUsageModel');
 
 // ==========================================
 // Define Database Relationships / Associations
@@ -145,6 +147,39 @@ WishlistItemModel.belongsTo(ProductModel, {
   as: 'product',
 });
 
+// 10. Promotion <-> PromotionUsage
+PromotionModel.hasMany(PromotionUsageModel, {
+  foreignKey: 'promotionId',
+  as: 'usages',
+  onDelete: 'CASCADE',
+});
+PromotionUsageModel.belongsTo(PromotionModel, {
+  foreignKey: 'promotionId',
+  as: 'promotion',
+});
+
+// 11. Order <-> PromotionUsage
+OrderModel.hasMany(PromotionUsageModel, {
+  foreignKey: 'orderId',
+  as: 'promotionUsages',
+  onDelete: 'CASCADE',
+});
+PromotionUsageModel.belongsTo(OrderModel, {
+  foreignKey: 'orderId',
+  as: 'order',
+});
+
+// 12. User <-> PromotionUsage
+UserModel.hasMany(PromotionUsageModel, {
+  foreignKey: 'userId',
+  as: 'promotionUsages',
+  onDelete: 'SET NULL',
+});
+PromotionUsageModel.belongsTo(UserModel, {
+  foreignKey: 'userId',
+  as: 'user',
+});
+
 module.exports = {
   UserModel,
   CategoryModel,
@@ -157,4 +192,6 @@ module.exports = {
   OrderModel,
   OrderItemModel,
   WishlistItemModel,
+  PromotionModel,
+  PromotionUsageModel,
 };

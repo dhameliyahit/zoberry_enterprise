@@ -12,9 +12,10 @@
 | :--- | :--- | :--- | :--- |
 | **Phase 1** | **Production Foundation & Security** | ✅ **COMPLETE** | 26 / 26 Passed |
 | **Phase 2** | **Commerce Core (Cart, Variants, Inventory, Address, Order, Checkout)** | ✅ **COMPLETE** | 20 / 20 Passed |
-| **Phase 3** | **Storefront & Customer Shopping Experience (Cart Drawer, PDP Variants, Addresses, Orders, Wishlist, Checkout)** | ✅ **COMPLETE** | 6 / 6 Passed (52/52 Total) |
-| **Phase 4** | **Payments & Logistics (PhonePe Gateway, Webhooks, Courier Tracking, Invoicing)** | ⏳ **PENDING (NEXT)** | - |
-| **Phase 5** | **Coupons, Discounts, Reviews & Marketing Systems** | ⏳ **PENDING** | - |
+| **Phase 3** | **Storefront & Customer Shopping Experience (Cart Drawer, PDP Variants, Addresses, Orders, Wishlist, Checkout)** | ✅ **COMPLETE** | 6 / 6 Passed |
+| **Phase 4** | **Promotions, Coupons & Pricing Rules (Coupons, Percent/Fixed Caps, Usage Limits, Snapshots, Admin Panel)** | ✅ **COMPLETE** | 16 / 16 Passed (68/68 Total) |
+| **Phase 5** | **Payments & Logistics (PhonePe Gateway, Webhooks, Courier Tracking, Invoicing)** | ⏳ **PENDING (NEXT)** | - |
+| **Phase 6** | **Reviews, Marketing & Customer Loyalty Systems** | ⏳ **PENDING** | - |
 
 ---
 
@@ -72,7 +73,25 @@
   - Dedicated order confirmation view with status indicators, address snapshot, itemized receipts, and order summary.
 - **Wishlist (`/wishlist`):** 
   - Customer wishlist domain with toggle buttons, grid display, and "Move to Cart" action.
-- **Verification:** `server/test/storefront_phase3.test.js` (6 tests) | 52 / 52 Total Tests Passing | Clean Vite Client Build.
+- **Verification:** `server/test/storefront_phase3.test.js` (6 tests).
+
+### ✅ Phase 4: Promotions, Coupons & Pricing Rules
+- **Promotion & Coupon Models:**
+  - `Promotion` model with `code`, `name`, `type` (COUPON / AUTOMATIC), `discountType` (PERCENTAGE / FIXED_AMOUNT), `discountValue`, `minimumSubtotal`, `maximumDiscount`, `usageLimit`, `perCustomerLimit`, `startsAt`, `endsAt`, `isActive`, `targetProductIds`, `targetCategoryIds`.
+  - `PromotionUsage` ledger with foreign key relations to `Promotion`, `User`, and `Order`, tracking usage timestamp and actual discount amount.
+  - Extended `Order` with `couponCode` and immutable `discountSnapshot` JSON column preserving historical discount data against future edits.
+- **Pricing & Calculation Engine (`promotionHelper.js`):**
+  - Integer-paise calculations for percentage and fixed discounts, strict cap enforcement (`maximumDiscount`), and non-negative total enforcement.
+  - String sanitization and code uppercase normalization (`normalizeCouponCode`).
+  - Multi-condition eligibility validation: active status, start/end dates, minimum subtotal, global usage limits, per-customer / guest email limits, product/category targeting.
+  - Concurrency-safe atomic usage tracking with DB row locking (`t.LOCK.UPDATE`).
+- **GraphQL APIs:**
+  - Customer: `validateCoupon(code, guestSessionToken)` and integrated discount preview in `previewCheckout` and `createOrderFromCart`.
+  - Admin: `adminGetAllPromotions`, `adminGetPromotionById`, `adminCreatePromotion`, `adminUpdatePromotion`, `adminTogglePromotionActive`, `adminDeletePromotion`.
+- **Frontend Experience:**
+  - Storefront: Dynamic coupon promo code input, validation feedback, instant preview discount line item, and remove coupon capability in `/checkout`.
+  - Admin Management: Dedicated `/admin/promotions` dashboard with live search, filters (active, inactive, coupons, auto), create/edit promotion modal, instant active toggle switches, and deletion controls.
+- **Verification:** `server/test/promotions_phase4.test.js` (16 tests) | **68 / 68 Total Tests Passing** | Clean Vite Client Build.
 
 ---
 
@@ -87,11 +106,11 @@ client/src/
 │   ├── layout/                      # Header, Footer, Topbar, MainLayout
 │   ├── products/                    # ProductCard
 │   └── sections/                    # Hero, CategorySlider, FeaturedProducts
-├── graphql/                         # Apollo queries/mutations (auth, products, cart, address, orders, wishlist)
+├── graphql/                         # Apollo queries/mutations (auth, products, cart, address, orders, wishlist, promotions)
 ├── hooks/                           # Custom hooks (useCart, useWishlist)
 ├── pages/                           # HomePage, ProductsPage, ProductDetailPage, CartPage, CheckoutPage, OrderDetailPage, WishlistPage, AboutPage, ContactPage
 │   ├── account/                     # AccountPage, AccountOrders, AccountAddresses
-│   └── admin/                       # AdminDashboard, AdminCategories, AdminProducts
+│   └── admin/                       # AdminDashboard, AdminCategories, AdminProducts, AdminPromotions
 ├── store/                           # uiStore (cart count, wishlist IDs, auth state, toasts)
 └── utils/                           # guestToken, imageUrl
 
@@ -99,15 +118,16 @@ server/
 ├── config/
 │   └── db.js                        # Sequelize connection configuration
 ├── graphql/
-│   ├── typeDefs/                    # GraphQL schemas (user, category, product, variant, cart, address, order, wishlist)
-│   └── resolvers/                   # Resolvers (user, category, product, variant, cart, address, order, wishlist)
-├── helpers/                         # authHelper, authMiddleware, errorHelper, imageHelper, inventoryHelper, moneyHelper, orderStateMachine, validationHelper
-├── models/                          # Sequelize models (User, Category, Product, ProductVariant, Cart, CartItem, Address, Order, OrderItem, InventoryMovement, WishlistItem)
+│   ├── typeDefs/                    # GraphQL schemas (user, category, product, variant, cart, address, order, wishlist, promotion)
+│   └── resolvers/                   # Resolvers (user, category, product, variant, cart, address, order, wishlist, promotion)
+├── helpers/                         # authHelper, authMiddleware, errorHelper, imageHelper, inventoryHelper, moneyHelper, orderStateMachine, promotionHelper, validationHelper
+├── models/                          # Sequelize models (User, Category, Product, ProductVariant, Cart, CartItem, Address, Order, OrderItem, InventoryMovement, WishlistItem, Promotion, PromotionUsage)
 ├── scripts/                         # initDb.js
 └── test/
     ├── security_and_regression.test.js  # Phase 1 test suite (26 tests)
     ├── commerce_phase2.test.js          # Phase 2 test suite (20 tests)
-    └── storefront_phase3.test.js        # Phase 3 test suite (6 tests)
+    ├── storefront_phase3.test.js        # Phase 3 test suite (6 tests)
+    └── promotions_phase4.test.js        # Phase 4 test suite (16 tests)
 ```
 
 ---
@@ -119,7 +139,7 @@ From the `server` directory:
 cd server
 npm test
 ```
-*(Runs Phase 1, Phase 2, and Phase 3 automated test suites — 52/52 passing).*
+*(Runs Phase 1, Phase 2, Phase 3, and Phase 4 automated test suites — 68/68 passing).*
 
 To build the client:
 ```bash

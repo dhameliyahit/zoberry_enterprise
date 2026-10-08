@@ -1,11 +1,14 @@
 import { gql } from '@apollo/client';
 
 export const PREVIEW_CHECKOUT = gql`
-  query PreviewCheckout($guestSessionToken: String) {
-    previewCheckout(guestSessionToken: $guestSessionToken) {
+  query PreviewCheckout($guestSessionToken: String, $couponCode: String) {
+    previewCheckout(guestSessionToken: $guestSessionToken, couponCode: $couponCode) {
       itemCount
       subtotal
       discountAmount
+      couponCode
+      couponDiscount
+      couponMessage
       shippingAmount
       taxAmount
       grandTotal
@@ -48,6 +51,7 @@ export const CREATE_ORDER_FROM_CART = gql`
       fulfillmentStatus
       currency
       subtotal
+      couponCode
       discountAmount
       shippingAmount
       taxAmount

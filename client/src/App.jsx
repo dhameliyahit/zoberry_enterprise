@@ -17,6 +17,7 @@ import AdminLayout from './layouts/AdminLayout';
 import AdminDashboard from './pages/admin/AdminDashboard';
 import AdminCategories from './pages/admin/AdminCategories';
 import AdminProducts from './pages/admin/AdminProducts';
+import AdminPromotions from './pages/admin/AdminPromotions';
 
 function App() {
   return (
@@ -80,6 +81,7 @@ function App() {
           <Route index element={<AdminDashboard />} />
           <Route path="categories" element={<AdminCategories />} />
           <Route path="products" element={<AdminProducts />} />
+          <Route path="promotions" element={<AdminPromotions />} />
         </Route>
 
         {/* Fallback */}

@@ -33,6 +33,8 @@ const orderTypeDefs = `#graphql
     grandTotal: Float!
     shippingAddressSnapshot: JSON!
     billingAddressSnapshot: JSON
+    couponCode: String
+    discountSnapshot: JSON
     idempotencyKey: String
     notes: String
     cancelledReason: String
@@ -48,6 +50,8 @@ const orderTypeDefs = `#graphql
     itemCount: Int!
     subtotal: Float!
     discountAmount: Float!
+    couponCode: String
+    appliedCoupon: AppliedPromotionSnapshot
     shippingAmount: Float!
     taxAmount: Float!
     grandTotal: Float!
@@ -73,6 +77,7 @@ const orderTypeDefs = `#graphql
     guestEmail: String
     guestPhone: String
     guestSessionToken: String
+    couponCode: String
     idempotencyKey: String!
     notes: String
   }
@@ -81,7 +86,7 @@ const orderTypeDefs = `#graphql
     getMyOrders: [Order!]!
     getMyOrder(id: ID!): Order
     getOrderByNumber(orderNumber: String!): Order
-    previewCheckout(guestSessionToken: String): CheckoutPreview!
+    previewCheckout(guestSessionToken: String, couponCode: String): CheckoutPreview!
     adminGetAllOrders(status: String, page: Int, limit: Int): [Order!]!
     adminGetOrderById(id: ID!): Order
   }
