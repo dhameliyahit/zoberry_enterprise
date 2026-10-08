@@ -3,7 +3,7 @@ import { useParams, useSearchParams, Link } from 'react-router-dom';
 import { useQuery, useMutation } from '@apollo/client';
 import {
   FiCheckCircle, FiPackage, FiTruck, FiMapPin,
-  FiClock, FiArrowRight, FiShoppingBag, FiCreditCard, FiAlertTriangle, FiRefreshCw, FiTag
+  FiClock, FiArrowRight, FiShoppingBag, FiCreditCard, FiAlertTriangle, FiRefreshCw, FiTag, FiNavigation
 } from 'react-icons/fi';
 import { GET_ORDER_BY_NUMBER } from '../graphql/orders';
 import { GET_PAYMENT_STATUS, INITIATE_PAYMENT } from '../graphql/payment';
@@ -87,6 +87,9 @@ const OrderDetailPage = () => {
   const shipping = order.shippingAddressSnapshot || {};
   const shippingSnapshot = order.shippingSnapshot || {};
   const taxSnapshot = order.taxSnapshot || {};
+  const shipments = order.shipments || [];
+  const primaryShipment = shipments[0] || null;
+
   const dateStr = order.createdAt
     ? new Date(order.createdAt).toLocaleDateString('en-IN', {
         day: 'numeric',
@@ -147,7 +150,7 @@ const OrderDetailPage = () => {
               Thank you for your purchase!
             </h1>
             <p className="text-gray-500 text-xs md:text-sm max-w-md mx-auto">
-              Your order number is <span className="font-bold text-gray-900">{order.orderNumber}</span>. We've verified your payment and will begin processing your shipment.
+              Your order number is <span className="font-bold text-gray-900">{order.orderNumber}</span>. We've verified your payment and our logistics team is processing your fulfillment.
             </p>
           </div>
         ) : !isFailed ? (
@@ -192,18 +195,82 @@ const OrderDetailPage = () => {
           </div>
 
           <div className="bg-white rounded-xl border border-gray-200 p-5 shadow-xs">
-            <span className="text-[10px] font-bold text-gray-400 uppercase block mb-1">Shipping & Delivery</span>
+            <span className="text-[10px] font-bold text-gray-400 uppercase block mb-1">Fulfillment & Shipment</span>
             <div className="flex items-center gap-2">
               <FiTruck size={15} className="text-primary" />
-              <span className="font-bold text-sm text-gray-900">
-                {shippingSnapshot.name || order.shippingMethod || 'Standard Delivery'}
+              <span className="font-bold text-sm text-gray-900 uppercase">
+                {primaryShipment?.status || order.fulfillmentStatus || 'UNFULFILLED'}
               </span>
             </div>
             <span className="text-[11px] text-gray-500 mt-2 block">
-              Est: {shippingSnapshot.estimatedDays || '3 - 5 business days'}
+              {primaryShipment?.awbNumber ? `AWB: ${primaryShipment.awbNumber}` : 'Awaiting carrier dispatch'}
             </span>
           </div>
         </div>
+
+        {/* Shipment & Live Tracking Section (Phase 7) */}
+        {primaryShipment ? (
+          <div className="bg-white rounded-xl border border-gray-200 shadow-xs p-6 space-y-4">
+            <div className="flex flex-col sm:flex-row sm:items-center justify-between pb-3 border-b border-gray-100 gap-2">
+              <div>
+                <h2 className="text-base font-bold text-gray-900 flex items-center gap-2">
+                  <FiNavigation className="text-primary" /> Tracking & Logistics Information
+                </h2>
+                <p className="text-xs text-gray-500 mt-0.5">
+                  Carrier: <strong className="text-gray-800">{primaryShipment.provider}</strong> • Method: <strong className="text-gray-800">{primaryShipment.shippingMethodCode || order.shippingMethod}</strong>
+                </p>
+              </div>
+              <div className="text-right">
+                <span className="text-xs font-mono font-bold bg-gray-100 text-gray-800 px-3 py-1 rounded border border-gray-200 block sm:inline-block">
+                  AWB: {primaryShipment.awbNumber || 'Assigned'}
+                </span>
+                {primaryShipment.estimatedDeliveryAt && (
+                  <span className="text-[11px] text-gray-500 block mt-1">
+                    Est. Delivery: {new Date(primaryShipment.estimatedDeliveryAt).toLocaleDateString('en-IN', { month: 'short', day: 'numeric', year: 'numeric' })}
+                  </span>
+                )}
+              </div>
+            </div>
+
+            {/* Tracking Milestones Timeline */}
+            <div className="space-y-3 pt-2">
+              <h3 className="text-xs font-bold text-gray-700 uppercase tracking-wide">Tracking Updates</h3>
+              {primaryShipment.trackingEvents && primaryShipment.trackingEvents.length > 0 ? (
+                <div className="relative pl-6 border-l-2 border-primary/30 space-y-4 text-xs">
+                  {primaryShipment.trackingEvents.map((ev, idx) => (
+                    <div key={ev.id || idx} className="relative">
+                      <div className="absolute -left-[31px] top-1 w-3.5 h-3.5 rounded-full bg-primary ring-4 ring-blue-50"></div>
+                      <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-1">
+                        <span className="font-bold text-gray-900 uppercase">{ev.status}</span>
+                        <span className="text-[11px] text-gray-400">
+                          {new Date(ev.eventTime).toLocaleString('en-IN', { day: 'numeric', month: 'short', hour: '2-digit', minute: '2-digit' })}
+                        </span>
+                      </div>
+                      <p className="text-gray-600 mt-0.5">{ev.description || ev.status}</p>
+                      {ev.location && <span className="text-[11px] text-gray-400 block mt-0.5">Location: {ev.location}</span>}
+                    </div>
+                  ))}
+                </div>
+              ) : (
+                <p className="text-xs text-gray-400 italic">Shipment is created. Carrier tracking events will update shortly.</p>
+              )}
+            </div>
+          </div>
+        ) : (
+          <div className="bg-blue-50 border border-blue-200 rounded-xl p-5 shadow-xs flex items-center justify-between text-xs">
+            <div className="flex items-center gap-3">
+              <div className="w-9 h-9 rounded-full bg-blue-100 text-primary flex items-center justify-center shrink-0">
+                <FiPackage size={18} />
+              </div>
+              <div>
+                <h4 className="font-bold text-blue-900">Shipment in Preparation</h4>
+                <p className="text-blue-700 text-[11px] mt-0.5">
+                  Your order is confirmed and queued for fulfillment dispatch. An AWB tracking number will be assigned once packaged.
+                </p>
+              </div>
+            </div>
+          </div>
+        )}
 
         {/* Order Details Container */}
         <div className="bg-white rounded-lg border border-gray-200 shadow-xs overflow-hidden mb-8">

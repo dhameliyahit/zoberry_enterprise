@@ -9,6 +9,7 @@ const wishlistResolvers = require('./wishlist');
 const promotionResolvers = require('./promotion');
 const paymentResolvers = require('./payment');
 const shippingResolvers = require('./shipping');
+const shipmentResolvers = require('./shipment');
 
 // Combine all individual module resolvers into one master resolver object
 const rootResolvers = {
@@ -23,6 +24,7 @@ const rootResolvers = {
     ...promotionResolvers.Query,
     ...paymentResolvers.Query,
     ...shippingResolvers.Query,
+    ...shipmentResolvers.Query,
   },
   Mutation: {
     ...userResolvers.Mutation,
@@ -36,10 +38,12 @@ const rootResolvers = {
     ...promotionResolvers.Mutation,
     ...paymentResolvers.Mutation,
     ...shippingResolvers.Mutation,
+    ...shipmentResolvers.Mutation,
   },
   // Relational Field Resolvers
   Product: productResolvers.Product,
   Category: productResolvers.Category,
+  Order: orderResolvers.Order,
 };
 
 module.exports = rootResolvers;

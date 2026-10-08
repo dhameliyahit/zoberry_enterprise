@@ -189,6 +189,26 @@ export const GET_MY_ORDER = gql`
         lineTotal
         productImage
       }
+      shipments {
+        id
+        provider
+        providerShipmentId
+        awbNumber
+        trackingNumber
+        status
+        shippingMethodCode
+        estimatedDeliveryAt
+        shippedAt
+        deliveredAt
+        trackingEvents {
+          id
+          status
+          location
+          description
+          eventTime
+          source
+        }
+      }
     }
   }
 `;
@@ -228,6 +248,26 @@ export const GET_ORDER_BY_NUMBER = gql`
         unitPrice
         lineTotal
         productImage
+      }
+      shipments {
+        id
+        provider
+        providerShipmentId
+        awbNumber
+        trackingNumber
+        status
+        shippingMethodCode
+        estimatedDeliveryAt
+        shippedAt
+        deliveredAt
+        trackingEvents {
+          id
+          status
+          location
+          description
+          eventTime
+          source
+        }
       }
     }
   }

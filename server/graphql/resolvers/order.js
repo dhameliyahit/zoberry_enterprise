@@ -9,6 +9,8 @@ const {
   ProductModel,
   ProductVariantModel,
   PromotionModel,
+  ShipmentModel,
+  ShipmentTrackingEventModel,
 } = require('../../models');
 const { requireAuth, requireAdmin, requireOwnerOrAdmin } = require('../../helpers/authMiddleware');
 const { calculateTotals, calculateLineTotal, toPaise, fromPaise } = require('../../helpers/moneyHelper');
@@ -561,6 +563,17 @@ const orderResolvers = {
 
       return await OrderModel.findByPk(order.id, {
         include: [{ model: OrderItemModel, as: 'items' }],
+      });
+    },
+  },
+
+  Order: {
+    shipments: async (parent) => {
+      if (parent.shipments) return parent.shipments;
+      return await ShipmentModel.findAll({
+        where: { orderId: parent.id },
+        include: [{ model: ShipmentTrackingEventModel, as: 'trackingEvents' }],
+        order: [['createdAt', 'DESC']],
       });
     },
   },

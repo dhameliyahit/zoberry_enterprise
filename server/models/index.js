@@ -15,6 +15,8 @@ const PaymentModel = require('./paymentModel');
 const PaymentTransactionModel = require('./paymentTransactionModel');
 const ShippingMethodModel = require('./shippingMethodModel');
 const TaxRuleModel = require('./taxRuleModel');
+const { ShipmentModel, SHIPMENT_STATUS } = require('./shipmentModel');
+const ShipmentTrackingEventModel = require('./shipmentTrackingEventModel');
 
 // ==========================================
 // Define Database Relationships / Associations
@@ -206,6 +208,28 @@ PaymentTransactionModel.belongsTo(PaymentModel, {
   as: 'payment',
 });
 
+// 15. Order <-> Shipment (Supports 1-to-many for split shipments)
+OrderModel.hasMany(ShipmentModel, {
+  foreignKey: 'orderId',
+  as: 'shipments',
+  onDelete: 'CASCADE',
+});
+ShipmentModel.belongsTo(OrderModel, {
+  foreignKey: 'orderId',
+  as: 'order',
+});
+
+// 16. Shipment <-> ShipmentTrackingEvent
+ShipmentModel.hasMany(ShipmentTrackingEventModel, {
+  foreignKey: 'shipmentId',
+  as: 'trackingEvents',
+  onDelete: 'CASCADE',
+});
+ShipmentTrackingEventModel.belongsTo(ShipmentModel, {
+  foreignKey: 'shipmentId',
+  as: 'shipment',
+});
+
 module.exports = {
   UserModel,
   CategoryModel,
@@ -224,4 +248,7 @@ module.exports = {
   PaymentTransactionModel,
   ShippingMethodModel,
   TaxRuleModel,
+  ShipmentModel,
+  ShipmentTrackingEventModel,
+  SHIPMENT_STATUS,
 };

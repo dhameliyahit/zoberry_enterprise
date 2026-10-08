@@ -15,8 +15,9 @@
 | **Phase 3** | **Storefront & Customer Shopping Experience (Cart Drawer, PDP Variants, Addresses, Orders, Wishlist, Checkout)** | ✅ **COMPLETE** | 6 / 6 Passed |
 | **Phase 4** | **Promotions, Coupons & Pricing Rules (Coupons, Percent/Fixed Caps, Usage Limits, Snapshots, Admin Panel)** | ✅ **COMPLETE** | 16 / 16 Passed |
 | **Phase 5** | **PhonePe Test Mode Payment Integration (Standard Checkout SDK, Webhooks, Verification, Inventory TTL)** | ✅ **COMPLETE** | 13 / 13 Passed |
-| **Phase 6** | **Shipping, Tax & Checkout Business Rules (Centralized Pricing Engine, Shipping Methods, Free Shipping, GST Rules, Order Snapshots)** | ✅ **COMPLETE** | 10 / 10 Passed |
-| **Phase 7** | **Reviews, Marketing & Customer Loyalty Systems** | ⏳ **PENDING (NEXT)** | - |
+| **Phase 6** | **Shipping, Tax & Checkout Business Rules (Centralized Pricing Engine, Shipping Methods, Free Shipping, GST Rules, Order Snapshots)** | ✅ **COMPLETE** | 12 / 12 Passed |
+| **Phase 7** | **Fulfillment & Logistics Foundation (Shipments, AWB Tracking, Provider Adapter, Timeline, Admin Fulfillment)** | ✅ **COMPLETE** | 14 / 14 Passed |
+| **Phase 8** | **Customer Reviews, Loyalty & Invoicing** | ⏳ **PENDING (NEXT)** | - |
 
 ---
 
@@ -117,6 +118,7 @@
 ### ✅ Phase 6: Shipping, Tax & Checkout Business Rules
 - **Single Centralized Checkout Pricing Engine (`checkoutPricingEngine.js`):**
   - Server-authoritative, deterministic integer-paise calculations for subtotal, promotion discounts, provider-independent shipping rates, tax breakdowns, and final grand totals.
+  - Strict validation against invalid or inactive shipping method codes (rejects with `BAD_USER_INPUT`).
   - Hierarchy: `Merchandise Subtotal` - `Promotion Discount` = `Eligible Merchandise Subtotal` -> `Shipping Rate (with ₹999 free threshold)` -> `GST Tax Breakdown (5% Inclusive)` = `Grand Total`.
 - **Shipping Domain Architecture:**
   - `ShippingMethod` model (`code`, `name`, `description`, `price`, `freeThreshold`, `estimatedDays`, `isActive`, `priority`).
@@ -129,12 +131,35 @@
 - **GraphQL APIs:**
   - Queries: `getAvailableShippingMethods`, `getTaxRules`, `adminGetAllShippingMethods`.
   - Mutations: `adminCreateShippingMethod`, `adminUpdateShippingMethod`, `adminToggleShippingMethodActive`, `adminCreateTaxRule`, `adminUpdateTaxRule`, `adminToggleTaxRuleActive`.
-  - Extended `previewCheckout` and `createOrderFromCart` with real-time shipping method selection and address pincode resolution.
 - **Frontend Experience:**
   - `/checkout`: Added Shipping Method selector with live cost calculation, dynamic free-shipping progress badge, and itemized tax breakdown.
   - `/order/:orderNumber`: Renders immutable shipping method and tax breakdown snapshot.
   - `/admin/shipping`: Dedicated dashboard to configure shipping rates, free-shipping thresholds, transit estimates, and GST rules.
-- **Verification:** `server/test/shipping_tax_phase6.test.js` (10 tests) | Clean Vite Client Build.
+- **Verification:** `server/test/shipping_tax_phase6.test.js` (12 tests).
+
+### ✅ Phase 7: Fulfillment & Logistics Foundation
+- **Fulfillment & Shipment Architecture:**
+  - `Shipment` model (`orderId`, `provider`, `providerShipmentId`, `awbNumber`, `trackingNumber`, `status`, `shippingMethodCode`, `shippingAddressSnapshot`, `packageDetails`, `estimatedDeliveryAt`, `shippedAt`, `deliveredAt`, `cancelledAt`, `idempotencyKey`).
+  - `ShipmentTrackingEvent` model recording append-only audit tracking milestones (`status`, `location`, `description`, `eventTime`, `source`, `rawPayload`).
+  - Database association: `Order.hasMany(Shipment)` allowing future split-order fulfillment without architectural bottlenecks.
+- **Controlled Shipment Lifecycle & State Machine (`shipmentStateMachine.js`):**
+  - Strict transitions: `PENDING` → `READY_TO_SHIP` → `SHIPMENT_CREATED` → `PICKED_UP` → `IN_TRANSIT` → `OUT_FOR_DELIVERY` → `DELIVERED`.
+  - Terminal states: `DELIVERED`, `CANCELLED`.
+  - Controlled retry: `FAILED` → `READY_TO_SHIP` / `SHIPMENT_CREATED` / `CANCELLED`.
+- **Payment Eligibility & Inventory Safety (`fulfillmentService.js`):**
+  - Authoritative rule: Orders must be in `paymentStatus: PAID` and not cancelled before shipments can be created.
+  - Zero double deduction: Stock is not deducted again during fulfillment.
+  - Order status synchronization: Transitioning shipments to `PICKED_UP` / `IN_TRANSIT` updates `Order.status = 'SHIPPED'`, and `DELIVERED` updates `Order.status = 'DELIVERED'`.
+- **Provider-Independent Adapter Layer (`shippingProviderAdapter.js`):**
+  - Abstract base class with clean methods for `checkServiceability`, `createShipment`, `cancelShipment`, and `getTracking`.
+  - Default `InternalCourierProvider` generating deterministic unique AWBs (`AWB-ZB-YYYYMMDD-XXXX`).
+- **GraphQL APIs:**
+  - Customer: `getMyOrderShipments(orderId)`, `getShipmentTracking(awbNumber)`, `checkPostalServiceability(postalCode)`.
+  - Admin: `adminCreateShipment`, `adminUpdateShipmentStatus`, `adminCancelShipment`, `adminAddTrackingEvent`, `adminGetOrderShipments`, `adminGetAllShipments`.
+- **Frontend Experience:**
+  - Customer `/order/:orderNumber`: Displays carrier provider, AWB tracking badge, delivery status, and milestone timeline.
+  - Admin `/admin/shipping`: Tabbed interface with dedicated Shipments & Fulfillment manager (live filters, shipment creation modal, status updates, and tracking event audit log).
+- **Verification:** `server/test/fulfillment_phase7.test.js` (14 tests) | Clean Vite Client Build.
 
 ---
 
@@ -149,7 +174,7 @@ client/src/
 │   ├── layout/                      # Header, Footer, Topbar, MainLayout
 │   ├── products/                    # ProductCard
 │   └── sections/                    # Hero, CategorySlider, FeaturedProducts
-├── graphql/                         # Apollo queries/mutations (auth, products, cart, address, orders, wishlist, promotions, payment, shipping)
+├── graphql/                         # Apollo queries/mutations (auth, products, cart, address, orders, wishlist, promotions, payment, shipping, fulfillment)
 ├── hooks/                           # Custom hooks (useCart, useWishlist)
 ├── pages/                           # HomePage, ProductsPage, ProductDetailPage, CartPage, CheckoutPage, OrderDetailPage, WishlistPage, AboutPage, ContactPage
 │   ├── account/                     # AccountPage, AccountOrders, AccountAddresses
@@ -161,17 +186,14 @@ server/
 ├── config/
 │   └── db.js                        # Sequelize connection configuration
 ├── graphql/
-│   ├── typeDefs/                    # GraphQL schemas (user, category, product, variant, cart, address, order, wishlist, promotion, payment, shipping)
-│   └── resolvers/                   # Resolvers (user, category, product, variant, cart, address, order, wishlist, promotion, payment, shipping)
-├── helpers/                         # authHelper, authMiddleware, checkoutPricingEngine, errorHelper, imageHelper, inventoryHelper, moneyHelper, orderStateMachine, promotionHelper, validationHelper
-├── models/                          # Sequelize models (User, Category, Product, ProductVariant, Cart, CartItem, Address, Order, OrderItem, InventoryMovement, WishlistItem, Promotion, PromotionUsage, Payment, PaymentTransaction, ShippingMethod, TaxRule)
+│   ├── typeDefs/                    # GraphQL schemas (user, category, product, variant, cart, address, order, wishlist, promotion, payment, shipping, shipment)
+│   └── resolvers/                   # Resolvers (user, category, product, variant, cart, address, order, wishlist, promotion, payment, shipping, shipment)
+├── helpers/                         # authHelper, authMiddleware, checkoutPricingEngine, errorHelper, imageHelper, inventoryHelper, moneyHelper, orderStateMachine, promotionHelper, shipmentStateMachine, validationHelper
+├── models/                          # Sequelize models (User, Category, Product, ProductVariant, Cart, CartItem, Address, Order, OrderItem, InventoryMovement, WishlistItem, Promotion, PromotionUsage, Payment, PaymentTransaction, ShippingMethod, TaxRule, Shipment, ShipmentTrackingEvent)
 ├── routes/                          # paymentRoutes.js (PhonePe callback/webhook)
 ├── services/
-│   └── payment/
-│       ├── paymentService.js        # Master payment orchestrator, TTL, and status verification
-│       └── phonepe/
-│           ├── phonepeConfig.js     # PhonePe sandbox config
-│           └── phonepeService.js    # pg-sdk-node adapter
+│   ├── payment/                     # PhonePe SDK adapter and payment service
+│   └── shipping/                    # Shipping provider adapter and fulfillment service
 ├── scripts/                         # initDb.js
 └── test/
     ├── security_and_regression.test.js  # Phase 1 test suite (26 tests)
@@ -179,7 +201,8 @@ server/
     ├── storefront_phase3.test.js        # Phase 3 test suite (6 tests)
     ├── promotions_phase4.test.js        # Phase 4 test suite (16 tests)
     ├── payment_phase5.test.js           # Phase 5 test suite (13 tests)
-    └── shipping_tax_phase6.test.js      # Phase 6 test suite (10 tests)
+    ├── shipping_tax_phase6.test.js      # Phase 6 test suite (12 tests)
+    └── fulfillment_phase7.test.js       # Phase 7 test suite (14 tests)
 ```
 
 ---
@@ -189,9 +212,9 @@ server/
 From the `server` directory:
 ```bash
 cd server
-node test/shipping_tax_phase6.test.js
+node test/fulfillment_phase7.test.js
 ```
-*(Runs Phase 6 automated test suite — 10/10 passing).*
+*(Runs Phase 7 automated test suite — 14/14 passing).*
 
 To build the client:
 ```bash

@@ -44,6 +44,7 @@ const orderTypeDefs = `#graphql
     shippedAt: String
     deliveredAt: String
     items: [OrderItem!]!
+    shipments: [Shipment!]
     createdAt: String
     updatedAt: String
   }
