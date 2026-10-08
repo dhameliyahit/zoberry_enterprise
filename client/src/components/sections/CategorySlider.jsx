@@ -1,7 +1,7 @@
 import React from 'react';
 import { Link } from 'react-router-dom';
 import { useQuery } from '@apollo/client';
-import { ArrowRight } from 'lucide-react';
+import { ArrowRight, Folder } from 'lucide-react';
 import { GET_ALL_CATEGORIES } from '../../graphql/products';
 import { getImageUrl } from '../../utils/imageUrl';
 import { Skeleton } from '../ui/Skeleton';
@@ -12,17 +12,17 @@ export function CategorySlider() {
 
   if (loading) {
     return (
-      <section className="py-8 sm:py-12 bg-white border-b border-slate-200">
-        <div className="container mx-auto px-4 lg:px-8">
-          <div className="flex items-center justify-between mb-6">
-            <Skeleton className="w-40 h-6" />
-            <Skeleton className="w-20 h-4" />
+      <section className="py-6 sm:py-8 bg-white border-b border-slate-200">
+        <div className="container mx-auto px-4 lg:px-8 max-w-6xl">
+          <div className="flex items-center justify-between mb-4">
+            <Skeleton className="w-36 h-5" />
+            <Skeleton className="w-16 h-4" />
           </div>
-          <div className="grid grid-cols-3 sm:grid-cols-4 md:grid-cols-6 gap-4">
+          <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-6 gap-3">
             {[1, 2, 3, 4, 5, 6].map((i) => (
-              <div key={i} className="flex flex-col items-center gap-2">
-                <Skeleton className="w-20 h-20 sm:w-24 sm:h-24 rounded-full" />
-                <Skeleton className="w-16 h-3.5" />
+              <div key={i} className="p-3 rounded-lg border border-slate-100 flex flex-col items-center gap-2">
+                <Skeleton className="w-14 h-14 rounded-full" />
+                <Skeleton className="w-16 h-3" />
               </div>
             ))}
           </div>
@@ -34,48 +34,55 @@ export function CategorySlider() {
   if (categories.length === 0) return null;
 
   return (
-    <section className="py-8 sm:py-12 bg-white border-b border-slate-200">
-      <div className="container mx-auto px-4 lg:px-8">
-        <div className="flex items-end justify-between mb-6">
+    <section className="py-6 sm:py-8 bg-white border-b border-slate-200">
+      <div className="container mx-auto px-4 lg:px-8 max-w-6xl">
+        <div className="flex items-center justify-between mb-4 pb-2 border-b border-slate-100">
           <div>
-            <span className="text-[11px] font-bold uppercase tracking-wider text-primary mb-1 block">
-              Curated Collections
-            </span>
-            <h2 className="text-xl sm:text-2xl font-bold text-slate-900 tracking-tight">
+            <h2 className="text-base sm:text-lg font-bold text-slate-900 tracking-tight">
               Shop by Category
             </h2>
           </div>
           <Link
             to="/categories"
-            className="inline-flex items-center gap-1 text-xs font-semibold text-primary hover:text-primary-hover hover:underline"
+            className="inline-flex items-center gap-1 text-xs font-semibold text-primary hover:underline"
           >
-            <span>View All</span>
+            <span>All Categories</span>
             <ArrowRight className="w-3.5 h-3.5" />
           </Link>
         </div>
 
-        {/* Categories Grid / Scroll */}
-        <div className="grid grid-cols-3 sm:grid-cols-4 md:grid-cols-6 gap-4 sm:gap-6">
+        {/* Category Cards Grid */}
+        <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-6 gap-3 sm:gap-4">
           {categories.map((category) => {
+            const hasImage = Boolean(category.imageUrl);
             const imgUrl = getImageUrl(category.imageUrl);
 
             return (
               <Link
                 key={category.id}
                 to={`/category/${category.slug}`}
-                className="group flex flex-col items-center text-center p-3 rounded-xl hover:bg-slate-50 border border-transparent hover:border-slate-200 transition-all duration-150"
+                className="group flex flex-col items-center text-center p-3 rounded-xl bg-slate-50/60 hover:bg-blue-50/40 border border-slate-200 hover:border-primary/40 transition-all"
               >
-                <div className="w-20 h-20 sm:w-24 sm:h-24 rounded-full overflow-hidden bg-slate-100 border border-slate-200 shadow-2xs group-hover:border-primary group-hover:shadow-sm transition-all duration-200 mb-2.5">
-                  <img
-                    src={imgUrl}
-                    alt={category.name}
-                    loading="lazy"
-                    className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-300"
-                  />
+                <div className="w-14 h-14 rounded-full overflow-hidden bg-white border border-slate-200 flex items-center justify-center mb-2 group-hover:border-primary group-hover:scale-105 transition-all shadow-2xs">
+                  {hasImage ? (
+                    <img
+                      src={imgUrl}
+                      alt={category.name}
+                      loading="lazy"
+                      className="w-full h-full object-cover"
+                    />
+                  ) : (
+                    <Folder className="w-6 h-6 text-primary" />
+                  )}
                 </div>
-                <span className="text-xs sm:text-sm font-semibold text-slate-800 group-hover:text-primary line-clamp-1 transition-colors">
+                <span className="text-xs font-semibold text-slate-800 group-hover:text-primary line-clamp-1 transition-colors">
                   {category.name}
                 </span>
+                {category.productCount !== undefined && category.productCount > 0 && (
+                  <span className="text-[10px] text-slate-400 mt-0.5">
+                    {category.productCount} {category.productCount === 1 ? 'item' : 'items'}
+                  </span>
+                )}
               </Link>
             );
           })}

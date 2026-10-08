@@ -1,92 +1,48 @@
 import React from 'react';
 import { Link } from 'react-router-dom';
-import { ShieldCheck, Truck, Clock, Phone, Mail, MapPin } from 'lucide-react';
+import { ShieldCheck, Phone, Mail, MapPin, ArrowRight } from 'lucide-react';
 
 export function Footer() {
   return (
-    <footer className="bg-slate-900 text-slate-300 mt-auto border-t border-slate-800">
-      {/* 1. Value / Trust Prop Section */}
-      <div className="border-b border-slate-800/80 py-8 bg-slate-950/40">
-        <div className="container mx-auto px-4 lg:px-8">
-          <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-6">
-            <div className="flex items-center gap-3.5">
-              <div className="w-10 h-10 rounded-lg bg-blue-500/10 border border-blue-500/20 text-blue-400 flex items-center justify-center shrink-0">
-                <Truck className="w-5 h-5" />
-              </div>
-              <div>
-                <h4 className="text-sm font-semibold text-white">Fast Dispatch</h4>
-                <p className="text-xs text-slate-400">Free standard shipping over ₹999</p>
-              </div>
-            </div>
-
-            <div className="flex items-center gap-3.5">
-              <div className="w-10 h-10 rounded-lg bg-emerald-500/10 border border-emerald-500/20 text-emerald-400 flex items-center justify-center shrink-0">
-                <ShieldCheck className="w-5 h-5" />
-              </div>
-              <div>
-                <h4 className="text-sm font-semibold text-white">PhonePe Verified</h4>
-                <p className="text-xs text-slate-400">100% secure encrypted payment</p>
-              </div>
-            </div>
-
-            <div className="flex items-center gap-3.5">
-              <div className="w-10 h-10 rounded-lg bg-amber-500/10 border border-amber-500/20 text-amber-400 flex items-center justify-center shrink-0">
-                <Clock className="w-5 h-5" />
-              </div>
-              <div>
-                <h4 className="text-sm font-semibold text-white">Direct Warehouse</h4>
-                <p className="text-xs text-slate-400">Smart utility & daily essentials</p>
-              </div>
-            </div>
-
-            <div className="flex items-center gap-3.5">
-              <div className="w-10 h-10 rounded-lg bg-purple-500/10 border border-purple-500/20 text-purple-400 flex items-center justify-center shrink-0">
-                <Phone className="w-5 h-5" />
-              </div>
-              <div>
-                <h4 className="text-sm font-semibold text-white">Customer Support</h4>
-                <p className="text-xs text-slate-400">+91-9638601192 (Mon-Sat)</p>
-              </div>
-            </div>
-          </div>
-        </div>
-      </div>
-
-      {/* 2. Main Footer Links */}
-      <div className="container mx-auto px-4 lg:px-8 py-12">
+    <footer className="bg-slate-950 text-slate-300 mt-auto border-t border-slate-800 text-xs">
+      <div className="container mx-auto px-4 lg:px-8 py-10 sm:py-12">
         <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-5 gap-8">
-          {/* Brand Column */}
-          <div className="lg:col-span-2 space-y-4">
+          
+          {/* Brand Column (White Logo on Dark Background) */}
+          <div className="lg:col-span-2 space-y-3.5">
             <Link to="/" className="inline-block">
               <img
                 src="/zoberry_logo.png"
                 alt="Zoberry Enterprise"
-                className="h-8 object-contain brightness-0 invert opacity-95"
+                className="h-8 object-contain"
                 onError={(e) => {
                   e.target.src = '/logo.svg';
                 }}
               />
             </Link>
-            <p className="text-xs sm:text-sm text-slate-400 leading-relaxed max-w-sm">
-              Zoberry Enterprise delivers curated home & kitchen utility gadgets, smart lifestyle
-              organizers, and daily problem-solver essentials directly to Indian homes.
+            <p className="text-slate-400 text-xs leading-relaxed max-w-sm">
+              Zoberry Enterprise provides curated home utilities, kitchen gadgets, smart storage, and daily problem-solver essentials delivered across India.
             </p>
-            <div className="flex flex-col gap-1.5 text-xs text-slate-400">
-              <span className="flex items-center gap-2">
-                <Mail className="w-3.5 h-3.5 text-blue-400 shrink-0" />
-                support@zoberryenterprise.shop
-              </span>
-              <span className="flex items-center gap-2">
-                <MapPin className="w-3.5 h-3.5 text-blue-400 shrink-0" />
-                Surat, Gujarat, India - 395004
-              </span>
+            <div className="space-y-1.5 text-slate-400 text-xs pt-1">
+              <div className="flex items-center gap-2">
+                <Phone className="w-3.5 h-3.5 text-primary shrink-0" />
+                <span>+91 96386 01192 (Mon - Sat, 10 AM - 7 PM)</span>
+              </div>
+              <div className="flex items-center gap-2">
+                <Mail className="w-3.5 h-3.5 text-primary shrink-0" />
+                <span>support@zoberryenterprise.shop</span>
+              </div>
+              <div className="flex items-center gap-2">
+                <MapPin className="w-3.5 h-3.5 text-primary shrink-0" />
+                <span>Surat, Gujarat, India - 395004</span>
+              </div>
             </div>
           </div>
 
-          {/* Quick Shop */}
+          {/* Quick Shop Links */}
           <div>
-            <h4 className="text-xs font-bold text-white uppercase tracking-wider mb-4">Shop</h4>
-            <ul className="space-y-2.5 text-xs sm:text-sm text-slate-400">
+            <h4 className="text-xs font-bold text-white uppercase tracking-wider mb-3.5">Catalog</h4>
+            <ul className="space-y-2 text-slate-400">
               <li>
                 <Link to="/products" className="hover:text-white transition-colors">
                   All Products
@@ -94,7 +50,7 @@ export function Footer() {
               </li>
               <li>
                 <Link to="/categories" className="hover:text-white transition-colors">
-                  Categories
+                  Shop by Category
                 </Link>
               </li>
               <li>
@@ -110,10 +66,10 @@ export function Footer() {
             </ul>
           </div>
 
-          {/* Support & Account */}
+          {/* Account & Help */}
           <div>
-            <h4 className="text-xs font-bold text-white uppercase tracking-wider mb-4">Account & Help</h4>
-            <ul className="space-y-2.5 text-xs sm:text-sm text-slate-400">
+            <h4 className="text-xs font-bold text-white uppercase tracking-wider mb-3.5">Customer Care</h4>
+            <ul className="space-y-2 text-slate-400">
               <li>
                 <Link to="/account" className="hover:text-white transition-colors">
                   Customer Account
@@ -121,17 +77,17 @@ export function Footer() {
               </li>
               <li>
                 <Link to="/account?tab=orders" className="hover:text-white transition-colors">
-                  Track My Orders
+                  Track Orders & Shipments
                 </Link>
               </li>
               <li>
                 <Link to="/contact" className="hover:text-white transition-colors">
-                  Help Center / Contact
+                  Help & Contact Support
                 </Link>
               </li>
               <li>
                 <Link to="/about" className="hover:text-white transition-colors">
-                  About Zoberry
+                  About Zoberry Enterprise
                 </Link>
               </li>
             </ul>
@@ -139,23 +95,23 @@ export function Footer() {
 
           {/* Payment & Security */}
           <div>
-            <h4 className="text-xs font-bold text-white uppercase tracking-wider mb-4">Payment Security</h4>
-            <p className="text-xs text-slate-400 leading-relaxed mb-3">
-              We process 100% digital prepaid orders via PhonePe Standard Gateway supporting UPI, RuPay, Visa, Mastercard & NetBanking.
+            <h4 className="text-xs font-bold text-white uppercase tracking-wider mb-3.5">Secure Checkout</h4>
+            <p className="text-slate-400 text-xs leading-relaxed mb-3">
+              100% encrypted online payments powered by PhonePe Standard Gateway (UPI, Cards & NetBanking).
             </p>
-            <div className="inline-flex items-center gap-2 px-3 py-1.5 rounded bg-slate-800 text-[11px] font-semibold text-emerald-400 border border-slate-700">
-              <ShieldCheck className="w-3.5 h-3.5" />
-              256-Bit SSL Encrypted
+            <div className="inline-flex items-center gap-2 px-3 py-1.5 rounded-lg bg-slate-900 border border-slate-800 text-[11px] text-emerald-400 font-semibold">
+              <ShieldCheck className="w-4 h-4 text-emerald-400" />
+              <span>256-Bit SSL Encrypted</span>
             </div>
           </div>
         </div>
       </div>
 
-      {/* 3. Bottom Copyright */}
-      <div className="border-t border-slate-800 py-6 bg-slate-950/60 text-xs text-slate-500 text-center">
-        <div className="container mx-auto px-4 flex flex-col sm:flex-row items-center justify-between gap-2">
+      {/* Copyright Bar */}
+      <div className="border-t border-slate-800/80 py-4 bg-slate-950 text-slate-500 text-[11px]">
+        <div className="container mx-auto px-4 lg:px-8 flex flex-col sm:flex-row items-center justify-between gap-2 text-center sm:text-left">
           <span>&copy; {new Date().getFullYear()} Zoberry Enterprise. All rights reserved.</span>
-          <span className="text-slate-600">Smart Living, Home & Kitchen Utility Products</span>
+          <span>Smart Living, Home & Kitchen Utilities</span>
         </div>
       </div>
     </footer>

@@ -1,7 +1,7 @@
 import React, { useState } from 'react';
 import { Link, useNavigate } from 'react-router-dom';
 import { useQuery } from '@apollo/client';
-import { ChevronLeft, ChevronRight, ShoppingBag, ArrowRight, Sparkles } from 'lucide-react';
+import { ChevronLeft, ChevronRight, ShoppingBag, ArrowRight, Sparkles, ShieldCheck } from 'lucide-react';
 import { useUIStore } from '../../store/uiStore';
 import { useCart } from '../../hooks/useCart';
 import { Button } from '../ui/Button';
@@ -23,21 +23,21 @@ export function Hero() {
 
   if (loading) {
     return (
-      <section className="w-full py-8 md:py-12 bg-slate-50">
-        <div className="container mx-auto px-4 max-w-5xl">
-          <div className="bg-white rounded-2xl border border-slate-200 p-6 md:p-8 flex flex-col md:flex-row gap-8 shadow-xs">
-            <Skeleton className="w-full md:w-1/2 aspect-square rounded-xl" />
+      <section className="w-full py-6 md:py-8 bg-slate-100/70 border-b border-slate-200">
+        <div className="container mx-auto px-4 lg:px-8 max-w-6xl">
+          <div className="bg-white rounded-xl border border-slate-200 p-6 flex flex-col md:flex-row gap-6 shadow-xs">
+            <Skeleton className="w-full md:w-5/12 aspect-square rounded-lg" />
             <div className="flex-1 flex flex-col justify-between gap-4">
               <div className="space-y-3">
-                <Skeleton className="w-28 h-6 rounded-full" />
-                <Skeleton className="w-3/4 h-8" />
-                <Skeleton className="w-full h-16" />
+                <Skeleton className="w-24 h-5 rounded-full" />
+                <Skeleton className="w-3/4 h-7" />
+                <Skeleton className="w-full h-12" />
               </div>
-              <div className="space-y-4">
-                <Skeleton className="w-36 h-8" />
+              <div className="space-y-3">
+                <Skeleton className="w-32 h-7" />
                 <div className="flex gap-3">
-                  <Skeleton className="flex-1 h-11 rounded-lg" />
-                  <Skeleton className="flex-1 h-11 rounded-lg" />
+                  <Skeleton className="flex-1 h-10 rounded-lg" />
+                  <Skeleton className="flex-1 h-10 rounded-lg" />
                 </div>
               </div>
             </div>
@@ -49,21 +49,21 @@ export function Hero() {
 
   if (products.length === 0) {
     return (
-      <section className="w-full py-16 px-4 bg-slate-50 flex items-center justify-center">
-        <div className="max-w-xl text-center space-y-4">
-          <Badge variant="primary" size="md">
+      <section className="w-full py-12 px-4 bg-slate-900 text-white border-b border-slate-800">
+        <div className="container mx-auto px-4 max-w-3xl text-center space-y-3.5">
+          <Badge variant="blue" size="sm">
             Direct Warehouse Value
           </Badge>
-          <h1 className="text-2xl sm:text-4xl font-extrabold text-slate-900 tracking-tight">
-            Smart Home Utilities & Daily Essentials
+          <h1 className="text-2xl sm:text-3xl lg:text-4xl font-extrabold text-white tracking-tight">
+            Smart Home Utilities & Kitchen Essentials
           </h1>
-          <p className="text-slate-600 text-sm sm:text-base leading-relaxed">
-            Discover curated problem-solving gadgets, kitchen organizers, and daily life essentials at direct prices.
+          <p className="text-slate-300 text-xs sm:text-sm leading-relaxed max-w-xl mx-auto">
+            Practical home and kitchen products engineered for daily convenience, curated and delivered across India.
           </p>
           <div className="pt-2">
             <Link to="/products">
-              <Button variant="primary" size="lg" rightIcon={<ArrowRight className="w-4 h-4" />}>
-                Explore All Products
+              <Button variant="primary" size="md" rightIcon={<ArrowRight className="w-4 h-4" />}>
+                Browse All Products
               </Button>
             </Link>
           </div>
@@ -107,105 +107,106 @@ export function Hero() {
   };
 
   return (
-    <section className="relative w-full py-6 md:py-10 bg-slate-50 border-b border-slate-200">
-      <div className="container mx-auto px-4 max-w-5xl relative">
-        {/* Carousel Prev/Next Buttons */}
-        {totalSlides > 1 && (
-          <>
-            <button
-              type="button"
-              onClick={prevSlide}
-              aria-label="Previous spotlight"
-              className="absolute left-0 top-1/2 -translate-y-1/2 -translate-x-2 lg:-translate-x-5 z-20 w-10 h-10 rounded-full bg-white border border-slate-200 shadow-md flex items-center justify-center text-slate-700 hover:text-primary hover:border-slate-300 transition-all hidden sm:flex"
-            >
-              <ChevronLeft className="w-5 h-5" />
-            </button>
-            <button
-              type="button"
-              onClick={nextSlide}
-              aria-label="Next spotlight"
-              className="absolute right-0 top-1/2 -translate-y-1/2 translate-x-2 lg:translate-x-5 z-20 w-10 h-10 rounded-full bg-white border border-slate-200 shadow-md flex items-center justify-center text-slate-700 hover:text-primary hover:border-slate-300 transition-all hidden sm:flex"
-            >
-              <ChevronRight className="w-5 h-5" />
-            </button>
-          </>
-        )}
+    <section className="relative w-full py-5 md:py-8 bg-slate-100/70 border-b border-slate-200">
+      <div className="container mx-auto px-4 lg:px-8 max-w-6xl relative">
+        {/* Top Tagline Strip */}
+        <div className="flex items-center justify-between mb-3 text-xs">
+          <div className="flex items-center gap-2">
+            <span className="font-bold text-slate-900 tracking-tight">Daily Problem-Solvers</span>
+            <span className="text-slate-400">•</span>
+            <span className="text-slate-600 hidden sm:inline">Practical items for smart living</span>
+          </div>
+          <Link to="/products" className="text-primary hover:underline font-bold text-xs inline-flex items-center gap-1">
+            <span>Explore Catalog</span>
+            <ArrowRight className="w-3 h-3" />
+          </Link>
+        </div>
 
-        {/* Hero Card */}
-        <div className="bg-white rounded-2xl border border-slate-200 shadow-sm overflow-hidden flex flex-col md:flex-row">
+        {/* Hero Spotlight Card */}
+        <div className="bg-white rounded-xl border border-slate-200 shadow-xs overflow-hidden flex flex-col md:flex-row relative">
+          
           {/* Media / Image */}
-          <div className="w-full md:w-1/2 aspect-square md:aspect-auto md:min-h-[380px] lg:min-h-[420px] bg-slate-100 relative overflow-hidden flex items-center justify-center">
+          <div className="w-full md:w-5/12 aspect-[4/3] md:aspect-auto md:min-h-[320px] bg-slate-50 relative overflow-hidden flex items-center justify-center border-b md:border-b-0 md:border-r border-slate-100">
             <img
               src={mainImage}
               alt={currentProduct.name}
               className="w-full h-full object-cover object-center"
             />
             {hasDiscount && (
-              <div className="absolute top-4 left-4 z-10">
-                <Badge variant="success" size="md">
+              <div className="absolute top-3 left-3 z-10">
+                <Badge variant="green" size="sm">
                   {discountPercent}% OFF
                 </Badge>
               </div>
             )}
+            
+            {/* Direct Link to PDP */}
+            <Link
+              to={`/product/${currentProduct.slug}`}
+              className="absolute inset-0 z-0"
+              aria-label={`View ${currentProduct.name}`}
+            />
           </div>
 
-          {/* Details */}
-          <div className="w-full md:w-1/2 p-6 sm:p-8 lg:p-10 flex flex-col justify-between">
-            <div className="space-y-3">
+          {/* Details & Actions */}
+          <div className="w-full md:w-7/12 p-5 sm:p-7 flex flex-col justify-between bg-white z-10">
+            <div className="space-y-2.5">
               <div className="flex items-center gap-2">
-                <Badge variant="primary" size="sm" dot>
+                <Badge variant="blue" size="sm">
                   <Sparkles className="w-3 h-3 text-primary inline mr-1" />
-                  {currentProduct.optionsLabel || 'Trending Spotlight'}
+                  {currentProduct.optionsLabel || 'Trending Everyday Essential'}
                 </Badge>
               </div>
 
-              <h1 className="text-xl sm:text-2xl lg:text-3xl font-extrabold text-slate-900 tracking-tight leading-tight">
-                {currentProduct.name}
-              </h1>
+              <Link to={`/product/${currentProduct.slug}`} className="block group">
+                <h1 className="text-lg sm:text-xl md:text-2xl font-bold text-slate-900 tracking-tight group-hover:text-primary transition-colors line-clamp-2">
+                  {currentProduct.name}
+                </h1>
+              </Link>
 
-              <p className="text-slate-600 text-xs sm:text-sm leading-relaxed line-clamp-3">
+              <p className="text-slate-600 text-xs sm:text-sm leading-relaxed line-clamp-2">
                 {currentProduct.shortDescription ||
-                  'Engineered for maximum daily utility, durability, and practical problem-solving in modern homes.'}
+                  'Engineered for maximum daily convenience, high durability, and practical utility in modern homes.'}
               </p>
             </div>
 
-            <div className="pt-6 border-t border-slate-100 mt-6 space-y-4">
+            <div className="pt-4 border-t border-slate-100 mt-4 space-y-3.5">
               {/* Pricing */}
-              <div className="flex items-baseline gap-3">
-                <span className="text-2xl sm:text-3xl font-extrabold text-slate-900">
+              <div className="flex items-baseline gap-2.5">
+                <span className="text-2xl font-extrabold text-slate-900">
                   ₹{Number(currentProduct.price).toLocaleString('en-IN')}
                 </span>
                 {hasDiscount && (
-                  <span className="text-sm text-slate-400 line-through">
+                  <span className="text-xs text-slate-400 line-through">
                     ₹{Number(currentProduct.compareAtPrice).toLocaleString('en-IN')}
                   </span>
                 )}
                 {hasDiscount && (
-                  <span className="text-xs font-semibold text-emerald-700">
+                  <span className="text-xs font-bold text-emerald-700">
                     Save ₹{Number(currentProduct.compareAtPrice - currentProduct.price).toLocaleString('en-IN')}
                   </span>
                 )}
               </div>
 
               {/* Action Buttons */}
-              <div className="flex flex-col sm:flex-row gap-3">
+              <div className="flex flex-col sm:flex-row items-center gap-2.5">
                 <Button
                   onClick={handleHeroAddToCart}
                   variant="primary"
-                  size="lg"
-                  className="flex-1"
+                  size="md"
+                  className="w-full sm:flex-1 justify-center"
                   leftIcon={<ShoppingBag className="w-4 h-4" />}
                 >
-                  {currentProduct.hasVariants ? 'Select Options' : 'Add to Cart'}
+                  {currentProduct.hasVariants ? 'Choose Options' : 'Add to Cart'}
                 </Button>
-                <Link to={`/product/${currentProduct.slug}`} className="flex-1">
+                <Link to={`/product/${currentProduct.slug}`} className="w-full sm:flex-1">
                   <Button
                     variant="outline"
-                    size="lg"
-                    className="w-full"
-                    rightIcon={<ArrowRight className="w-4 h-4" />}
+                    size="md"
+                    className="w-full justify-center"
+                    rightIcon={<ArrowRight className="w-3.5 h-3.5" />}
                   >
-                    View Details
+                    View Product
                   </Button>
                 </Link>
               </div>
@@ -213,22 +214,42 @@ export function Hero() {
           </div>
         </div>
 
-        {/* Slide Indicators */}
+        {/* Carousel Slide Switcher */}
         {totalSlides > 1 && (
-          <div className="flex justify-center gap-1.5 mt-4">
-            {products.map((_, idx) => (
+          <div className="flex items-center justify-between mt-3 text-xs text-slate-500">
+            <div className="flex gap-1.5 items-center">
+              {products.map((_, idx) => (
+                <button
+                  key={idx}
+                  type="button"
+                  onClick={() => setCurrentSlide(idx)}
+                  aria-label={`Slide ${idx + 1}`}
+                  className={`h-1.5 rounded-full transition-all duration-150 ${
+                    currentSlide % totalSlides === idx
+                      ? 'w-6 bg-primary'
+                      : 'w-2 bg-slate-300 hover:bg-slate-400'
+                  }`}
+                />
+              ))}
+            </div>
+            <div className="flex items-center gap-1">
               <button
-                key={idx}
                 type="button"
-                onClick={() => setCurrentSlide(idx)}
-                aria-label={`Go to slide ${idx + 1}`}
-                className={`h-1.5 rounded-full transition-all duration-200 ${
-                  currentSlide % totalSlides === idx
-                    ? 'w-6 bg-primary'
-                    : 'w-2 bg-slate-300 hover:bg-slate-400'
-                }`}
-              />
-            ))}
+                onClick={prevSlide}
+                aria-label="Previous spotlight"
+                className="p-1 rounded bg-white border border-slate-200 text-slate-600 hover:text-primary hover:border-slate-300 transition-colors"
+              >
+                <ChevronLeft className="w-3.5 h-3.5" />
+              </button>
+              <button
+                type="button"
+                onClick={nextSlide}
+                aria-label="Next spotlight"
+                className="p-1 rounded bg-white border border-slate-200 text-slate-600 hover:text-primary hover:border-slate-300 transition-colors"
+              >
+                <ChevronRight className="w-3.5 h-3.5" />
+              </button>
+            </div>
           </div>
         )}
       </div>

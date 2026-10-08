@@ -1,7 +1,7 @@
 import React from 'react';
 import { Link } from 'react-router-dom';
 import { useQuery } from '@apollo/client';
-import { ArrowRight } from 'lucide-react';
+import { ArrowRight, Flame } from 'lucide-react';
 import { ProductCard } from '../products/ProductCard';
 import { ProductCardSkeleton } from '../ui/Skeleton';
 import { GET_ALL_PRODUCTS } from '../../graphql/products';
@@ -14,40 +14,38 @@ export function FeaturedProducts() {
   const products = (data?.getAllProducts || []).filter((p) => p.isActive !== false).slice(0, 8);
 
   return (
-    <section className="py-10 sm:py-16 bg-slate-50">
-      <div className="container mx-auto px-4 lg:px-8">
+    <section className="py-8 sm:py-10 bg-slate-50 border-b border-slate-200">
+      <div className="container mx-auto px-4 lg:px-8 max-w-6xl">
         {/* Section Header */}
-        <div className="flex items-end justify-between mb-8 pb-4 border-b border-slate-200">
-          <div>
-            <span className="text-[11px] font-bold uppercase tracking-wider text-primary mb-1 block">
-              Handpicked Essentials
-            </span>
-            <h2 className="text-xl sm:text-2xl lg:text-3xl font-bold text-slate-900 tracking-tight">
-              Featured Products
+        <div className="flex items-center justify-between mb-5 pb-2.5 border-b border-slate-200">
+          <div className="flex items-center gap-2">
+            <Flame className="w-5 h-5 text-red-500" />
+            <h2 className="text-base sm:text-lg font-bold text-slate-900 tracking-tight">
+              Featured Products & Best Sellers
             </h2>
           </div>
           <Link
             to="/products"
-            className="inline-flex items-center gap-1.5 text-xs sm:text-sm font-semibold text-primary hover:text-primary-hover hover:underline"
+            className="inline-flex items-center gap-1 text-xs font-semibold text-primary hover:underline"
           >
-            <span>View All</span>
-            <ArrowRight className="w-4 h-4" />
+            <span>View All ({products.length})</span>
+            <ArrowRight className="w-3.5 h-3.5" />
           </Link>
         </div>
 
         {/* Loading Skeletons */}
         {loading ? (
-          <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-4 gap-4 sm:gap-6">
+          <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-4 gap-3 sm:gap-4">
             {[1, 2, 3, 4, 5, 6, 7, 8].map((n) => (
               <ProductCardSkeleton key={n} />
             ))}
           </div>
         ) : products.length === 0 ? (
-          <div className="text-center py-12 text-slate-500 text-sm">
+          <div className="text-center py-10 text-slate-500 text-xs">
             No featured products available at this time.
           </div>
         ) : (
-          <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-4 gap-4 sm:gap-6">
+          <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-4 gap-3 sm:gap-4">
             {products.map((product) => (
               <ProductCard key={product.id} product={product} />
             ))}
